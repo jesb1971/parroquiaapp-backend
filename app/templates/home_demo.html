@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parroquia Cruz del Señor — App</title>
+    <!-- Favicon -->
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="max-w-4xl mx-auto py-8 px-4">
+        <!-- Logo / Imagen -->
+        <div class="text-center mb-6">
+            <img src="/static/crusDelSeñor.jpg" alt="Parroquia Cruz del Señor"
+                 class="mx-auto h-40 rounded-lg shadow-md">
+            <h1 class="text-2xl font-bold text-blue-700 mt-4">
+                Parroquia Cruz del Señor
+            </h1>
+            <p class="text-gray-500">Vista previa de la app para feligreses</p>
+        </div>
+
+        <!-- Tarjetas de navegación -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Horarios -->
+            <div class="bg-white shadow rounded-lg p-4">
+                <h2 class="font-semibold text-lg text-blue-700">📅 Horarios de misas</h2>
+                <p class="text-sm text-gray-500">Consulta las próximas celebraciones.</p>
+                <a href="/demo" class="mt-2 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    Ver horarios
+                </a>
+            </div>
+
+            <!-- Avisos -->
+            <div class="bg-white shadow rounded-lg p-4">
+                <h2 class="font-semibold text-lg text-blue-700">📢 Avisos / Noticias</h2>
+                <p class="text-sm text-gray-500">Comunicados y novedades de la parroquia.</p>
+                <button class="mt-2 inline-block px-4 py-2 bg-gray-300 text-gray-600 rounded cursor-not-allowed">
+                    Próximamente
+                </button>
+            </div>
+
+            <!-- Evangelización -->
+            <div class="bg-white shadow rounded-lg p-4">
+                <h2 class="font-semibold text-lg text-blue-700">📖 Evangelización</h2>
+                <p class="text-sm text-gray-500">Reflexiones, homilías y contenidos.</p>
+                <button class="mt-2 inline-block px-4 py-2 bg-gray-300 text-gray-600 rounded cursor-not-allowed">
+                    Próximamente
+                </button>
+            </div>
+
+            <!-- Contacto -->
+            <div class="bg-white shadow rounded-lg p-4">
+                <h2 class="font-semibold text-lg text-blue-700">📞 Contacto</h2>
+                <p class="text-sm text-gray-500">Teléfono, dirección y horarios de despacho.</p>
+                <button class="mt-2 inline-block px-4 py-2 bg-gray-300 text-gray-600 rounded cursor-not-allowed">
+                    Próximamente
+                </button>
+            </div>
+
+            <!-- Donativos -->
+            <div class="bg-white shadow rounded-lg p-4">
+                <h2 class="font-semibold text-lg text-blue-700">💙 Donativos</h2>
+                <p class="text-sm text-gray-500">Apoya la misión de la parroquia.</p>
+                <button class="mt-2 inline-block px-4 py-2 bg-gray-300 text-gray-600 rounded cursor-not-allowed">
+                    Próximamente
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

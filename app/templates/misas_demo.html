@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horarios de misas</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <!-- Favicon -->
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <h1 class="text-center text-primary mb-4">Horarios de misas – {{ parroquia.nombre }}</h1>
+        <p class="text-center text-muted">{{ parroquia.direccion }}</p>
+
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            {% for misa in misas %}
+            <div class="col">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="card-title text-primary">📅 {{ misa.fecha.strftime("%d/%m/%Y %H:%M") }}</h5>
+                        <p class="card-text">💬 {{ misa.descripcion }}</p>
+                        <p class="card-text">
+                            ⭐ {% if misa.es_festiva %}Misa festiva{% else %}Misa ordinaria{% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>
