@@ -16,11 +16,15 @@
         <div class="row row-cols-1 row-cols-md-3 g-4">
             {% for misa in misas %}
             <div class="col">
-                <div class="card shadow-sm h-100">
+
+                <!-- 🔥 DETECCIÓN DE DOMINGO -->
+                {% set es_domingo = misa.fecha.weekday() == 6 %}
+
+                <div class="card shadow-sm h-100 {% if es_domingo %}border-warning{% endif %}">
                     <div class="card-body">
 
                         <!-- FECHA -->
-                        <h5 class="card-title text-primary">
+                        <h5 class="card-title {% if es_domingo %}text-warning{% else %}text-primary{% endif %}">
                             📅 {{ misa.fecha.strftime("%d/%m/%Y") }}
                         </h5>
 
@@ -28,6 +32,11 @@
                         <p class="mb-2">
                             ⏰ <strong>{{ misa.fecha.strftime("%H:%M") }}</strong>
                         </p>
+
+                        <!-- ETIQUETA DOMINGO -->
+                        {% if es_domingo %}
+                        <span class="badge bg-warning text-dark mb-2">Domingo</span>
+                        {% endif %}
 
                         <!-- DESCRIPCIÓN -->
                         <p class="card-text">💬 {{ misa.descripcion }}</p>
