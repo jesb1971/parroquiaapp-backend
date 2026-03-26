@@ -26,23 +26,30 @@ def generar_misas(db: Session, semanas: int = 12, parroquia_id: int = 1):
     No crea duplicados si ya existen en esa fecha/hora.
     """
     try:
+        # 🔥 LIMPIAR CALENDARIO ANTES DE GENERAR
+        db.query(Misa).filter(Misa.parroquia_id == parroquia_id).delete()
+        db.commit()
+
         hoy = datetime.now().date()  # NAIVE (local)
         fin = hoy + timedelta(weeks=semanas)
 
         d = hoy
         while d <= fin:
             wd = d.weekday()  # 0=Lun ... 5=Sáb, 6=Dom
+
             if wd in (1, 2, 3, 4, 5):  # Mar-Sáb
                 desc = "Misa de víspera" if wd == 5 else "Misa diaria"
                 _add_if_missing(db, _combine(d, 19, 0), desc, parroquia_id)
+
             if wd == 6:  # Domingo
                 _add_if_missing(db, _combine(d, 10, 0), "Misa dominical 10:00", parroquia_id)
                 _add_if_missing(db, _combine(d, 12, 0), "Misa dominical 12:00", parroquia_id)
+
             d += timedelta(days=1)
 
         db.commit()
+
     except Exception as e:
-        # rollback solo si el objeto tiene rollback()
         if hasattr(db, "rollback"):
             db.rollback()
         raise RuntimeError(f"Error en generar_misas: {type(e).__name__} -> {e}") from e
