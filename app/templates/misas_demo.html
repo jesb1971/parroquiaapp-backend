@@ -13,46 +13,40 @@
         <p class="text-center text-muted">{{ parroquia.direccion }}</p>
 
         <div class="row row-cols-1 row-cols-md-3 g-4">
-            {% set semana_actual = None %}
-
             {% for misa in misas %}
-            {% set semana = misa.fecha.strftime("%U") %}
-
-            {% if semana != semana_actual %}
-                <div class="col-12">
-                    <h4 class="mt-4 text-secondary">
-                        Semana {{ semana }}
-                    </h4>
-                </div>
-                {% set semana_actual = semana %}
-            {% endif %}
-
             <div class="col">
+
                 {% set es_domingo = misa.fecha.weekday() == 6 %}
 
                 <div class="card shadow-sm h-100 {% if es_domingo %}border-warning{% endif %}">
                     <div class="card-body">
 
+                        <!-- FECHA -->
                         <h5 class="card-title {% if es_domingo %}text-warning{% else %}text-primary{% endif %}">
                             📅 {{ misa.fecha.strftime("%d/%m/%Y") }}
                         </h5>
 
+                        <!-- HORA -->
                         <p class="mb-2">
                             ⏰ <strong>{{ misa.fecha.strftime("%H:%M") }}</strong>
                         </p>
 
+                        <!-- DOMINGO -->
                         {% if es_domingo %}
                         <span class="badge bg-warning text-dark mb-2">Domingo</span>
                         {% endif %}
 
+                        <!-- DESCRIPCIÓN -->
                         <p class="card-text">💬 {{ misa.descripcion }}</p>
 
+                        <!-- TIPO -->
                         <p class="card-text">
                             ⭐ {% if misa.es_festiva %}Misa festiva{% else %}Misa ordinaria{% endif %}
                         </p>
 
                     </div>
                 </div>
+
             </div>
             {% endfor %}
         </div>
