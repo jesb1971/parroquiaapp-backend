@@ -18,11 +18,25 @@
             <div class="col">
                 <div class="card shadow-sm h-100">
                     <div class="card-body">
-                        <h5 class="card-title text-primary">📅 {{ misa.fecha.strftime("%d/%m/%Y %H:%M") }}</h5>
+
+                        <!-- FECHA -->
+                        <h5 class="card-title text-primary">
+                            📅 {{ misa.fecha.strftime("%d/%m/%Y") }}
+                        </h5>
+
+                        <!-- HORA -->
+                        <p class="mb-2">
+                            ⏰ <strong>{{ misa.fecha.strftime("%H:%M") }}</strong>
+                        </p>
+
+                        <!-- DESCRIPCIÓN -->
                         <p class="card-text">💬 {{ misa.descripcion }}</p>
+
+                        <!-- TIPO -->
                         <p class="card-text">
                             ⭐ {% if misa.es_festiva %}Misa festiva{% else %}Misa ordinaria{% endif %}
                         </p>
+
                     </div>
                 </div>
             </div>
