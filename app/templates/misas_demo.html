@@ -37,10 +37,10 @@
                         <span class="badge bg-warning text-dark mb-2">Domingo</span>
                         {% endif %}
 
-                        <!-- MODO USUARIO -->
+                        <!-- USUARIO -->
                         <p class="card-text" id="texto-{{ misa.id }}">💬 {{ misa.descripcion }}</p>
 
-                        <!-- MODO ADMIN -->
+                        <!-- ADMIN -->
                         <div id="admin-{{ misa.id }}" style="display:none;">
                             <input type="text" id="desc-{{ misa.id }}" 
                                    class="form-control form-control-sm mb-2"
@@ -61,17 +61,26 @@
     </div>
 
 <script>
-function esAdmin() {
-    return localStorage.getItem("admin") === "1";
-}
+// 🔥 EJECUCIÓN SEGURA (clave)
+document.addEventListener("DOMContentLoaded", function () {
 
-function aplicarModo() {
-    if (!esAdmin()) return;
+    const admin = localStorage.getItem("admin");
 
-    document.querySelectorAll("[id^='admin-']").forEach(el => el.style.display = "block");
-    document.querySelectorAll("[id^='texto-']").forEach(el => el.style.display = "none");
-}
+    console.log("ADMIN:", admin); // para verificar
 
+    if (admin === "1") {
+
+        document.querySelectorAll("[id^='admin-']").forEach(el => {
+            el.style.display = "block";
+        });
+
+        document.querySelectorAll("[id^='texto-']").forEach(el => {
+            el.style.display = "none";
+        });
+    }
+});
+
+// GUARDAR
 function guardarMisa(id) {
     const desc = document.getElementById(`desc-${id}`).value;
 
@@ -95,12 +104,11 @@ function guardarMisa(id) {
     });
 }
 
+// LOGOUT
 function logout() {
     localStorage.removeItem("admin");
     window.location.href = "/login";
 }
-
-window.onload = aplicarModo;
 </script>
 
 </body>
