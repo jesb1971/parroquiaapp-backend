@@ -21,28 +21,31 @@
                 <div class="card shadow-sm h-100 {% if es_domingo %}border-warning{% endif %}">
                     <div class="card-body">
 
-                        <!-- FECHA -->
                         <h5 class="card-title {% if es_domingo %}text-warning{% else %}text-primary{% endif %}">
                             📅 {{ misa.fecha.strftime("%d/%m/%Y") }}
                         </h5>
 
-                        <!-- HORA -->
                         <p class="mb-2">
                             ⏰ <strong>{{ misa.fecha.strftime("%H:%M") }}</strong>
                         </p>
 
-                        <!-- DOMINGO -->
                         {% if es_domingo %}
                         <span class="badge bg-warning text-dark mb-2">Domingo</span>
                         {% endif %}
 
-                        <!-- DESCRIPCIÓN -->
                         <p class="card-text">💬 {{ misa.descripcion }}</p>
 
-                        <!-- TIPO -->
                         <p class="card-text">
                             ⭐ {% if misa.es_festiva %}Misa festiva{% else %}Misa ordinaria{% endif %}
                         </p>
+
+                        <!-- 🔐 SOLO ADMIN -->
+                        {% if request.query_params.get('admin') == '1' %}
+                        <button class="btn btn-sm btn-outline-primary mt-2"
+                                onclick="editarMisa({{ misa.id }}, '{{ misa.descripcion }}')">
+                            ✏️ Editar
+                        </button>
+                        {% endif %}
 
                     </div>
                 </div>
@@ -51,5 +54,31 @@
             {% endfor %}
         </div>
     </div>
+
+    <script>
+    function editarMisa(id, descripcion) {
+        const nuevaDescripcion = prompt("Editar descripción:", descripcion);
+        if (!nuevaDescripcion) return;
+
+        fetch(`/misas/${id}`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                descripcion: nuevaDescripcion
+            })
+        })
+        .then(res => {
+            if (res.ok) {
+                alert("Misa actualizada");
+                location.reload();
+            } else {
+                alert("Error al actualizar");
+            }
+        });
+    }
+    </script>
+
 </body>
 </html>
