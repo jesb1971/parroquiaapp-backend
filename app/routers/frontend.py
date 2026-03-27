@@ -9,6 +9,15 @@ from .. import models
 router = APIRouter(tags=["frontend"])
 templates = Jinja2Templates(directory="app/templates")
 
+# 🔐 LOGIN
+@router.get("/login", response_class=HTMLResponse)
+def login(request: Request):
+    return templates.TemplateResponse(
+        "login.html",
+        {"request": request}
+    )
+
+# 👥 DEMO MISAS (no tocamos nada)
 @router.get("/demo", response_class=HTMLResponse)
 def demo_misas(request: Request, db: Session = Depends(get_db)):
     parroquia = (
