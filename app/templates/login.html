@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -28,7 +28,8 @@ function login() {
 
     if (user === "admin" && pass === "1234") {
         localStorage.setItem("admin", "1");
-        window.location.href = "/app";
+		console.log("LOGIN OK", localStorage.getItem("admin"));
+		window.location.href = "/app";
     } else {
         document.getElementById("error").style.display = "block";
     }
