@@ -1,5 +1,5 @@
 """Rutas de misas (definitivas)."""
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Header
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 
@@ -9,6 +9,11 @@ from ..services.misas_scheduler import generar_misas
 
 router = APIRouter(prefix="/misas", tags=["misas"])
 PARROQUIA_ID = 1  # Cruz del Señor (fijo por ahora)
+
+# 🔐 CLAVE ADMIN SIMPLE
+def verificar_admin(x_admin: str = Header(None)):
+    if x_admin != "1234":
+        raise HTTPException(status_code=403, detail="No autorizado")
 
 # --- helpers de normalización ---
 def _to_naive_utc(dt: datetime) -> datetime:
@@ -76,10 +81,14 @@ def obtener_misa(misa_id: int, db: Session = Depends(get_db)):
     return misa
 
 # ─────────────────────────────────────────────
-# Crear
+# Crear (PROTEGIDO)
 # ─────────────────────────────────────────────
 @router.post("/", response_model=schemas.MisaOut, status_code=status.HTTP_201_CREATED)
-def crear_misa(payload: schemas.MisaCreate, db: Session = Depends(get_db)):
+def crear_misa(
+    payload: schemas.MisaCreate,
+    db: Session = Depends(get_db),
+    _: str = Depends(verificar_admin)
+):
     payload.fecha = _to_naive_utc(payload.fecha)
     _assert_unique_datetime(db, payload.fecha)
     misa = models.Misa(**payload.model_dump(), parroquia_id=PARROQUIA_ID)
@@ -89,10 +98,15 @@ def crear_misa(payload: schemas.MisaCreate, db: Session = Depends(get_db)):
     return misa
 
 # ─────────────────────────────────────────────
-# Actualizar
+# Actualizar (PROTEGIDO)
 # ─────────────────────────────────────────────
 @router.patch("/{misa_id}", response_model=schemas.MisaOut)
-def actualizar_misa(misa_id: int, payload: schemas.MisaUpdate, db: Session = Depends(get_db)):
+def actualizar_misa(
+    misa_id: int,
+    payload: schemas.MisaUpdate,
+    db: Session = Depends(get_db),
+    _: str = Depends(verificar_admin)
+):
     misa = db.query(models.Misa).filter(
         models.Misa.id == misa_id,
         models.Misa.parroquia_id == PARROQUIA_ID
@@ -110,10 +124,14 @@ def actualizar_misa(misa_id: int, payload: schemas.MisaUpdate, db: Session = Dep
     return misa
 
 # ─────────────────────────────────────────────
-# Eliminar
+# Eliminar (PROTEGIDO)
 # ─────────────────────────────────────────────
 @router.delete("/{misa_id}", status_code=status.HTTP_204_NO_CONTENT)
-def eliminar_misa(misa_id: int, db: Session = Depends(get_db)):
+def eliminar_misa(
+    misa_id: int,
+    db: Session = Depends(get_db),
+    _: str = Depends(verificar_admin)
+):
     misa = db.query(models.Misa).filter(
         models.Misa.id == misa_id,
         models.Misa.parroquia_id == PARROQUIA_ID
@@ -125,15 +143,19 @@ def eliminar_misa(misa_id: int, db: Session = Depends(get_db)):
     return
 
 # ─────────────────────────────────────────────
-# Regenerar calendario (Cruz del Señor)
+# Regenerar calendario (PROTEGIDO)
 # ─────────────────────────────────────────────
 @router.post("/regenerar", status_code=202)
-def regenerar_calendario(semanas: int = Query(12, ge=1, le=52), db: Session = Depends(get_db)):
+def regenerar_calendario(
+    semanas: int = Query(12, ge=1, le=52),
+    db: Session = Depends(get_db),
+    _: str = Depends(verificar_admin)
+):
     generar_misas(db, semanas=semanas, parroquia_id=PARROQUIA_ID)
     return {"detail": f"Calendario generado para {semanas} semanas"}
 
 # ─────────────────────────────────────────────
-# Depuración: listar todo sin filtros (temporal)
+# Depuración
 # ─────────────────────────────────────────────
 @router.get("/debug/all", response_model=list[schemas.MisaOut])
 def debug_all(db: Session = Depends(get_db)):
