@@ -29,7 +29,7 @@ function login() {
     if (user === "admin" && pass === "1234") {
         localStorage.setItem("admin", "1");
 		console.log("LOGIN OK", localStorage.getItem("admin"));
-		window.location.href = "/app";
+		window.location.href = "/demo";
     } else {
         document.getElementById("error").style.display = "block";
     }
