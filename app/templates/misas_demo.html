@@ -12,12 +12,15 @@
         <h1 class="text-center text-primary mb-4">Horarios de misas – {{ parroquia.nombre }}</h1>
         <p class="text-center text-muted">{{ parroquia.direccion }}</p>
 
+        <div class="text-end mb-3">
+            <button class="btn btn-sm btn-outline-secondary" onclick="logout()">Cerrar sesión</button>
+        </div>
+
         <div class="row row-cols-1 row-cols-md-3 g-4">
             {% for misa in misas %}
             <div class="col">
 
                 {% set es_domingo = misa.fecha.weekday() == 6 %}
-                {% set es_admin = request.query_params.get('admin') == '1' %}
 
                 <div class="card shadow-sm h-100 {% if es_domingo %}border-warning{% endif %}">
                     <div class="card-body">
@@ -34,8 +37,11 @@
                         <span class="badge bg-warning text-dark mb-2">Domingo</span>
                         {% endif %}
 
-                        {% if es_admin %}
-                            <!-- 🔐 MODO ADMIN -->
+                        <!-- MODO USUARIO -->
+                        <p class="card-text" id="texto-{{ misa.id }}">💬 {{ misa.descripcion }}</p>
+
+                        <!-- MODO ADMIN -->
+                        <div id="admin-{{ misa.id }}" style="display:none;">
                             <input type="text" id="desc-{{ misa.id }}" 
                                    class="form-control form-control-sm mb-2"
                                    value="{{ misa.descripcion }}">
@@ -44,10 +50,7 @@
                                     onclick="guardarMisa({{ misa.id }})">
                                 💾 Guardar cambios
                             </button>
-                        {% else %}
-                            <!-- 👥 MODO USUARIO -->
-                            <p class="card-text">💬 {{ misa.descripcion }}</p>
-                        {% endif %}
+                        </div>
 
                     </div>
                 </div>
@@ -58,6 +61,17 @@
     </div>
 
 <script>
+function esAdmin() {
+    return localStorage.getItem("admin") === "1";
+}
+
+function aplicarModo() {
+    if (!esAdmin()) return;
+
+    document.querySelectorAll("[id^='admin-']").forEach(el => el.style.display = "block");
+    document.querySelectorAll("[id^='texto-']").forEach(el => el.style.display = "none");
+}
+
 function guardarMisa(id) {
     const desc = document.getElementById(`desc-${id}`).value;
 
@@ -80,6 +94,13 @@ function guardarMisa(id) {
         }
     });
 }
+
+function logout() {
+    localStorage.removeItem("admin");
+    window.location.href = "/login";
+}
+
+aplicarModo();
 </script>
 
 </body>
