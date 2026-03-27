@@ -17,6 +17,7 @@
             <div class="col">
 
                 {% set es_domingo = misa.fecha.weekday() == 6 %}
+                {% set es_admin = request.query_params.get('admin') == '1' %}
 
                 <div class="card shadow-sm h-100 {% if es_domingo %}border-warning{% endif %}">
                     <div class="card-body">
@@ -33,15 +34,20 @@
                         <span class="badge bg-warning text-dark mb-2">Domingo</span>
                         {% endif %}
 
-                        <!-- FORMULARIO EDITAR -->
-                        <input type="text" id="desc-{{ misa.id }}" 
-                               class="form-control form-control-sm mb-2"
-                               value="{{ misa.descripcion }}">
+                        {% if es_admin %}
+                            <!-- 🔐 MODO ADMIN -->
+                            <input type="text" id="desc-{{ misa.id }}" 
+                                   class="form-control form-control-sm mb-2"
+                                   value="{{ misa.descripcion }}">
 
-                        <button class="btn btn-sm btn-primary w-100"
-                                onclick="guardarMisa({{ misa.id }})">
-                            💾 Guardar cambios
-                        </button>
+                            <button class="btn btn-sm btn-primary w-100"
+                                    onclick="guardarMisa({{ misa.id }})">
+                                💾 Guardar cambios
+                            </button>
+                        {% else %}
+                            <!-- 👥 MODO USUARIO -->
+                            <p class="card-text">💬 {{ misa.descripcion }}</p>
+                        {% endif %}
 
                     </div>
                 </div>
