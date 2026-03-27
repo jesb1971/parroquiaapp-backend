@@ -33,19 +33,15 @@
                         <span class="badge bg-warning text-dark mb-2">Domingo</span>
                         {% endif %}
 
-                        <p class="card-text">💬 {{ misa.descripcion }}</p>
+                        <!-- FORMULARIO EDITAR -->
+                        <input type="text" id="desc-{{ misa.id }}" 
+                               class="form-control form-control-sm mb-2"
+                               value="{{ misa.descripcion }}">
 
-                        <p class="card-text">
-                            ⭐ {% if misa.es_festiva %}Misa festiva{% else %}Misa ordinaria{% endif %}
-                        </p>
-
-                        <!-- 🔐 SOLO ADMIN -->
-                        {% if request.query_params.get('admin') == '1' %}
-                        <button class="btn btn-sm btn-outline-primary mt-2"
-                                onclick="editarMisa({{ misa.id }}, '{{ misa.descripcion }}')">
-                            ✏️ Editar
+                        <button class="btn btn-sm btn-primary w-100"
+                                onclick="guardarMisa({{ misa.id }})">
+                            💾 Guardar cambios
                         </button>
-                        {% endif %}
 
                     </div>
                 </div>
@@ -55,30 +51,30 @@
         </div>
     </div>
 
-    <script>
-    function editarMisa(id, descripcion) {
-        const nuevaDescripcion = prompt("Editar descripción:", descripcion);
-        if (!nuevaDescripcion) return;
+<script>
+function guardarMisa(id) {
+    const desc = document.getElementById(`desc-${id}`).value;
 
-        fetch(`/misas/${id}`, {
-            method: "PATCH",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                descripcion: nuevaDescripcion
-            })
+    fetch(`/misas/${id}`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            "x-admin": "1234"
+        },
+        body: JSON.stringify({
+            descripcion: desc
         })
-        .then(res => {
-            if (res.ok) {
-                alert("Misa actualizada");
-                location.reload();
-            } else {
-                alert("Error al actualizar");
-            }
-        });
-    }
-    </script>
+    })
+    .then(res => {
+        if (res.ok) {
+            alert("Guardado correctamente");
+            location.reload();
+        } else {
+            alert("Error al guardar");
+        }
+    });
+}
+</script>
 
 </body>
 </html>
