@@ -110,7 +110,7 @@ def crear_misa(payload: schemas.MisaCreate, db: Session = Depends(get_db)):
 
 
 # ─────────────────────────────────────────────
-# ACTUALIZAR (🔥 AQUÍ ESTÁ LA CLAVE)
+# ACTUALIZAR (🔥 DESCRIPCIÓN + HORA + TIPO)
 # ─────────────────────────────────────────────
 @router.patch("/{misa_id}", response_model=schemas.MisaOut)
 def actualizar_misa(
@@ -129,23 +129,39 @@ def actualizar_misa(
     if not misa:
         raise HTTPException(status_code=404, detail="Misa no encontrada.")
 
-    # 🔥 ACTUALIZAR DESCRIPCIÓN
+    # 🔹 DESCRIPCIÓN
     if "descripcion" in payload:
         misa.descripcion = payload["descripcion"]
 
-    # 🔥 ACTUALIZAR HORA (sin tocar fecha)
+    # 🔹 HORA (mantiene fecha)
     if "hora" in payload:
         try:
             hora, minuto = map(int, payload["hora"].split(":"))
-
             nueva_fecha = misa.fecha.replace(hour=hora, minute=minuto)
-
             _assert_unique_datetime(db, nueva_fecha, skip_id=misa_id)
-
             misa.fecha = nueva_fecha
-
         except:
             raise HTTPException(status_code=400, detail="Formato de hora inválido")
+
+    # 🔥 TIPO DE MISA (SIN CAMBIAR MODELO)
+    if "tipo" in payload:
+
+        tipo = payload["tipo"]
+
+        # Mapeo inteligente
+        if tipo == "ordinaria":
+            misa.es_festiva = False
+
+        elif tipo == "festiva":
+            misa.es_festiva = True
+
+        elif tipo == "especial":
+            misa.es_festiva = True
+            misa.descripcion = f"✨ {misa.descripcion}"
+
+        elif tipo == "evento":
+            misa.es_festiva = True
+            misa.descripcion = f"📌 {misa.descripcion}"
 
     db.commit()
     db.refresh(misa)
