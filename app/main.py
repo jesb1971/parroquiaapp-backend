@@ -4,36 +4,39 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-# Base de datos: crear tablas en desarrollo
+# Base de datos
 from .db import Base, engine
+
+# 🔥 IMPORTANTE: importar models para que cree TODAS las tablas
+from app import models
 
 # Routers
 from app.routers import evangelizacion, misas, avisos, auth, frontend
 
 app = FastAPI(title="ParroquiaApp")
 
-# ⚠️ Solo para desarrollo: crea las tablas si no existen
+# ⚠️ Crear tablas automáticamente (incluye fiestas_parroquia)
 Base.metadata.create_all(bind=engine)
 
-# Monta los routers
+# Routers
 app.include_router(evangelizacion.router)
 app.include_router(misas.router)
 app.include_router(avisos.router)
 app.include_router(auth.router)
 app.include_router(frontend.router)
 
-# Servir carpeta static (para imágenes, CSS, etc.)
+# Static
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
-# Configurar templates
+# Templates
 templates = Jinja2Templates(directory="app/templates")
 
-# Ruta raíz → redirige a la portada demo
+# Root
 @app.get("/")
 def root():
     return RedirectResponse(url="/app")
 
-# Portada demo para feligreses
+# Portada
 @app.get("/app", response_class=HTMLResponse)
 def app_home(request: Request):
     return templates.TemplateResponse("home_demo.html", {"request": request})

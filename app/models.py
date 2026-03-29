@@ -98,3 +98,17 @@ class Aviso(Base):
     cuerpo = Column(Text, nullable=False)
     publicado_at = Column(DateTime, default=datetime.utcnow)
     parroquia_id = Column(Integer, ForeignKey("parroquias.id"))
+    
+    # ─────────────────────────────────────────────
+# 🎉 FIESTAS PROPIAS DE LA PARROQUIA
+# ─────────────────────────────────────────────
+from sqlalchemy import Column, Integer, String, Date, ForeignKey
+
+class FiestaParroquia(Base):
+    __tablename__ = "fiestas_parroquia"
+
+    id = Column(Integer, primary_key=True, index=True)
+    parroquia_id = Column(Integer, ForeignKey("parroquias.id"))
+    fecha = Column(Date, nullable=False)
+    nombre = Column(String, nullable=False)
+    color = Column(String, default="blanco")

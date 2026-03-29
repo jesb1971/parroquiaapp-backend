@@ -38,7 +38,7 @@ def _assert_unique_datetime(db: Session, fecha: datetime, skip_id: int | None = 
 
 
 # ─────────────────────────────────────────────
-# ✝️ CALENDARIO + CELEBRACIONES
+# ✝️ CALENDARIO + FIESTAS PARROQUIA
 # ─────────────────────────────────────────────
 def calcular_pascua(year):
     a = year % 19
@@ -58,8 +58,22 @@ def calcular_pascua(year):
     return datetime(year, month, day)
 
 
-def obtener_liturgia(fecha: datetime) -> dict:
+def obtener_liturgia(fecha: datetime, db: Session) -> dict:
 
+    # 🔥 1. FIESTAS PARROQUIALES (PRIORIDAD TOTAL)
+    fiesta = db.query(models.FiestaParroquia).filter(
+        models.FiestaParroquia.fecha == fecha.date(),
+        models.FiestaParroquia.parroquia_id == PARROQUIA_ID
+    ).first()
+
+    if fiesta:
+        return {
+            "tiempo": "fiesta_local",
+            "color": fiesta.color,
+            "celebracion": f"🎉 {fiesta.nombre}"
+        }
+
+    # 🔥 2. CALENDARIO UNIVERSAL
     year = fecha.year
 
     pascua = calcular_pascua(year)
@@ -75,7 +89,6 @@ def obtener_liturgia(fecha: datetime) -> dict:
 
     adviento_inicio = navidad - timedelta(days=(navidad.weekday() + 1) % 7 + 21)
 
-    # ───── TIEMPOS ─────
     if fecha >= adviento_inicio and fecha < navidad:
         tiempo = "adviento"
         color = "morado"
@@ -102,14 +115,12 @@ def obtener_liturgia(fecha: datetime) -> dict:
 
     celebracion = None
 
-    # ───── CELEBRACIONES CLAVE ─────
+    # CELEBRACIONES UNIVERSALES
     if fecha.date() == navidad.date():
         celebracion = "🎄 Navidad"
-        color = "blanco"
 
     elif fecha.date() == epifania.date():
         celebracion = "⭐ Epifanía del Señor"
-        color = "blanco"
 
     elif fecha.date() == domingo_ramos.date():
         celebracion = "🌿 Domingo de Ramos"
@@ -117,7 +128,6 @@ def obtener_liturgia(fecha: datetime) -> dict:
 
     elif fecha.date() == jueves_santo.date():
         celebracion = "🍞 Jueves Santo"
-        color = "blanco"
 
     elif fecha.date() == viernes_santo.date():
         celebracion = "✝ Viernes Santo"
@@ -125,17 +135,15 @@ def obtener_liturgia(fecha: datetime) -> dict:
 
     elif fecha.date() == vigilia.date():
         celebracion = "🔥 Vigilia Pascual"
-        color = "blanco"
 
     elif fecha.date() == pascua.date():
         celebracion = "✨ Domingo de Pascua"
-        color = "blanco"
 
     elif fecha.date() == pentecostes.date():
         celebracion = "🔥 Pentecostés"
         color = "rojo"
 
-    # ───── ROSA ─────
+    # ROSA
     if fecha.weekday() == 6:
 
         if tiempo == "adviento":
@@ -167,7 +175,7 @@ def listar_misas(db: Session = Depends(get_db)):
         .all()
 
     for misa in result:
-        lit = obtener_liturgia(misa.fecha)
+        lit = obtener_liturgia(misa.fecha, db)
 
         misa.tiempo = lit["tiempo"]
         misa.color = lit["color"]
