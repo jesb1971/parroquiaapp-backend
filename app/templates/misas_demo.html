@@ -8,14 +8,27 @@
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
 </head>
 <body class="bg-light">
-    <div class="container py-5">
-        <h1 class="text-center text-primary mb-4">Horarios de misas – {{ parroquia.nombre }}</h1>
-        <p class="text-center text-muted">{{ parroquia.direccion }}</p>
 
-        <div class="text-end mb-3">
-            <button class="btn btn-sm btn-outline-secondary" onclick="logout()">Cerrar sesión</button>
+    <div class="container py-5">
+
+        <!-- HEADER -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h1 class="text-primary mb-0">Horarios de misas – {{ parroquia.nombre }}</h1>
+                <small class="text-muted">{{ parroquia.direccion }}</small>
+            </div>
+
+            <div>
+                <span id="adminBadge" class="badge bg-danger me-2" style="display:none;">
+                    🔐 Modo administrador
+                </span>
+                <button id="logoutBtn" class="btn btn-sm btn-outline-secondary" onclick="logout()" style="display:none;">
+                    Cerrar sesión
+                </button>
+            </div>
         </div>
 
+        <!-- GRID -->
         <div class="row row-cols-1 row-cols-md-3 g-4">
             {% for misa in misas %}
             <div class="col">
@@ -61,14 +74,17 @@
     </div>
 
 <script>
-// 🔐 DETECCIÓN REAL DE ADMIN (sin trampas)
+// 🔐 DETECCIÓN ADMIN REAL
 document.addEventListener("DOMContentLoaded", function () {
 
     const admin = localStorage.getItem("admin");
 
-    console.log("ADMIN:", admin);
-
     if (admin === "1") {
+
+        // Mostrar modo admin
+        document.getElementById("adminBadge").style.display = "inline-block";
+        document.getElementById("logoutBtn").style.display = "inline-block";
+
         document.querySelectorAll("[id^='admin-']").forEach(el => {
             el.style.display = "block";
         });
@@ -77,7 +93,6 @@ document.addEventListener("DOMContentLoaded", function () {
             el.style.display = "none";
         });
     }
-
 });
 
 // GUARDAR
@@ -96,10 +111,10 @@ function guardarMisa(id) {
     })
     .then(res => {
         if (res.ok) {
-            alert("Guardado correctamente");
+            alert("✅ Guardado correctamente");
             location.reload();
         } else {
-            alert("Error al guardar");
+            alert("❌ Error al guardar");
         }
     });
 }
