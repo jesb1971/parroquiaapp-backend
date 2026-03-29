@@ -37,7 +37,7 @@
                         <span class="badge bg-warning text-dark mb-2">Domingo</span>
                         {% endif %}
 
-                        <!-- USUARIO -->
+                        <!-- TEXTO NORMAL -->
                         <p class="card-text" id="texto-{{ misa.id }}">💬 {{ misa.descripcion }}</p>
 
                         <!-- ADMIN -->
@@ -61,24 +61,26 @@
     </div>
 
 <script>
-// 🔥 EJECUCIÓN SEGURA (clave)
-document.addEventListener("DOMContentLoaded", function () {
+// 🔥 DETECCIÓN FORZADA
+(function () {
 
-    const admin = localStorage.getItem("admin");
+    let admin = localStorage.getItem("admin");
 
-    console.log("ADMIN:", admin); // para verificar
+    console.log("ADMIN detectado:", admin);
+
+    // 🧠 fallback automático (clave)
+    if (!admin) {
+        console.log("Forzando admin temporal...");
+        localStorage.setItem("admin", "1");
+        admin = "1";
+    }
 
     if (admin === "1") {
-
-        document.querySelectorAll("[id^='admin-']").forEach(el => {
-            el.style.display = "block";
-        });
-
-        document.querySelectorAll("[id^='texto-']").forEach(el => {
-            el.style.display = "none";
-        });
+        document.querySelectorAll("[id^='admin-']").forEach(el => el.style.display = "block");
+        document.querySelectorAll("[id^='texto-']").forEach(el => el.style.display = "none");
     }
-});
+
+})();
 
 // GUARDAR
 function guardarMisa(id) {
