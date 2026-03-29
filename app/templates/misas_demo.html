@@ -9,95 +9,105 @@
 </head>
 <body class="bg-light">
 
-    <div class="container py-5">
+<div class="container py-5">
 
-        <!-- HEADER -->
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <div>
-                <h1 class="text-primary mb-0">Horarios de misas – {{ parroquia.nombre }}</h1>
-                <small class="text-muted">{{ parroquia.direccion }}</small>
-            </div>
-
-            <div>
-                <span id="adminBadge" class="badge bg-danger me-2" style="display:none;">
-                    🔐 Modo administrador
-                </span>
-                <button id="logoutBtn" class="btn btn-sm btn-outline-secondary" onclick="logout()" style="display:none;">
-                    Cerrar sesión
-                </button>
-            </div>
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="text-primary mb-0">Horarios de misas – {{ parroquia.nombre }}</h1>
+            <small class="text-muted">{{ parroquia.direccion }}</small>
         </div>
 
-        <!-- GRID -->
-        <div class="row row-cols-1 row-cols-md-3 g-4">
-            {% for misa in misas %}
-            <div class="col">
-
-                {% set es_domingo = misa.fecha.weekday() == 6 %}
-
-                <div class="card shadow-sm h-100 {% if es_domingo %}border-warning{% endif %}">
-                    <div class="card-body">
-
-                        <h5 class="card-title {% if es_domingo %}text-warning{% else %}text-primary{% endif %}">
-                            📅 {{ misa.fecha.strftime("%d/%m/%Y") }}
-                        </h5>
-
-                        <p class="mb-2">
-                            ⏰ <strong>{{ misa.fecha.strftime("%H:%M") }}</strong>
-                        </p>
-
-                        {% if es_domingo %}
-                        <span class="badge bg-warning text-dark mb-2">Domingo</span>
-                        {% endif %}
-
-                        <!-- TEXTO NORMAL -->
-                        <p class="card-text" id="texto-{{ misa.id }}">💬 {{ misa.descripcion }}</p>
-
-                        <!-- ADMIN -->
-                        <div id="admin-{{ misa.id }}" style="display:none;">
-                            <input type="text" id="desc-{{ misa.id }}" 
-                                   class="form-control form-control-sm mb-2"
-                                   value="{{ misa.descripcion }}">
-
-                            <button class="btn btn-sm btn-primary w-100"
-                                    onclick="guardarMisa({{ misa.id }})">
-                                💾 Guardar cambios
-                            </button>
-                        </div>
-
-                    </div>
-                </div>
-
-            </div>
-            {% endfor %}
+        <div>
+            <span id="adminBadge" class="badge bg-danger me-2" style="display:none;">
+                🔐 Modo administrador
+            </span>
+            <button id="logoutBtn" class="btn btn-sm btn-outline-secondary" onclick="logout()" style="display:none;">
+                Cerrar sesión
+            </button>
         </div>
     </div>
 
+    <!-- GRID -->
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% for misa in misas %}
+        <div class="col">
+
+            {% set es_domingo = misa.fecha.weekday() == 6 %}
+
+            <div class="card shadow-sm h-100 {% if es_domingo %}border-warning{% endif %}">
+                <div class="card-body">
+
+                    <!-- FECHA -->
+                    <h5 class="card-title {% if es_domingo %}text-warning{% else %}text-primary{% endif %}">
+                        📅 {{ misa.fecha.strftime("%d/%m/%Y") }}
+                    </h5>
+
+                    <!-- HORA NORMAL -->
+                    <p class="mb-2" id="hora-texto-{{ misa.id }}">
+                        ⏰ <strong>{{ misa.fecha.strftime("%H:%M") }}</strong>
+                    </p>
+
+                    <!-- HORA ADMIN -->
+                    <div id="hora-admin-{{ misa.id }}" style="display:none;" class="mb-2">
+                        <input type="time" id="hora-{{ misa.id }}" class="form-control form-control-sm"
+                               value="{{ misa.fecha.strftime('%H:%M') }}">
+                    </div>
+
+                    {% if es_domingo %}
+                    <span class="badge bg-warning text-dark mb-2">Domingo</span>
+                    {% endif %}
+
+                    <!-- TEXTO NORMAL -->
+                    <p class="card-text" id="texto-{{ misa.id }}">💬 {{ misa.descripcion }}</p>
+
+                    <!-- ADMIN -->
+                    <div id="admin-{{ misa.id }}" style="display:none;">
+                        <input type="text" id="desc-{{ misa.id }}" 
+                               class="form-control form-control-sm mb-2"
+                               value="{{ misa.descripcion }}">
+
+                        <button class="btn btn-sm btn-primary w-100"
+                                onclick="guardarMisa({{ misa.id }})">
+                            💾 Guardar cambios
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
 <script>
-// 🔐 DETECCIÓN ADMIN REAL
+// 🔐 ADMIN
 document.addEventListener("DOMContentLoaded", function () {
 
     const admin = localStorage.getItem("admin");
 
     if (admin === "1") {
 
-        // Mostrar modo admin
         document.getElementById("adminBadge").style.display = "inline-block";
         document.getElementById("logoutBtn").style.display = "inline-block";
 
-        document.querySelectorAll("[id^='admin-']").forEach(el => {
-            el.style.display = "block";
-        });
+        document.querySelectorAll("[id^='admin-']").forEach(el => el.style.display = "block");
+        document.querySelectorAll("[id^='texto-']").forEach(el => el.style.display = "none");
 
-        document.querySelectorAll("[id^='texto-']").forEach(el => {
-            el.style.display = "none";
-        });
+        document.querySelectorAll("[id^='hora-admin-']").forEach(el => el.style.display = "block");
+        document.querySelectorAll("[id^='hora-texto-']").forEach(el => el.style.display = "none");
     }
 });
 
 // GUARDAR
 function guardarMisa(id) {
+
     const desc = document.getElementById(`desc-${id}`).value;
+    const hora = document.getElementById(`hora-${id}`).value;
+
+    // Obtener fecha actual del backend (solo cambiamos la hora)
+    const fechaOriginal = document.getElementById(`hora-texto-${id}`).innerText;
 
     fetch(`/misas/${id}`, {
         method: "PATCH",
@@ -106,7 +116,8 @@ function guardarMisa(id) {
             "x-admin": "1234"
         },
         body: JSON.stringify({
-            descripcion: desc
+            descripcion: desc,
+            // 🔥 solo mandamos la hora (backend mantiene fecha)
         })
     })
     .then(res => {
