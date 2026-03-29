@@ -110,7 +110,7 @@ def crear_misa(payload: schemas.MisaCreate, db: Session = Depends(get_db)):
 
 
 # ─────────────────────────────────────────────
-# ACTUALIZAR (🔥 DESCRIPCIÓN + HORA + TIPO)
+# ACTUALIZAR (🔥 COMPLETO PRO)
 # ─────────────────────────────────────────────
 @router.patch("/{misa_id}", response_model=schemas.MisaOut)
 def actualizar_misa(
@@ -133,7 +133,7 @@ def actualizar_misa(
     if "descripcion" in payload:
         misa.descripcion = payload["descripcion"]
 
-    # 🔹 HORA (mantiene fecha)
+    # 🔹 HORA
     if "hora" in payload:
         try:
             hora, minuto = map(int, payload["hora"].split(":"))
@@ -143,25 +143,53 @@ def actualizar_misa(
         except:
             raise HTTPException(status_code=400, detail="Formato de hora inválido")
 
-    # 🔥 TIPO DE MISA (SIN CAMBIAR MODELO)
+    # 🔥 TIPOS SEGÚN MISAL ROMANO
     if "tipo" in payload:
 
         tipo = payload["tipo"]
 
-        # Mapeo inteligente
+        # limpiar prefijos previos
+        desc = misa.descripcion.replace("✨ ", "").replace("📌 ", "").replace("✝ ", "")
+
         if tipo == "ordinaria":
             misa.es_festiva = False
+            misa.descripcion = desc
 
-        elif tipo == "festiva":
+        elif tipo == "dominical":
             misa.es_festiva = True
+            misa.descripcion = f"Domingo - {desc}"
 
-        elif tipo == "especial":
+        elif tipo == "vespertina":
             misa.es_festiva = True
-            misa.descripcion = f"✨ {misa.descripcion}"
+            misa.descripcion = f"Misa de víspera - {desc}"
 
-        elif tipo == "evento":
+        elif tipo == "solemne":
             misa.es_festiva = True
-            misa.descripcion = f"📌 {misa.descripcion}"
+            misa.descripcion = f"✨ Solemne - {desc}"
+
+        elif tipo == "votiva":
+            misa.es_festiva = True
+            misa.descripcion = f"Votiva - {desc}"
+
+        elif tipo == "difuntos":
+            misa.es_festiva = True
+            misa.descripcion = f"✝ Difuntos - {desc}"
+
+        elif tipo == "ritual":
+            misa.es_festiva = True
+            misa.descripcion = f"Ritual - {desc}"
+
+        elif tipo == "accion_gracias":
+            misa.es_festiva = True
+            misa.descripcion = f"Acción de gracias - {desc}"
+
+        elif tipo == "ninos":
+            misa.es_festiva = True
+            misa.descripcion = f"Misa con niños - {desc}"
+
+        elif tipo == "envio":
+            misa.es_festiva = True
+            misa.descripcion = f"📌 Envío - {desc}"
 
     db.commit()
     db.refresh(misa)
