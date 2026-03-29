@@ -6,20 +6,13 @@
     <title>Horarios de misas</title>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
 
     <style>
-        .card:hover {
-            transform: scale(1.02);
-            transition: 0.2s;
-        }
-        .badge-domingo {
-            background-color: #ffc107;
-            color: black;
-        }
-        .tipo-select {
-            font-size: 12px;
-        }
+        .morado { border-left: 6px solid purple; }
+        .verde { border-left: 6px solid green; }
+        .blanco { border-left: 6px solid #ddd; }
+        .rojo { border-left: 6px solid red; }
+        .rosa { border-left: 6px solid pink; }
     </style>
 </head>
 
@@ -27,23 +20,12 @@
 
 <div class="container py-5">
 
-    <h1 class="text-center text-primary mb-2">
+    <h1 class="text-center text-primary mb-4">
         Horarios de misas –
     </h1>
 
-    <p class="text-center text-muted mb-4">
-        {{ parroquia.nombre }} · {{ parroquia.direccion }}
-    </p>
-
-    <!-- BOTONES -->
-    <div class="d-flex justify-content-end mb-3 gap-2">
-        <span id="modo-admin" class="badge bg-danger" style="display:none;">
-            🛠 Modo administrador
-        </span>
-
-        <button class="btn btn-sm btn-outline-secondary" onclick="logout()">
-            Cerrar sesión
-        </button>
+    <div class="text-end mb-3">
+        <button class="btn btn-sm btn-outline-secondary" onclick="logout()">Cerrar sesión</button>
     </div>
 
     <div class="row row-cols-1 row-cols-md-3 g-4">
@@ -51,63 +33,30 @@
         {% for misa in misas %}
         <div class="col">
 
-            {% set es_domingo = misa.fecha.weekday() == 6 %}
+            <div class="card shadow-sm h-100 {{ misa.color }}">
 
-            <div class="card shadow-sm h-100 {% if es_domingo %}border-warning{% endif %}">
                 <div class="card-body">
 
                     <!-- FECHA -->
-                    <h5 class="{% if es_domingo %}text-warning{% else %}text-primary{% endif %}">
+                    <h5 class="text-primary">
                         📅 {{ misa.fecha.strftime("%d/%m/%Y") }}
                     </h5>
 
                     <!-- HORA -->
-                    <p>⏰ <strong>{{ misa.fecha.strftime("%H:%M") }}</strong></p>
+                    <p>⏰ {{ misa.fecha.strftime("%H:%M") }}</p>
 
-                    <!-- DOMINGO -->
-                    {% if es_domingo %}
-                        <span class="badge badge-domingo mb-2">Domingo</span>
-                    {% endif %}
-
-                    <!-- MODO USUARIO -->
-                    <p id="texto-{{ misa.id }}">
-                        💬 {{ misa.descripcion }}
+                    <!-- TIEMPO LITÚRGICO -->
+                    <p class="text-muted">
+                        ✝ {{ misa.tiempo }}
                     </p>
 
-                    <!-- MODO ADMIN -->
-                    <div id="admin-{{ misa.id }}" style="display:none;">
-
-                        <!-- DESCRIPCIÓN -->
-                        <input type="text"
-                               id="desc-{{ misa.id }}"
-                               class="form-control form-control-sm mb-2"
-                               value="{{ misa.descripcion }}">
-
-                        <!-- TIPO DE MISA -->
-                        <select id="tipo-{{ misa.id }}" class="form-select form-select-sm tipo-select mb-2">
-
-                            <option value="ordinaria">Misa ordinaria (ferial)</option>
-                            <option value="dominical">Misa dominical</option>
-                            <option value="vespertina">Misa de víspera</option>
-                            <option value="solemne">Misa solemne</option>
-                            <option value="votiva">Misa votiva</option>
-                            <option value="difuntos">Misa de difuntos</option>
-                            <option value="ritual">Misa ritual</option>
-                            <option value="accion_gracias">Acción de gracias</option>
-                            <option value="ninos">Misa con niños/jóvenes</option>
-                            <option value="envio">Misa de envío</option>
-
-                        </select>
-
-                        <!-- BOTÓN -->
-                        <button class="btn btn-sm btn-primary w-100"
-                                onclick="guardarMisa({{ misa.id }})">
-                            💾 Guardar cambios
-                        </button>
-
-                    </div>
+                    <!-- DESCRIPCIÓN / CELEBRACIÓN -->
+                    <p class="fw-bold">
+                        {{ misa.descripcion }}
+                    </p>
 
                 </div>
+
             </div>
 
         </div>
@@ -117,64 +66,10 @@
 </div>
 
 <script>
-
-// 🔐 DETECCIÓN ADMIN REAL
-function esAdmin() {
-    return localStorage.getItem("admin") === "1";
-}
-
-function aplicarModo() {
-
-    if (!esAdmin()) return;
-
-    document.getElementById("modo-admin").style.display = "inline-block";
-
-    document.querySelectorAll("[id^='admin-']")
-        .forEach(el => el.style.display = "block");
-
-    document.querySelectorAll("[id^='texto-']")
-        .forEach(el => el.style.display = "none");
-}
-
-
-// 💾 GUARDAR
-function guardarMisa(id) {
-
-    const desc = document.getElementById(`desc-${id}`).value;
-    const tipo = document.getElementById(`tipo-${id}`).value;
-
-    fetch(`/misas/${id}`, {
-        method: "PATCH",
-        headers: {
-            "Content-Type": "application/json",
-            "x-admin": "1234"
-        },
-        body: JSON.stringify({
-            descripcion: desc,
-            tipo: tipo
-        })
-    })
-    .then(res => {
-        if (res.ok) {
-            alert("Guardado correctamente");
-            location.reload();
-        } else {
-            alert("Error al guardar");
-        }
-    });
-}
-
-
-// 🚪 LOGOUT
 function logout() {
     localStorage.removeItem("admin");
     window.location.href = "/login";
 }
-
-
-// INIT
-window.onload = aplicarModo;
-
 </script>
 
 </body>
