@@ -35,6 +35,51 @@ def _assert_unique_datetime(db: Session, fecha: datetime, skip_id: int | None = 
         raise HTTPException(status_code=409, detail="Ya existe una misa en esa fecha/hora.")
 
 
+# 🔥 NUEVO: TIEMPO + COLOR LITÚRGICO
+def obtener_liturgia(fecha: datetime) -> dict:
+
+    # --- base ---
+    if fecha.month == 12 and fecha.day >= 1:
+        tiempo = "adviento"
+        color = "morado"
+
+    elif fecha.month in (1, 12):
+        tiempo = "navidad"
+        color = "blanco"
+
+    elif fecha.month in (2, 3):
+        tiempo = "cuaresma"
+        color = "morado"
+
+    elif fecha.month in (3, 4):
+        tiempo = "semana_santa"
+        color = "rojo"
+
+    elif fecha.month in (4, 5):
+        tiempo = "pascua"
+        color = "blanco"
+
+    else:
+        tiempo = "tiempo_ordinario"
+        color = "verde"
+
+    # --- 🎯 DOMINGOS ROSA ---
+    if fecha.weekday() == 6:
+
+        # Gaudete (Adviento)
+        if tiempo == "adviento" and 10 <= fecha.day <= 20:
+            color = "rosa"
+
+        # Laetare (Cuaresma)
+        if tiempo == "cuaresma" and 10 <= fecha.day <= 25:
+            color = "rosa"
+
+    return {
+        "tiempo": tiempo,
+        "color": color
+    }
+
+
 # ─────────────────────────────────────────────
 # LISTAR
 # ─────────────────────────────────────────────
@@ -59,7 +104,15 @@ def listar_misas(
     if hasta:
         q = q.filter(models.Misa.fecha <= _to_naive_utc(hasta))
 
-    return q.order_by(models.Misa.fecha.asc()).offset(offset).limit(limit).all()
+    result = q.order_by(models.Misa.fecha.asc()).offset(offset).limit(limit).all()
+
+    # 🔥 añadir liturgia
+    for misa in result:
+        lit = obtener_liturgia(misa.fecha)
+        misa.tiempo = lit["tiempo"]
+        misa.color = lit["color"]
+
+    return result
 
 
 # ─────────────────────────────────────────────
@@ -68,49 +121,24 @@ def listar_misas(
 @router.get("/proximas", response_model=list[schemas.MisaOut])
 def proximas(limit: int = Query(20, ge=1, le=100), db: Session = Depends(get_db)):
     ahora = datetime.utcnow()
-    return db.query(models.Misa)\
+
+    result = db.query(models.Misa)\
         .filter(models.Misa.fecha >= ahora,
                 models.Misa.parroquia_id == PARROQUIA_ID)\
         .order_by(models.Misa.fecha.asc())\
         .limit(limit)\
         .all()
 
+    for misa in result:
+        lit = obtener_liturgia(misa.fecha)
+        misa.tiempo = lit["tiempo"]
+        misa.color = lit["color"]
 
-# ─────────────────────────────────────────────
-# OBTENER
-# ─────────────────────────────────────────────
-@router.get("/{misa_id}", response_model=schemas.MisaOut)
-def obtener_misa(misa_id: int, db: Session = Depends(get_db)):
-    misa = db.query(models.Misa).filter(
-        models.Misa.id == misa_id,
-        models.Misa.parroquia_id == PARROQUIA_ID
-    ).first()
-
-    if not misa:
-        raise HTTPException(status_code=404, detail="Misa no encontrada.")
-
-    return misa
+    return result
 
 
 # ─────────────────────────────────────────────
-# CREAR
-# ─────────────────────────────────────────────
-@router.post("/", response_model=schemas.MisaOut, status_code=status.HTTP_201_CREATED)
-def crear_misa(payload: schemas.MisaCreate, db: Session = Depends(get_db)):
-    payload.fecha = _to_naive_utc(payload.fecha)
-    _assert_unique_datetime(db, payload.fecha)
-
-    misa = models.Misa(**payload.model_dump(), parroquia_id=PARROQUIA_ID)
-
-    db.add(misa)
-    db.commit()
-    db.refresh(misa)
-
-    return misa
-
-
-# ─────────────────────────────────────────────
-# ACTUALIZAR (🔥 COMPLETO PRO)
+# ACTUALIZAR
 # ─────────────────────────────────────────────
 @router.patch("/{misa_id}", response_model=schemas.MisaOut)
 def actualizar_misa(
@@ -129,11 +157,11 @@ def actualizar_misa(
     if not misa:
         raise HTTPException(status_code=404, detail="Misa no encontrada.")
 
-    # 🔹 DESCRIPCIÓN
+    # DESCRIPCIÓN
     if "descripcion" in payload:
         misa.descripcion = payload["descripcion"]
 
-    # 🔹 HORA
+    # HORA
     if "hora" in payload:
         try:
             hora, minuto = map(int, payload["hora"].split(":"))
@@ -143,12 +171,11 @@ def actualizar_misa(
         except:
             raise HTTPException(status_code=400, detail="Formato de hora inválido")
 
-    # 🔥 TIPOS SEGÚN MISAL ROMANO
+    # TIPOS MISAL ROMANO
     if "tipo" in payload:
 
         tipo = payload["tipo"]
 
-        # limpiar prefijos previos
         desc = misa.descripcion.replace("✨ ", "").replace("📌 ", "").replace("✝ ", "")
 
         if tipo == "ordinaria":
@@ -195,25 +222,6 @@ def actualizar_misa(
     db.refresh(misa)
 
     return misa
-
-
-# ─────────────────────────────────────────────
-# ELIMINAR
-# ─────────────────────────────────────────────
-@router.delete("/{misa_id}", status_code=status.HTTP_204_NO_CONTENT)
-def eliminar_misa(misa_id: int, db: Session = Depends(get_db), x_admin: str = Header(None)):
-    check_admin(x_admin)
-
-    misa = db.query(models.Misa).filter(
-        models.Misa.id == misa_id,
-        models.Misa.parroquia_id == PARROQUIA_ID
-    ).first()
-
-    if not misa:
-        raise HTTPException(status_code=404, detail="Misa no encontrada.")
-
-    db.delete(misa)
-    db.commit()
 
 
 # ─────────────────────────────────────────────
