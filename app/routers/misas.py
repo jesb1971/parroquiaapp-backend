@@ -222,3 +222,23 @@ def actualizar_misa(
 def regenerar_calendario(db: Session = Depends(get_db)):
     generar_misas(db, semanas=12, parroquia_id=PARROQUIA_ID)
     return {"detail": "Calendario regenerado"}
+    
+    # ─────────────────────────────────────────────
+# 🔧 DEBUG: CREAR FIESTA PARROQUIAL (TEMPORAL)
+# ─────────────────────────────────────────────
+@router.get("/debug/crear-fiesta")
+def crear_fiesta_debug(db: Session = Depends(get_db)):
+
+    from datetime import date
+
+    fiesta = models.FiestaParroquia(
+        parroquia_id=1,
+        fecha=date(2026, 3, 31),  # 👈 fecha que estás viendo
+        nombre="Fiesta parroquial prueba",
+        color="rojo"
+    )
+
+    db.add(fiesta)
+    db.commit()
+
+    return {"ok": "fiesta creada"}
