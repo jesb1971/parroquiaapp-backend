@@ -44,13 +44,13 @@
                     </h5>
 
                     <!-- HORA NORMAL -->
-                    <p class="mb-2" id="hora-texto-{{ misa.id }}">
+                    <p id="hora-texto-{{ misa.id }}">
                         ⏰ <strong>{{ misa.fecha.strftime("%H:%M") }}</strong>
                     </p>
 
                     <!-- HORA ADMIN -->
-                    <div id="hora-admin-{{ misa.id }}" style="display:none;" class="mb-2">
-                        <input type="time" id="hora-{{ misa.id }}" class="form-control form-control-sm"
+                    <div id="hora-admin-{{ misa.id }}" style="display:none;">
+                        <input type="time" id="hora-{{ misa.id }}" class="form-control form-control-sm mb-2"
                                value="{{ misa.fecha.strftime('%H:%M') }}">
                     </div>
 
@@ -59,13 +59,23 @@
                     {% endif %}
 
                     <!-- TEXTO NORMAL -->
-                    <p class="card-text" id="texto-{{ misa.id }}">💬 {{ misa.descripcion }}</p>
+                    <p id="texto-{{ misa.id }}">💬 {{ misa.descripcion }}</p>
 
                     <!-- ADMIN -->
                     <div id="admin-{{ misa.id }}" style="display:none;">
+
+                        <!-- DESCRIPCIÓN -->
                         <input type="text" id="desc-{{ misa.id }}" 
                                class="form-control form-control-sm mb-2"
                                value="{{ misa.descripcion }}">
+
+                        <!-- TIPO DE MISA -->
+                        <select id="tipo-{{ misa.id }}" class="form-select form-select-sm mb-2">
+                            <option value="ordinaria">Ordinaria</option>
+                            <option value="festiva">Festiva</option>
+                            <option value="especial">Especial</option>
+                            <option value="evento">Evento</option>
+                        </select>
 
                         <button class="btn btn-sm btn-primary w-100"
                                 onclick="guardarMisa({{ misa.id }})">
@@ -82,7 +92,7 @@
 </div>
 
 <script>
-// 🔐 ADMIN
+// ADMIN
 document.addEventListener("DOMContentLoaded", function () {
 
     const admin = localStorage.getItem("admin");
@@ -105,9 +115,7 @@ function guardarMisa(id) {
 
     const desc = document.getElementById(`desc-${id}`).value;
     const hora = document.getElementById(`hora-${id}`).value;
-
-    // Obtener fecha actual del backend (solo cambiamos la hora)
-    const fechaOriginal = document.getElementById(`hora-texto-${id}`).innerText;
+    const tipo = document.getElementById(`tipo-${id}`).value;
 
     fetch(`/misas/${id}`, {
         method: "PATCH",
@@ -117,7 +125,8 @@ function guardarMisa(id) {
         },
         body: JSON.stringify({
             descripcion: desc,
-            // 🔥 solo mandamos la hora (backend mantiene fecha)
+            hora: hora,
+            tipo: tipo
         })
     })
     .then(res => {
