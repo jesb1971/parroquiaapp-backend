@@ -1,7 +1,7 @@
 """Rutas de misas (definitivas)."""
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Header
 from sqlalchemy.orm import Session
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from ..db import get_db
 from .. import models, schemas
@@ -17,7 +17,9 @@ def check_admin(x_admin: str = Header(None)):
         raise HTTPException(status_code=403, detail="No autorizado")
 
 
-# --- helpers ---
+# ─────────────────────────────────────────────
+# HELPERS
+# ─────────────────────────────────────────────
 def _to_naive_utc(dt: datetime) -> datetime:
     if dt.tzinfo is not None:
         return dt.astimezone(timezone.utc).replace(tzinfo=None)
@@ -35,27 +37,58 @@ def _assert_unique_datetime(db: Session, fecha: datetime, skip_id: int | None = 
         raise HTTPException(status_code=409, detail="Ya existe una misa en esa fecha/hora.")
 
 
-# 🔥 NUEVO: TIEMPO + COLOR LITÚRGICO
+# ─────────────────────────────────────────────
+# ✝️ CALENDARIO LITÚRGICO REAL
+# ─────────────────────────────────────────────
+def calcular_pascua(year):
+    """Algoritmo de Meeus"""
+    a = year % 19
+    b = year // 100
+    c = year % 100
+    d = b // 4
+    e = b % 4
+    f = (b + 8) // 25
+    g = (b - f + 1) // 3
+    h = (19*a + b - d - g + 15) % 30
+    i = c // 4
+    k = c % 4
+    l = (32 + 2*e + 2*i - h - k) % 7
+    m = (a + 11*h + 22*l) // 451
+    month = (h + l - 7*m + 114) // 31
+    day = ((h + l - 7*m + 114) % 31) + 1
+    return datetime(year, month, day)
+
+
 def obtener_liturgia(fecha: datetime) -> dict:
 
-    # --- base ---
-    if fecha.month == 12 and fecha.day >= 1:
+    year = fecha.year
+
+    pascua = calcular_pascua(year)
+    ceniza = pascua - timedelta(days=46)
+    domingo_ramos = pascua - timedelta(days=7)
+    pentecostes = pascua + timedelta(days=49)
+
+    navidad = datetime(year, 12, 25)
+    adviento_inicio = navidad - timedelta(days=(navidad.weekday() + 1) % 7 + 21)
+
+    # ───── TIEMPOS ─────
+    if fecha >= adviento_inicio and fecha < navidad:
         tiempo = "adviento"
         color = "morado"
 
-    elif fecha.month in (1, 12):
+    elif fecha >= navidad or fecha < ceniza:
         tiempo = "navidad"
         color = "blanco"
 
-    elif fecha.month in (2, 3):
+    elif fecha >= ceniza and fecha < domingo_ramos:
         tiempo = "cuaresma"
         color = "morado"
 
-    elif fecha.month in (3, 4):
+    elif fecha >= domingo_ramos and fecha < pascua:
         tiempo = "semana_santa"
         color = "rojo"
 
-    elif fecha.month in (4, 5):
+    elif fecha >= pascua and fecha <= pentecostes:
         tiempo = "pascua"
         color = "blanco"
 
@@ -63,16 +96,20 @@ def obtener_liturgia(fecha: datetime) -> dict:
         tiempo = "tiempo_ordinario"
         color = "verde"
 
-    # --- 🎯 DOMINGOS ROSA ---
+    # ───── ROSA EXACTO ─────
     if fecha.weekday() == 6:
 
-        # Gaudete (Adviento)
-        if tiempo == "adviento" and 10 <= fecha.day <= 20:
-            color = "rosa"
+        # Gaudete
+        if tiempo == "adviento":
+            tercer_domingo = adviento_inicio + timedelta(days=14)
+            if fecha.date() == tercer_domingo.date():
+                color = "rosa"
 
-        # Laetare (Cuaresma)
-        if tiempo == "cuaresma" and 10 <= fecha.day <= 25:
-            color = "rosa"
+        # Laetare
+        if tiempo == "cuaresma":
+            cuarto_domingo = ceniza + timedelta(days=21)
+            if fecha.date() == cuarto_domingo.date():
+                color = "rosa"
 
     return {
         "tiempo": tiempo,
@@ -106,7 +143,6 @@ def listar_misas(
 
     result = q.order_by(models.Misa.fecha.asc()).offset(offset).limit(limit).all()
 
-    # 🔥 añadir liturgia
     for misa in result:
         lit = obtener_liturgia(misa.fecha)
         misa.tiempo = lit["tiempo"]
@@ -157,11 +193,9 @@ def actualizar_misa(
     if not misa:
         raise HTTPException(status_code=404, detail="Misa no encontrada.")
 
-    # DESCRIPCIÓN
     if "descripcion" in payload:
         misa.descripcion = payload["descripcion"]
 
-    # HORA
     if "hora" in payload:
         try:
             hora, minuto = map(int, payload["hora"].split(":"))
@@ -171,11 +205,8 @@ def actualizar_misa(
         except:
             raise HTTPException(status_code=400, detail="Formato de hora inválido")
 
-    # TIPOS MISAL ROMANO
     if "tipo" in payload:
-
         tipo = payload["tipo"]
-
         desc = misa.descripcion.replace("✨ ", "").replace("📌 ", "").replace("✝ ", "")
 
         if tipo == "ordinaria":
