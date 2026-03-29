@@ -61,26 +61,24 @@
     </div>
 
 <script>
-// 🔥 DETECCIÓN FORZADA
-(function () {
+// 🔐 DETECCIÓN REAL DE ADMIN (sin trampas)
+document.addEventListener("DOMContentLoaded", function () {
 
-    let admin = localStorage.getItem("admin");
+    const admin = localStorage.getItem("admin");
 
-    console.log("ADMIN detectado:", admin);
-
-    // 🧠 fallback automático (clave)
-    if (!admin) {
-        console.log("Forzando admin temporal...");
-        localStorage.setItem("admin", "1");
-        admin = "1";
-    }
+    console.log("ADMIN:", admin);
 
     if (admin === "1") {
-        document.querySelectorAll("[id^='admin-']").forEach(el => el.style.display = "block");
-        document.querySelectorAll("[id^='texto-']").forEach(el => el.style.display = "none");
+        document.querySelectorAll("[id^='admin-']").forEach(el => {
+            el.style.display = "block";
+        });
+
+        document.querySelectorAll("[id^='texto-']").forEach(el => {
+            el.style.display = "none";
+        });
     }
 
-})();
+});
 
 // GUARDAR
 function guardarMisa(id) {
