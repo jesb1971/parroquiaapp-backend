@@ -1,5 +1,5 @@
 """Rutas de misas (definitivas)."""
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Header
+from fastapi import APIRouter, Depends, HTTPException, status, Header
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone, timedelta
 
@@ -26,19 +26,8 @@ def _to_naive_utc(dt: datetime) -> datetime:
     return dt
 
 
-def _assert_unique_datetime(db: Session, fecha: datetime, skip_id: int | None = None):
-    q = db.query(models.Misa).filter(
-        models.Misa.fecha == fecha,
-        models.Misa.parroquia_id == PARROQUIA_ID
-    )
-    if skip_id:
-        q = q.filter(models.Misa.id != skip_id)
-    if db.query(q.exists()).scalar():
-        raise HTTPException(status_code=409, detail="Ya existe una misa en esa fecha/hora.")
-
-
 # ─────────────────────────────────────────────
-# ✝️ CALENDARIO + FIESTAS PARROQUIA
+# ✝️ LITURGIA (SIN TOCAR DESCRIPCIÓN)
 # ─────────────────────────────────────────────
 def calcular_pascua(year):
     a = year % 19
@@ -60,7 +49,7 @@ def calcular_pascua(year):
 
 def obtener_liturgia(fecha: datetime, db: Session) -> dict:
 
-    # 🔥 1. FIESTAS PARROQUIALES (PRIORIDAD TOTAL)
+    # 🔥 FIESTAS PARROQUIALES
     fiesta = db.query(models.FiestaParroquia).filter(
         models.FiestaParroquia.fecha == fecha.date(),
         models.FiestaParroquia.parroquia_id == PARROQUIA_ID
@@ -69,98 +58,25 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
     if fiesta:
         return {
             "tiempo": "fiesta_local",
-            "color": fiesta.color,
-            "celebracion": f"🎉 {fiesta.nombre}"
+            "color": fiesta.color
         }
 
-    # 🔥 2. CALENDARIO UNIVERSAL
+    # 🔥 CALENDARIO UNIVERSAL
     year = fecha.year
-
     pascua = calcular_pascua(year)
     ceniza = pascua - timedelta(days=46)
     domingo_ramos = pascua - timedelta(days=7)
-    jueves_santo = pascua - timedelta(days=3)
-    viernes_santo = pascua - timedelta(days=2)
-    vigilia = pascua - timedelta(days=1)
-    pentecostes = pascua + timedelta(days=49)
 
-    navidad = datetime(year, 12, 25)
-    epifania = datetime(year, 1, 6)
-
-    adviento_inicio = navidad - timedelta(days=(navidad.weekday() + 1) % 7 + 21)
-
-    if fecha >= adviento_inicio and fecha < navidad:
-        tiempo = "adviento"
-        color = "morado"
-
-    elif fecha >= navidad or fecha < ceniza:
-        tiempo = "navidad"
-        color = "blanco"
-
-    elif fecha >= ceniza and fecha < domingo_ramos:
-        tiempo = "cuaresma"
-        color = "morado"
+    if fecha >= ceniza and fecha < domingo_ramos:
+        return {"tiempo": "cuaresma", "color": "morado"}
 
     elif fecha >= domingo_ramos and fecha < pascua:
-        tiempo = "semana_santa"
-        color = "rojo"
+        return {"tiempo": "semana_santa", "color": "rojo"}
 
-    elif fecha >= pascua and fecha <= pentecostes:
-        tiempo = "pascua"
-        color = "blanco"
+    elif fecha >= pascua and fecha <= pascua + timedelta(days=49):
+        return {"tiempo": "pascua", "color": "blanco"}
 
-    else:
-        tiempo = "tiempo_ordinario"
-        color = "verde"
-
-    celebracion = None
-
-    # CELEBRACIONES UNIVERSALES
-    if fecha.date() == navidad.date():
-        celebracion = "🎄 Navidad"
-
-    elif fecha.date() == epifania.date():
-        celebracion = "⭐ Epifanía del Señor"
-
-    elif fecha.date() == domingo_ramos.date():
-        celebracion = "🌿 Domingo de Ramos"
-        color = "rojo"
-
-    elif fecha.date() == jueves_santo.date():
-        celebracion = "🍞 Jueves Santo"
-
-    elif fecha.date() == viernes_santo.date():
-        celebracion = "✝ Viernes Santo"
-        color = "rojo"
-
-    elif fecha.date() == vigilia.date():
-        celebracion = "🔥 Vigilia Pascual"
-
-    elif fecha.date() == pascua.date():
-        celebracion = "✨ Domingo de Pascua"
-
-    elif fecha.date() == pentecostes.date():
-        celebracion = "🔥 Pentecostés"
-        color = "rojo"
-
-    # ROSA
-    if fecha.weekday() == 6:
-
-        if tiempo == "adviento":
-            tercer_domingo = adviento_inicio + timedelta(days=14)
-            if fecha.date() == tercer_domingo.date():
-                color = "rosa"
-
-        if tiempo == "cuaresma":
-            cuarto_domingo = ceniza + timedelta(days=21)
-            if fecha.date() == cuarto_domingo.date():
-                color = "rosa"
-
-    return {
-        "tiempo": tiempo,
-        "color": color,
-        "celebracion": celebracion
-    }
+    return {"tiempo": "ordinario", "color": "verde"}
 
 
 # ─────────────────────────────────────────────
@@ -176,12 +92,8 @@ def listar_misas(db: Session = Depends(get_db)):
 
     for misa in result:
         lit = obtener_liturgia(misa.fecha, db)
-
         misa.tiempo = lit["tiempo"]
         misa.color = lit["color"]
-
-        if lit["celebracion"]:
-            misa.descripcion = lit["celebracion"]
 
     return result
 
@@ -222,9 +134,10 @@ def actualizar_misa(
 def regenerar_calendario(db: Session = Depends(get_db)):
     generar_misas(db, semanas=12, parroquia_id=PARROQUIA_ID)
     return {"detail": "Calendario regenerado"}
-    
-    # ─────────────────────────────────────────────
-# 🔧 DEBUG: CREAR FIESTA PARROQUIAL (TEMPORAL)
+
+
+# ─────────────────────────────────────────────
+# DEBUG LIMPIO (OPCIONAL)
 # ─────────────────────────────────────────────
 @router.get("/debug/crear-fiesta")
 def crear_fiesta_debug(db: Session = Depends(get_db)):
@@ -233,7 +146,7 @@ def crear_fiesta_debug(db: Session = Depends(get_db)):
 
     fiesta = models.FiestaParroquia(
         parroquia_id=1,
-        fecha=date(2026, 3, 31),  # 👈 fecha que estás viendo
+        fecha=date(2026, 3, 31),
         nombre="Fiesta parroquial prueba",
         color="rojo"
     )
