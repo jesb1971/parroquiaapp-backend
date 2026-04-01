@@ -55,14 +55,15 @@ Cerrar sesión
 <span class="badge bg-warning text-dark mb-2">Domingo</span>
 {% endif %}
 
-<!-- TEXTO -->
-<p id="texto-{{ misa.id }}" class="fw-bold">
+<!-- 👤 USUARIO -->
+{% if not es_admin %}
+<p class="fw-bold">
 {{ misa.descripcion }}
 </p>
+{% endif %}
 
-<!-- ADMIN -->
-<div id="admin-{{ misa.id }}" style="display:none;">
-
+<!-- 🔐 ADMIN -->
+{% if es_admin %}
 <input type="text"
 id="desc-{{ misa.id }}"
 class="form-control form-control-sm mb-2"
@@ -72,8 +73,7 @@ value="{{ misa.descripcion }}">
 onclick="guardarMisa({{ misa.id }})">
 💾 Guardar cambios
 </button>
-
-</div>
+{% endif %}
 
 </div>
 </div>
@@ -87,23 +87,7 @@ onclick="guardarMisa({{ misa.id }})">
 
 <script>
 
-// 🔐 AHORA USAMOS COOKIE (LOGIN REAL)
-function esAdmin() {
-    return document.cookie.includes("admin=1");
-}
-
-function aplicarModo() {
-
-    if (!esAdmin()) return;
-
-    document.querySelectorAll("[id^='admin-']")
-    .forEach(el => el.style.display = "block");
-
-    document.querySelectorAll("[id^='texto-']")
-    .forEach(el => el.style.display = "none");
-}
-
-// GUARDAR
+// SOLO queda guardar (no control de admin aquí)
 function guardarMisa(id) {
 
     const desc = document.getElementById(`desc-${id}`).value;
@@ -127,8 +111,6 @@ function guardarMisa(id) {
         }
     });
 }
-
-window.onload = aplicarModo;
 
 </script>
 
