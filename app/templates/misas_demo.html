@@ -26,9 +26,9 @@ Horarios de misas – {{ parroquia.nombre }}
 </h1>
 
 <div class="text-end mb-3">
-<button class="btn btn-sm btn-outline-secondary" onclick="logout()">
+<a href="/logout" class="btn btn-sm btn-outline-secondary">
 Cerrar sesión
-</button>
+</a>
 </div>
 
 <div class="row row-cols-1 row-cols-md-3 g-4">
@@ -87,48 +87,45 @@ onclick="guardarMisa({{ misa.id }})">
 
 <script>
 
+// 🔐 AHORA USAMOS COOKIE (LOGIN REAL)
 function esAdmin() {
-return localStorage.getItem("admin") === "1";
+    return document.cookie.includes("admin=1");
 }
 
 function aplicarModo() {
 
-if (!esAdmin()) return;
+    if (!esAdmin()) return;
 
-document.querySelectorAll("[id^='admin-']")
-.forEach(el => el.style.display = "block");
+    document.querySelectorAll("[id^='admin-']")
+    .forEach(el => el.style.display = "block");
 
-document.querySelectorAll("[id^='texto-']")
-.forEach(el => el.style.display = "none");
+    document.querySelectorAll("[id^='texto-']")
+    .forEach(el => el.style.display = "none");
 }
 
+// GUARDAR
 function guardarMisa(id) {
 
-const desc = document.getElementById(`desc-${id}`).value;
+    const desc = document.getElementById(`desc-${id}`).value;
 
-fetch(`/misas/${id}`, {
-method: "PATCH",
-headers: {
-"Content-Type": "application/json",
-"x-admin": "1234"
-},
-body: JSON.stringify({
-descripcion: desc
-})
-})
-.then(res => {
-if (res.ok) {
-alert("Guardado correctamente");
-location.reload();
-} else {
-alert("Error al guardar");
-}
-});
-}
-
-function logout() {
-localStorage.removeItem("admin");
-window.location.href = "/login";
+    fetch(`/misas/${id}`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            "x-admin": "1234"
+        },
+        body: JSON.stringify({
+            descripcion: desc
+        })
+    })
+    .then(res => {
+        if (res.ok) {
+            alert("Guardado correctamente");
+            location.reload();
+        } else {
+            alert("Error al guardar");
+        }
+    });
 }
 
 window.onload = aplicarModo;
