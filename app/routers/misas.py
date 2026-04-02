@@ -1,5 +1,5 @@
 """Rutas de misas (definitivas)."""
-from fastapi import APIRouter, Depends, HTTPException, status, Header
+from fastapi import APIRouter, Depends, HTTPException, status, Header, Request
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone, timedelta
 
@@ -11,7 +11,7 @@ router = APIRouter(prefix="/misas", tags=["misas"])
 PARROQUIA_ID = 1
 
 
-# 🔐 ADMIN
+# 🔐 ADMIN (SE MANTIENE, aunque ya no se usa en PATCH)
 def check_admin(x_admin: str = Header(None)):
     if x_admin != "1234":
         raise HTTPException(status_code=403, detail="No autorizado")
@@ -99,16 +99,21 @@ def listar_misas(db: Session = Depends(get_db)):
 
 
 # ─────────────────────────────────────────────
-# ACTUALIZAR
+# ACTUALIZAR (🔒 SEGURIDAD REAL CON COOKIE)
 # ─────────────────────────────────────────────
 @router.patch("/{misa_id}", response_model=schemas.MisaOut)
 def actualizar_misa(
     misa_id: int,
     payload: dict,
-    db: Session = Depends(get_db),
-    x_admin: str = Header(None)
+    request: Request,
+    db: Session = Depends(get_db)
 ):
-    check_admin(x_admin)
+
+    # 🔐 VALIDACIÓN REAL
+    admin_cookie = request.cookies.get("admin")
+
+    if admin_cookie != "1":
+        raise HTTPException(status_code=403, detail="No autorizado")
 
     misa = db.query(models.Misa).filter(
         models.Misa.id == misa_id,
