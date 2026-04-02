@@ -25,15 +25,20 @@
 Horarios de misas – {{ parroquia.nombre }}
 </h1>
 
-<div class="text-end mb-3">
+<!-- 🔐 ZONA ADMIN SUPERIOR -->
 {% if es_admin %}
-<div class="text-end mb-3">
+<div class="d-flex justify-content-end gap-2 mb-3">
+
+    <button class="btn btn-sm btn-success" onclick="regenerar()">
+        🔄 Regenerar calendario
+    </button>
+
     <a href="/logout" class="btn btn-sm btn-outline-secondary">
         Cerrar sesión
     </a>
+
 </div>
 {% endif %}
-</div>
 
 <div class="row row-cols-1 row-cols-md-3 g-4">
 
@@ -91,7 +96,7 @@ onclick="guardarMisa({{ misa.id }})">
 
 <script>
 
-// SOLO queda guardar (no control de admin aquí)
+// GUARDAR (SE MANTIENE IGUAL)
 function guardarMisa(id) {
 
     const desc = document.getElementById(`desc-${id}`).value;
@@ -112,6 +117,25 @@ function guardarMisa(id) {
             location.reload();
         } else {
             alert("Error al guardar");
+        }
+    });
+}
+
+
+// 🔄 NUEVO: REGENERAR CALENDARIO
+function regenerar() {
+
+    if (!confirm("¿Seguro que quieres regenerar el calendario?")) return;
+
+    fetch("/misas/regenerar", {
+        method: "POST"
+    })
+    .then(res => {
+        if (res.ok) {
+            alert("Calendario regenerado");
+            location.reload();
+        } else {
+            alert("Error al regenerar");
         }
     });
 }
