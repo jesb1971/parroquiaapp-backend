@@ -13,7 +13,7 @@ templates = Jinja2Templates(directory="app/templates")
 def demo_misas(request: Request, db: Session = Depends(get_db)):
 
     # 🔐 comprobar login
-    admin_cookie = request.cookies.get("admin")
+    admin_cookie = request.cookies.get("admin", "0")
 
     parroquia = (
         db.query(models.Parroquia)
@@ -35,6 +35,6 @@ def demo_misas(request: Request, db: Session = Depends(get_db)):
             "request": request,
             "misas": misas,
             "parroquia": parroquia,
-            "es_admin": admin_cookie == "1"   # 🔥 PASAMOS ESTADO REAL
+            "es_admin": admin_cookie == "1"
         }
     )
