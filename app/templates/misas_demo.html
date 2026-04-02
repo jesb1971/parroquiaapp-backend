@@ -26,9 +26,13 @@ Horarios de misas – {{ parroquia.nombre }}
 </h1>
 
 <div class="text-end mb-3">
-<a href="/logout" class="btn btn-sm btn-outline-secondary">
-Cerrar sesión
-</a>
+{% if es_admin %}
+<div class="text-end mb-3">
+    <a href="/logout" class="btn btn-sm btn-outline-secondary">
+        Cerrar sesión
+    </a>
+</div>
+{% endif %}
 </div>
 
 <div class="row row-cols-1 row-cols-md-3 g-4">
