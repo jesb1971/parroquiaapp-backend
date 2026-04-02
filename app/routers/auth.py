@@ -5,18 +5,18 @@ from fastapi.templating import Jinja2Templates
 router = APIRouter(tags=["auth"])
 templates = Jinja2Templates(directory="app/templates")
 
-# 🔐 credenciales (por ahora fijas)
+# 🔐 credenciales (por ahora simples)
 ADMIN_USER = "admin"
 ADMIN_PASS = "1234"
 
 
-# FORMULARIO LOGIN
+# 🔹 FORMULARIO LOGIN
 @router.get("/login")
 def login_form(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
 
-# VALIDACIÓN LOGIN
+# 🔹 PROCESAR LOGIN
 @router.post("/login")
 def login(usuario: str = Form(...), password: str = Form(...)):
 
@@ -25,13 +25,12 @@ def login(usuario: str = Form(...), password: str = Form(...)):
         response.set_cookie(key="admin", value="1")
         return response
 
-    # si falla, vuelve al login
     return RedirectResponse(url="/login", status_code=302)
 
 
-# LOGOUT
+# 🔹 LOGOUT
 @router.get("/logout")
 def logout():
-    response = RedirectResponse(url="/login", status_code=302)
+    response = RedirectResponse(url="/", status_code=302)
     response.delete_cookie("admin")
     return response
