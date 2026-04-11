@@ -2,8 +2,10 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
+
 from ..db import get_db
 from .. import models
+from app.routers.misas import obtener_liturgia  # 🔥 IMPORTANTE
 
 router = APIRouter(tags=["frontend"])
 templates = Jinja2Templates(directory="app/templates")
@@ -17,27 +19,25 @@ def demo_misas(request: Request, db: Session = Depends(get_db)):
 
     parroquia = (
         db.query(models.Parroquia)
-          .filter(models.Parroquia.id == 1)
-          .first()
+        .filter(models.Parroquia.id == 1)
+        .first()
     )
 
     misas = (
-    db.query(models.Misa)
-    .filter(models.Misa.parroquia_id == 1)
-    .order_by(models.Misa.fecha.asc())
-    .limit(50)
-    .all()
+        db.query(models.Misa)
+        .filter(models.Misa.parroquia_id == 1)
+        .order_by(models.Misa.fecha.asc())
+        .limit(50)
+        .all()
     )
 
-# 🔥 APLICAR LITURGIA AQUÍ (CLAVE)
-from app.routers.misas import obtener_liturgia
+    # 🔥 APLICAR LITURGIA (CLAVE)
+    for misa in misas:
+        lit = obtener_liturgia(misa.fecha, db)
+        misa.color = lit["color"]
 
-for misa in misas:
-    lit = obtener_liturgia(misa.fecha, db)
-    misa.color = lit["color"]
-
-    if "celebracion" in lit:
-        misa.descripcion = f"🎉 {lit['celebracion']}"
+        if "celebracion" in lit:
+            misa.descripcion = f"🎉 {lit['celebracion']}"
 
     return templates.TemplateResponse(
         "misas_demo.html",
