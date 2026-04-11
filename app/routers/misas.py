@@ -146,13 +146,39 @@ def regenerar_calendario(
     db: Session = Depends(get_db)
 ):
 
+    from datetime import date
+
+    # 🔥 CARGAR FIESTAS AUTOMÁTICAS (SOLO SI NO EXISTEN)
+    fiestas = [
+        {"fecha": date(2026, 4, 12), "nombre": "Domingo de Pascua", "color": "blanco"},
+        {"fecha": date(2026, 4, 19), "nombre": "II Domingo de Pascua", "color": "blanco"},
+        {"fecha": date(2026, 4, 26), "nombre": "III Domingo de Pascua", "color": "blanco"},
+        {"fecha": date(2026, 5, 24), "nombre": "Pentecostés", "color": "rojo"},
+        {"fecha": date(2026, 6, 7), "nombre": "Corpus Christi", "color": "blanco"},
+    ]
+
+    for f in fiestas:
+        existe = db.query(models.FiestaParroquia).filter(
+            models.FiestaParroquia.fecha == f["fecha"],
+            models.FiestaParroquia.parroquia_id == PARROQUIA_ID
+        ).first()
+
+        if not existe:
+            db.add(models.FiestaParroquia(
+                parroquia_id=PARROQUIA_ID,
+                fecha=f["fecha"],
+                nombre=f["nombre"],
+                color=f["color"]
+            ))
+
+    db.commit()  # 👈 IMPORTANTE (guardar fiestas primero)
+
     # 🧠 convertir meses → semanas (aprox)
     semanas = meses * 4
 
     generar_misas(db, semanas=semanas, parroquia_id=PARROQUIA_ID)
 
     return {"detail": f"Calendario regenerado ({meses} meses)"}
-
 # ─────────────────────────────────────────────
 # DEBUG LIMPIO (OPCIONAL)
 # ─────────────────────────────────────────────
