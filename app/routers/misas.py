@@ -148,7 +148,7 @@ def regenerar_calendario(
 
     from datetime import date
 
-    # 🔥 CARGAR FIESTAS AUTOMÁTICAS (SOLO SI NO EXISTEN)
+    # 🔥 1. CARGAR FIESTAS (SI NO EXISTEN)
     fiestas = [
         {"fecha": date(2026, 4, 12), "nombre": "Domingo de Pascua", "color": "blanco"},
         {"fecha": date(2026, 4, 19), "nombre": "II Domingo de Pascua", "color": "blanco"},
@@ -171,11 +171,17 @@ def regenerar_calendario(
                 color=f["color"]
             ))
 
-    db.commit()  # 👈 IMPORTANTE (guardar fiestas primero)
+    db.commit()  # guardar fiestas
 
-    # 🧠 convertir meses → semanas (aprox)
+    # 🧨 2. BORRAR MISAS ANTIGUAS (CLAVE)
+    db.query(models.Misa).filter(
+        models.Misa.parroquia_id == PARROQUIA_ID
+    ).delete()
+
+    db.commit()
+
+    # 🧠 3. GENERAR NUEVAS MISAS
     semanas = meses * 4
-
     generar_misas(db, semanas=semanas, parroquia_id=PARROQUIA_ID)
 
     return {"detail": f"Calendario regenerado ({meses} meses)"}
