@@ -22,12 +22,22 @@ def demo_misas(request: Request, db: Session = Depends(get_db)):
     )
 
     misas = (
-        db.query(models.Misa)
-          .filter(models.Misa.parroquia_id == 1)
-          .order_by(models.Misa.fecha.asc())
-          .limit(20)
-          .all()
+    db.query(models.Misa)
+    .filter(models.Misa.parroquia_id == 1)
+    .order_by(models.Misa.fecha.asc())
+    .limit(50)
+    .all()
     )
+
+# 🔥 APLICAR LITURGIA AQUÍ (CLAVE)
+from app.routers.misas import obtener_liturgia
+
+for misa in misas:
+    lit = obtener_liturgia(misa.fecha, db)
+    misa.color = lit["color"]
+
+    if "celebracion" in lit:
+        misa.descripcion = f"🎉 {lit['celebracion']}"
 
     return templates.TemplateResponse(
         "misas_demo.html",
