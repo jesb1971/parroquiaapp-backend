@@ -57,11 +57,10 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
 
     if fiesta:
         return {
-        "tiempo": "fiesta_local",
-        "color": fiesta.color,
-        "celebracion": fiesta.nombre
-    }
-
+    "tiempo": "fiesta_local",
+    "color": fiesta.color,
+    "celebracion": f"🎉 {fiesta.nombre}"
+        }
     # 🔥 CALENDARIO UNIVERSAL
     year = fecha.year
     pascua = calcular_pascua(year)
