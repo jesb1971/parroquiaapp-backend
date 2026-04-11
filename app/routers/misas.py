@@ -57,9 +57,10 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
 
     if fiesta:
         return {
-            "tiempo": "fiesta_local",
-            "color": fiesta.color
-        }
+        "tiempo": "fiesta_local",
+        "color": fiesta.color,
+        "celebracion": fiesta.nombre
+    }
 
     # 🔥 CALENDARIO UNIVERSAL
     year = fecha.year
@@ -94,6 +95,8 @@ def listar_misas(db: Session = Depends(get_db)):
         lit = obtener_liturgia(misa.fecha, db)
         misa.tiempo = lit["tiempo"]
         misa.color = lit["color"]
+        if "celebracion" in lit:
+            misa.descripcion = lit["celebracion"]
 
     return result
 
