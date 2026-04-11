@@ -138,11 +138,20 @@ def actualizar_misa(
 # ─────────────────────────────────────────────
 # REGENERAR
 # ─────────────────────────────────────────────
-@router.post("/regenerar", status_code=202)
-def regenerar_calendario(db: Session = Depends(get_db)):
-    generar_misas(db, semanas=12, parroquia_id=PARROQUIA_ID)
-    return {"detail": "Calendario regenerado"}
+from fastapi import Query
 
+@router.post("/regenerar", status_code=202)
+def regenerar_calendario(
+    meses: int = Query(3),
+    db: Session = Depends(get_db)
+):
+
+    # 🧠 convertir meses → semanas (aprox)
+    semanas = meses * 4
+
+    generar_misas(db, semanas=semanas, parroquia_id=PARROQUIA_ID)
+
+    return {"detail": f"Calendario regenerado ({meses} meses)"}
 
 # ─────────────────────────────────────────────
 # DEBUG LIMPIO (OPCIONAL)
