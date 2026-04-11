@@ -50,10 +50,16 @@ def calcular_pascua(year):
 def obtener_liturgia(fecha: datetime, db: Session) -> dict:
 
     # 🔥 FIESTAS PARROQUIALES
-    fiesta = db.query(models.FiestaParroquia).filter(
-        models.FiestaParroquia.fecha == fecha.date(),
-        models.FiestaParroquia.parroquia_id == PARROQUIA_ID
-    ).first()
+from datetime import datetime, timedelta
+
+inicio_dia = datetime(fecha.year, fecha.month, fecha.day)
+fin_dia = inicio_dia + timedelta(days=1)
+
+fiesta = db.query(models.FiestaParroquia).filter(
+    models.FiestaParroquia.fecha >= inicio_dia.date(),
+    models.FiestaParroquia.fecha < fin_dia.date(),
+    models.FiestaParroquia.parroquia_id == PARROQUIA_ID
+).first()
 
     if fiesta:
         return {
@@ -61,6 +67,7 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
     "color": fiesta.color,
     "celebracion": f"🎉 {fiesta.nombre}"
         }
+        
     # 🔥 CALENDARIO UNIVERSAL
     year = fecha.year
     pascua = calcular_pascua(year)
