@@ -49,24 +49,39 @@ def calcular_pascua(year):
 
 def obtener_liturgia(fecha: datetime, db: Session) -> dict:
 
-    # 🔥 FIESTAS PARROQUIALES
-from datetime import datetime, timedelta
+    # 🔥 FIESTAS PARROQUIALES (CORRECTO)
+    inicio_dia = datetime(fecha.year, fecha.month, fecha.day)
+    fin_dia = inicio_dia + timedelta(days=1)
 
-inicio_dia = datetime(fecha.year, fecha.month, fecha.day)
-fin_dia = inicio_dia + timedelta(days=1)
-
-fiesta = db.query(models.FiestaParroquia).filter(
-    models.FiestaParroquia.fecha >= inicio_dia.date(),
-    models.FiestaParroquia.fecha < fin_dia.date(),
-    models.FiestaParroquia.parroquia_id == PARROQUIA_ID
-).first()
+    fiesta = db.query(models.FiestaParroquia).filter(
+        models.FiestaParroquia.fecha >= inicio_dia.date(),
+        models.FiestaParroquia.fecha < fin_dia.date(),
+        models.FiestaParroquia.parroquia_id == PARROQUIA_ID
+    ).first()
 
     if fiesta:
         return {
-    "tiempo": "fiesta_local",
-    "color": fiesta.color,
-    "celebracion": f"🎉 {fiesta.nombre}"
+            "tiempo": "fiesta_local",
+            "color": fiesta.color,
+            "celebracion": f"🎉 {fiesta.nombre}"
         }
+
+    # 🔥 CALENDARIO UNIVERSAL (LO QUE YA TENÍAS)
+    year = fecha.year
+    pascua = calcular_pascua(year)
+    ceniza = pascua - timedelta(days=46)
+    domingo_ramos = pascua - timedelta(days=7)
+
+    if fecha >= ceniza and fecha < domingo_ramos:
+        return {"tiempo": "cuaresma", "color": "morado"}
+
+    elif fecha >= domingo_ramos and fecha < pascua:
+        return {"tiempo": "semana_santa", "color": "rojo"}
+
+    elif fecha >= pascua and fecha <= pascua + timedelta(days=49):
+        return {"tiempo": "pascua", "color": "blanco"}
+
+    return {"tiempo": "ordinario", "color": "verde"}
         
     # 🔥 CALENDARIO UNIVERSAL
     year = fecha.year
