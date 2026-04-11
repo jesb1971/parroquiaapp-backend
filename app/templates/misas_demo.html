@@ -27,7 +27,14 @@ Horarios de misas – {{ parroquia.nombre }}
 
 <!-- 🔐 ZONA ADMIN SUPERIOR -->
 {% if es_admin %}
-<div class="d-flex justify-content-end gap-2 mb-3">
+<div class="d-flex justify-content-end align-items-center gap-2 mb-3">
+
+    <!-- ✅ NUEVO: selector meses -->
+    <select id="meses" class="form-select form-select-sm" style="width:150px;">
+        <option value="1">1 mes</option>
+        <option value="3" selected>3 meses</option>
+        <option value="6">6 meses</option>
+    </select>
 
     <button class="btn btn-sm btn-success" onclick="regenerar()">
         🔄 Regenerar calendario
@@ -122,12 +129,14 @@ function guardarMisa(id) {
 }
 
 
-// 🔄 NUEVO: REGENERAR CALENDARIO
+// 🔄 REGENERAR (AJUSTADO A MESES)
 function regenerar() {
 
     if (!confirm("¿Seguro que quieres regenerar el calendario?")) return;
 
-    fetch("/misas/regenerar", {
+    const meses = document.getElementById("meses").value;
+
+    fetch(`/misas/regenerar?meses=${meses}`, {
         method: "POST"
     })
     .then(res => {
