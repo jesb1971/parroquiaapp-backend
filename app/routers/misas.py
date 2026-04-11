@@ -1,5 +1,5 @@
 """Rutas de misas (definitivas)."""
-from fastapi import APIRouter, Depends, HTTPException, status, Header, Request
+from fastapi import APIRouter, Depends, HTTPException, Header, Request, Query
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone, timedelta
 
@@ -11,7 +11,7 @@ router = APIRouter(prefix="/misas", tags=["misas"])
 PARROQUIA_ID = 1
 
 
-# 🔐 ADMIN (SE MANTIENE, aunque ya no se usa en PATCH)
+# 🔐 ADMIN
 def check_admin(x_admin: str = Header(None)):
     if x_admin != "1234":
         raise HTTPException(status_code=403, detail="No autorizado")
@@ -27,7 +27,7 @@ def _to_naive_utc(dt: datetime) -> datetime:
 
 
 # ─────────────────────────────────────────────
-# ✝️ LITURGIA (SIN TOCAR DESCRIPCIÓN)
+# ✝️ LITURGIA COMPLETA (AUTOMÁTICA)
 # ─────────────────────────────────────────────
 def calcular_pascua(year):
     a = year % 19
@@ -49,7 +49,7 @@ def calcular_pascua(year):
 
 def obtener_liturgia(fecha: datetime, db: Session) -> dict:
 
-    # 🔥 FIESTAS PARROQUIALES (CORRECTO)
+    # 🔥 1. FIESTAS PARROQUIALES (PRIORIDAD)
     inicio_dia = datetime(fecha.year, fecha.month, fecha.day)
     fin_dia = inicio_dia + timedelta(days=1)
 
@@ -63,41 +63,79 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
         return {
             "tiempo": "fiesta_local",
             "color": fiesta.color,
-            "celebracion": f"🎉 {fiesta.nombre}"
+            "celebracion": fiesta.nombre
         }
 
-    # 🔥 CALENDARIO UNIVERSAL (LO QUE YA TENÍAS)
+    # 🔥 2. CALENDARIO AUTOMÁTICO
     year = fecha.year
     pascua = calcular_pascua(year)
     ceniza = pascua - timedelta(days=46)
     domingo_ramos = pascua - timedelta(days=7)
 
+    # CUARESMA
     if fecha >= ceniza and fecha < domingo_ramos:
         return {"tiempo": "cuaresma", "color": "morado"}
 
-    elif fecha >= domingo_ramos and fecha < pascua:
+    # SEMANA SANTA
+    if fecha >= domingo_ramos and fecha < pascua:
         return {"tiempo": "semana_santa", "color": "rojo"}
 
-    elif fecha >= pascua and fecha <= pascua + timedelta(days=49):
-        return {"tiempo": "pascua", "color": "blanco"}
+    # 🔥 PASCUA COMPLETA (AQUÍ ESTÁ LA MAGIA)
+    if fecha >= pascua and fecha <= pascua + timedelta(days=49):
 
-    return {"tiempo": "ordinario", "color": "verde"}
-        
-    # 🔥 CALENDARIO UNIVERSAL
-    year = fecha.year
-    pascua = calcular_pascua(year)
-    ceniza = pascua - timedelta(days=46)
-    domingo_ramos = pascua - timedelta(days=7)
+        dias = (fecha - pascua).days
 
-    if fecha >= ceniza and fecha < domingo_ramos:
-        return {"tiempo": "cuaresma", "color": "morado"}
+        if dias == 0:
+            return {
+                "tiempo": "pascua",
+                "color": "blanco",
+                "celebracion": "Domingo de Pascua"
+            }
 
-    elif fecha >= domingo_ramos and fecha < pascua:
-        return {"tiempo": "semana_santa", "color": "rojo"}
+        if dias < 7:
+            nombres = [
+                "Lunes de la Octava de Pascua",
+                "Martes de la Octava de Pascua",
+                "Miércoles de la Octava de Pascua",
+                "Jueves de la Octava de Pascua",
+                "Viernes de la Octava de Pascua",
+                "Sábado de la Octava de Pascua",
+            ]
+            return {
+                "tiempo": "pascua",
+                "color": "blanco",
+                "celebracion": nombres[dias - 1]
+            }
 
-    elif fecha >= pascua and fecha <= pascua + timedelta(days=49):
-        return {"tiempo": "pascua", "color": "blanco"}
+        semana = (dias // 7) + 1
 
+        dias_nombres = {
+            0: "Lunes",
+            1: "Martes",
+            2: "Miércoles",
+            3: "Jueves",
+            4: "Viernes",
+            5: "Sábado",
+            6: "Domingo"
+        }
+
+        dia_semana = fecha.weekday()
+        nombre_dia = dias_nombres[dia_semana]
+
+        if dia_semana == 6:
+            return {
+                "tiempo": "pascua",
+                "color": "blanco",
+                "celebracion": f"{semana}º Domingo de Pascua"
+            }
+
+        return {
+            "tiempo": "pascua",
+            "color": "blanco",
+            "celebracion": f"{nombre_dia} de la {semana}ª Semana de Pascua"
+        }
+
+    # ORDINARIO
     return {"tiempo": "ordinario", "color": "verde"}
 
 
@@ -116,6 +154,7 @@ def listar_misas(db: Session = Depends(get_db)):
         lit = obtener_liturgia(misa.fecha, db)
         misa.tiempo = lit["tiempo"]
         misa.color = lit["color"]
+
         if "celebracion" in lit:
             misa.descripcion = lit["celebracion"]
 
@@ -123,7 +162,7 @@ def listar_misas(db: Session = Depends(get_db)):
 
 
 # ─────────────────────────────────────────────
-# ACTUALIZAR (🔒 SEGURIDAD REAL CON COOKIE)
+# ACTUALIZAR
 # ─────────────────────────────────────────────
 @router.patch("/{misa_id}", response_model=schemas.MisaOut)
 def actualizar_misa(
@@ -133,10 +172,7 @@ def actualizar_misa(
     db: Session = Depends(get_db)
 ):
 
-    # 🔐 VALIDACIÓN REAL
-    admin_cookie = request.cookies.get("admin")
-
-    if admin_cookie != "1":
+    if request.cookies.get("admin") != "1":
         raise HTTPException(status_code=403, detail="No autorizado")
 
     misa = db.query(models.Misa).filter(
@@ -159,69 +195,20 @@ def actualizar_misa(
 # ─────────────────────────────────────────────
 # REGENERAR
 # ─────────────────────────────────────────────
-from fastapi import Query
-
 @router.post("/regenerar", status_code=202)
 def regenerar_calendario(
     meses: int = Query(3),
     db: Session = Depends(get_db)
 ):
 
-    from datetime import date
-
-    # 🔥 1. CARGAR FIESTAS (SI NO EXISTEN)
-    fiestas = [
-        {"fecha": date(2026, 4, 12), "nombre": "Domingo de Pascua", "color": "blanco"},
-        {"fecha": date(2026, 4, 19), "nombre": "II Domingo de Pascua", "color": "blanco"},
-        {"fecha": date(2026, 4, 26), "nombre": "III Domingo de Pascua", "color": "blanco"},
-        {"fecha": date(2026, 5, 24), "nombre": "Pentecostés", "color": "rojo"},
-        {"fecha": date(2026, 6, 7), "nombre": "Corpus Christi", "color": "blanco"},
-    ]
-
-    for f in fiestas:
-        existe = db.query(models.FiestaParroquia).filter(
-            models.FiestaParroquia.fecha == f["fecha"],
-            models.FiestaParroquia.parroquia_id == PARROQUIA_ID
-        ).first()
-
-        if not existe:
-            db.add(models.FiestaParroquia(
-                parroquia_id=PARROQUIA_ID,
-                fecha=f["fecha"],
-                nombre=f["nombre"],
-                color=f["color"]
-            ))
-
-    db.commit()  # guardar fiestas
-
-    # 🧨 2. BORRAR MISAS ANTIGUAS (CLAVE)
+    # 🧨 BORRAR MISAS
     db.query(models.Misa).filter(
         models.Misa.parroquia_id == PARROQUIA_ID
     ).delete()
 
     db.commit()
 
-    # 🧠 3. GENERAR NUEVAS MISAS
     semanas = meses * 4
     generar_misas(db, semanas=semanas, parroquia_id=PARROQUIA_ID)
 
     return {"detail": f"Calendario regenerado ({meses} meses)"}
-# ─────────────────────────────────────────────
-# DEBUG LIMPIO (OPCIONAL)
-# ─────────────────────────────────────────────
-@router.get("/debug/crear-fiesta")
-def crear_fiesta_debug(db: Session = Depends(get_db)):
-
-    from datetime import date
-
-    fiesta = models.FiestaParroquia(
-        parroquia_id=1,
-        fecha=date(2026, 3, 31),
-        nombre="Fiesta parroquial prueba",
-        color="rojo"
-    )
-
-    db.add(fiesta)
-    db.commit()
-
-    return {"ok": "fiesta creada"}
