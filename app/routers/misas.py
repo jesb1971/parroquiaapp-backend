@@ -121,7 +121,7 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
                 "celebracion": nombres[dias - 1]
             }
 
-        semana = (dias // 7) + 2
+        semana = (dias // 7) + 1
 
         dias_nombres = {
             0: "Lunes",
@@ -140,7 +140,7 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
             return {
                 "tiempo": "pascua",
                 "color": "blanco",
-                "celebracion": f"{numero_romano(semana)} Domingo de Pascua"
+                "celebracion": f"{numero_romano(semana + 1)} Domingo de Pascua"
             }
 
         return {
