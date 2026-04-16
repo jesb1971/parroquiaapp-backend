@@ -25,11 +25,24 @@
 Horarios de misas – {{ parroquia.nombre }}
 </h1>
 
-<!-- 🔐 ZONA ADMIN SUPERIOR -->
+<!-- 🔐 ADMIN -->
 {% if es_admin %}
+
+<!-- 🔥 FILA 1 (BOTÓN CSV SOLO) -->
+<div class="mb-2 text-end">
+    <form id="formCalendario" enctype="multipart/form-data" class="d-inline-flex gap-2">
+        <input type="file" name="file" accept=".csv"
+               class="form-control form-control-sm"
+               style="width:200px;">
+        <button type="submit" class="btn btn-sm btn-success">
+            📂 Subir calendario
+        </button>
+    </form>
+</div>
+
+<!-- 🔥 FILA 2 (LO QUE YA TENÍAS) -->
 <div class="d-flex justify-content-end align-items-center gap-2 mb-3">
 
-    <!-- ✅ NUEVO: selector meses -->
     <select id="meses" class="form-select form-select-sm" style="width:150px;">
         <option value="1">1 mes</option>
         <option value="3" selected>3 meses</option>
@@ -45,6 +58,7 @@ Horarios de misas – {{ parroquia.nombre }}
     </a>
 
 </div>
+
 {% endif %}
 
 <div class="row row-cols-1 row-cols-md-3 g-4">
@@ -71,14 +85,12 @@ Horarios de misas – {{ parroquia.nombre }}
 <span class="badge bg-warning text-dark mb-2">Domingo</span>
 {% endif %}
 
-<!-- 👤 USUARIO -->
 {% if not es_admin %}
 <p class="fw-bold">
 {{ misa.descripcion }}
 </p>
 {% endif %}
 
-<!-- 🔐 ADMIN -->
 {% if es_admin %}
 <input type="text"
 id="desc-{{ misa.id }}"
@@ -103,7 +115,6 @@ onclick="guardarMisa({{ misa.id }})">
 
 <script>
 
-// GUARDAR (SE MANTIENE IGUAL)
 function guardarMisa(id) {
 
     const desc = document.getElementById(`desc-${id}`).value;
@@ -128,8 +139,6 @@ function guardarMisa(id) {
     });
 }
 
-
-// 🔄 REGENERAR (AJUSTADO A MESES)
 function regenerar() {
 
     if (!confirm("¿Seguro que quieres regenerar el calendario?")) return;
