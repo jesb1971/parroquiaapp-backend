@@ -126,15 +126,12 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
         49: "Domingo de Pentecostés"
     }
 
-    if dia_semana == 6:
-        semana_domingo = (dias // 7) * 7
-
-        if semana_domingo in domingos:
-            return {
-                "tiempo": "pascua",
-                "color": "blanco",
-                "celebracion": domingos[semana_domingo]
-            }
+   if dia_semana == 6 and dias in domingos:
+    return {
+        "tiempo": "pascua",
+        "color": "blanco",
+        "celebracion": domingos[dias]
+    }
 
     # Semana normal
     dias_post_octava = dias - 7
