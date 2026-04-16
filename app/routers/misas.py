@@ -26,6 +26,20 @@ def _to_naive_utc(dt: datetime) -> datetime:
     return dt
 
 
+# 🔥 NUEVO: NÚMEROS ROMANOS
+def numero_romano(n):
+    romanos = {
+        1: "I",
+        2: "II",
+        3: "III",
+        4: "IV",
+        5: "V",
+        6: "VI",
+        7: "VII"
+    }
+    return romanos.get(n, str(n))
+
+
 # ─────────────────────────────────────────────
 # ✝️ LITURGIA COMPLETA (AUTOMÁTICA)
 # ─────────────────────────────────────────────
@@ -80,7 +94,7 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
     if fecha >= domingo_ramos and fecha < pascua:
         return {"tiempo": "semana_santa", "color": "rojo"}
 
-    # 🔥 PASCUA COMPLETA (AQUÍ ESTÁ LA MAGIA)
+    # 🔥 PASCUA COMPLETA
     if fecha >= pascua and fecha <= pascua + timedelta(days=49):
 
         dias = (fecha - pascua).days
@@ -126,13 +140,13 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
             return {
                 "tiempo": "pascua",
                 "color": "blanco",
-                "celebracion": f"{semana}º Domingo de Pascua"
+                "celebracion": f"{numero_romano(semana)} Domingo de Pascua"
             }
 
         return {
             "tiempo": "pascua",
             "color": "blanco",
-            "celebracion": f"{nombre_dia} de la {semana}ª Semana de Pascua"
+            "celebracion": f"{nombre_dia} de la {numero_romano(semana)} Semana de Pascua"
         }
 
     # ORDINARIO
@@ -201,7 +215,6 @@ def regenerar_calendario(
     db: Session = Depends(get_db)
 ):
 
-    # 🧨 BORRAR MISAS
     db.query(models.Misa).filter(
         models.Misa.parroquia_id == PARROQUIA_ID
     ).delete()
