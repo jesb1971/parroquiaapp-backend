@@ -113,17 +113,24 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
         return {"tiempo": "pascua", "color": "blanco", "celebracion": nombres[dias - 1]}
 
     domingos = {
-        7:"II Domingo de Pascua",
-        14:"III Domingo de Pascua",
-        21:"IV Domingo de Pascua",
-        28:"V Domingo de Pascua",
-        35:"VI Domingo de Pascua",
-        42:"VII Domingo de Pascua",
-        49:"Domingo de Pentecostés"
-    }
+    7: "II Domingo de Pascua",
+    14: "III Domingo de Pascua",
+    21: "IV Domingo de Pascua",
+    28: "V Domingo de Pascua",
+    35: "VI Domingo de Pascua",
+    42: "VII Domingo de Pascua",
+    49: "Domingo de Pentecostés"
+}
 
-    if dia_semana == 6 and dias in domingos:
-        return {"tiempo": "pascua", "color": "blanco", "celebracion": domingos[dias]}
+if dia_semana == 6:
+    semana_domingo = (dias // 7) * 7
+
+    if semana_domingo in domingos:
+        return {
+            "tiempo": "pascua",
+            "color": "blanco",
+            "celebracion": domingos[semana_domingo]
+        }
 
     dias_post_octava = dias - 7
     semana = (dias_post_octava // 7) + 2
