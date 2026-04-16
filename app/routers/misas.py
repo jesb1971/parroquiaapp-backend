@@ -2,6 +2,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Header, Request, Query
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone, timedelta
+import csv
+from pathlib import Path
 
 from ..db import get_db
 from .. import models, schemas
@@ -40,9 +42,40 @@ def calcular_pascua(year):
     return datetime(year, month, day)
 
 
+# 🔥 NUEVO: CARGAR CALENDARIO DESDE CSV
+def cargar_calendario_desde_csv(db: Session, year: int):
+
+    ruta = Path("app/data") / f"calendario_{year}.csv"
+
+    if not ruta.exists():
+        print(f"⚠️ No existe {ruta}")
+        return
+
+    with open(ruta, newline='', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+
+        for row in reader:
+            fecha = datetime.strptime(row["fecha"], "%Y-%m-%d").date()
+
+            existe = db.query(models.FiestaParroquia).filter(
+                models.FiestaParroquia.fecha == fecha,
+                models.FiestaParroquia.parroquia_id == PARROQUIA_ID
+            ).first()
+
+            if not existe:
+                db.add(models.FiestaParroquia(
+                    parroquia_id=PARROQUIA_ID,
+                    fecha=fecha,
+                    nombre=row["celebracion"],  # 🔥 TEXTO EXACTO DEL CSV
+                    color=row["color"]
+                ))
+
+    db.commit()
+
+
 def obtener_liturgia(fecha: datetime, db: Session) -> dict:
 
-    # PRIORIDAD: fiestas manuales
+    # 🔥 PRIORIDAD TOTAL: CSV
     fiesta = db.query(models.FiestaParroquia).filter(
         models.FiestaParroquia.fecha == fecha.date(),
         models.FiestaParroquia.parroquia_id == PARROQUIA_ID
@@ -50,11 +83,12 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
 
     if fiesta:
         return {
-            "tiempo": "fiesta_local",
+            "tiempo": "calendario",
             "color": fiesta.color,
             "celebracion": fiesta.nombre
         }
 
+    # 🔹 FALLBACK (por si falta algún día)
     year = fecha.year
     pascua = calcular_pascua(year)
 
@@ -64,11 +98,9 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
     dias = (fecha - pascua).days
     dia_semana = fecha.weekday()
 
-    # DOMINGO DE PASCUA
     if dias == 0:
         return {"tiempo": "pascua", "color": "blanco", "celebracion": "Domingo de Pascua"}
 
-    # OCTAVA
     if 1 <= dias <= 6:
         nombres = [
             "Lunes de la Octava de Pascua",
@@ -80,21 +112,19 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
         ]
         return {"tiempo": "pascua", "color": "blanco", "celebracion": nombres[dias - 1]}
 
-    # DOMINGOS (TABLA REAL)
     domingos = {
-        7: "II Domingo de Pascua",
-        14: "III Domingo de Pascua",
-        21: "IV Domingo de Pascua",
-        28: "V Domingo de Pascua",
-        35: "VI Domingo de Pascua",
-        42: "VII Domingo de Pascua",
-        49: "Domingo de Pentecostés"
+        7:"II Domingo de Pascua",
+        14:"III Domingo de Pascua",
+        21:"IV Domingo de Pascua",
+        28:"V Domingo de Pascua",
+        35:"VI Domingo de Pascua",
+        42:"VII Domingo de Pascua",
+        49:"Domingo de Pentecostés"
     }
 
     if dia_semana == 6 and dias in domingos:
         return {"tiempo": "pascua", "color": "blanco", "celebracion": domingos[dias]}
 
-    # SEMANAS REALES (DESPUÉS DE OCTAVA)
     dias_post_octava = dias - 7
     semana = (dias_post_octava // 7) + 2
 
@@ -144,12 +174,58 @@ def actualizar_misa(misa_id:int,payload:dict,request:Request,db:Session=Depends(
 
 @router.post("/regenerar", status_code=202)
 def regenerar_calendario(meses:int=Query(3),db:Session=Depends(get_db)):
+
+    # 🔥 CARGAR CSV
+    year = datetime.now().year
+    cargar_calendario_desde_csv(db, year)
+
+    # 🧨 BORRAR MISAS
     db.query(models.Misa).filter(
         models.Misa.parroquia_id == PARROQUIA_ID
     ).delete()
     db.commit()
 
+    # 🔄 GENERAR MISAS
     semanas = meses * 4
     generar_misas(db, semanas=semanas, parroquia_id=PARROQUIA_ID)
 
     return {"detail": f"Calendario regenerado ({meses} meses)"}
+    
+    from fastapi import UploadFile
+
+@router.post("/cargar-calendario")
+def cargar_calendario(
+    request: Request,
+    file: UploadFile,
+    db: Session = Depends(get_db)
+):
+
+    # 🔐 comprobar admin
+    if request.cookies.get("admin") != "1":
+        raise HTTPException(status_code=403)
+
+    import csv
+    from io import StringIO
+
+    contenido = file.file.read().decode("utf-8")
+    reader = csv.DictReader(StringIO(contenido))
+
+    # 🧨 borrar calendario anterior
+    db.query(models.FiestaParroquia).filter(
+        models.FiestaParroquia.parroquia_id == PARROQUIA_ID
+    ).delete()
+
+    # 🔄 cargar nuevo calendario
+    for row in reader:
+        fecha = datetime.strptime(row["fecha"], "%Y-%m-%d").date()
+
+        db.add(models.FiestaParroquia(
+            parroquia_id=PARROQUIA_ID,
+            fecha=fecha,
+            nombre=row["celebracion"],
+            color=row["color"]
+        ))
+
+    db.commit()
+
+    return {"ok": "Calendario cargado correctamente"}
