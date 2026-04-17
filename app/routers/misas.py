@@ -188,7 +188,7 @@ def actualizar_misa(misa_id:int,payload:dict,request:Request,db:Session=Depends(
 def regenerar_calendario(meses:int=Query(3),db:Session=Depends(get_db)):
 
     year = datetime.now().year
-    cargar_calendario_desde_csv(db, year)
+    #cargar_calendario_desde_csv(db, year)
 
     db.query(models.Misa).filter(
         models.Misa.parroquia_id == PARROQUIA_ID
