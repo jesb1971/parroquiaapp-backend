@@ -87,13 +87,17 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
         return {
             "tiempo": "calendario",
             "color": fiesta.color,
-            "celebracion": fiesta.nombre
+            "celebracion": fiesta.nombre,
+            "es_memoria": True
         }
 
     year = fecha.year
     pascua = calcular_pascua(year)
 
-    if fecha < pascua or fecha > pascua + timedelta(days=49):
+    if fecha < pascua:
+        return {"tiempo": "cuaresma", "color": "morado"}
+        
+    if fecha > pascua + timedelta(days=49):
         return {"tiempo": "ordinario", "color": "verde"}
 
     dias = (fecha - pascua).days
