@@ -187,14 +187,16 @@ def actualizar_misa(misa_id:int,payload:dict,request:Request,db:Session=Depends(
 @router.post("/regenerar", status_code=202)
 def regenerar_calendario(meses:int=Query(3),db:Session=Depends(get_db)):
 
-    year = datetime.now().year
-    #cargar_calendario_desde_csv(db, year)
-
-    db.query(models.Misa).filter(
-        models.Misa.parroquia_id == PARROQUIA_ID
-    ).delete()
+    # 🔥 LIMPIEZA TOTAL (CLAVE)
+    db.query(models.FiestaParroquia).delete()
+    db.query(models.Misa).delete()
     db.commit()
 
+    # ❌ CSV desactivado por ahora
+    # year = datetime.now().year
+    # cargar_calendario_desde_csv(db, year)
+
+    # 🔄 GENERAR MISAS
     semanas = meses * 4
     generar_misas(db, semanas=semanas, parroquia_id=PARROQUIA_ID)
 
