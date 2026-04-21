@@ -33,14 +33,14 @@ Horarios de misas – {{ parroquia.nombre }}
     <form id="formCalendario" enctype="multipart/form-data" class="d-inline-flex gap-2">
         <input type="file" name="file" accept=".csv"
                class="form-control form-control-sm"
-               style="width:200px;">
+               style="width:200px;" required>
         <button type="submit" class="btn btn-sm btn-success">
             📂 Subir calendario
         </button>
     </form>
 </div>
 
-<!-- 🔥 FILA 2 (LO QUE YA TENÍAS) -->
+<!-- 🔥 FILA 2 -->
 <div class="d-flex justify-content-end align-items-center gap-2 mb-3">
 
     <select id="meses" class="form-select form-select-sm" style="width:150px;">
@@ -115,6 +115,31 @@ onclick="guardarMisa({{ misa.id }})">
 
 <script>
 
+// 🔥 SUBIR CSV (CLAVE - ESTO FALTABA)
+document.getElementById("formCalendario").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+
+    fetch("/misas/cargar-calendario", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => {
+        if (res.ok) {
+            alert("Calendario cargado correctamente");
+        } else {
+            alert("Error al subir el calendario");
+        }
+    })
+    .catch(err => {
+        alert("Error de conexión");
+        console.error(err);
+    });
+});
+
+
+// GUARDAR
 function guardarMisa(id) {
 
     const desc = document.getElementById(`desc-${id}`).value;
@@ -139,6 +164,8 @@ function guardarMisa(id) {
     });
 }
 
+
+// REGENERAR
 function regenerar() {
 
     if (!confirm("¿Seguro que quieres regenerar el calendario?")) return;
