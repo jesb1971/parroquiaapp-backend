@@ -1,5 +1,5 @@
 """Rutas de misas (definitivas)."""
-from fastapi import APIRouter, Depends, HTTPException, Header, Request, Query, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Header, Request, Query, UploadFile, File
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone, timedelta
 import csv
@@ -232,8 +232,14 @@ def regenerar_calendario(meses:int=Query(3),db:Session=Depends(get_db)):
 
 
 # 🔥 SUBIR CSV
+from fastapi import UploadFile, File
+
 @router.post("/cargar-calendario")
-def cargar_calendario(request: Request, file: UploadFile, db: Session = Depends(get_db)):
+def cargar_calendario(
+    request: Request,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
 
     if request.cookies.get("admin") != "1":
         raise HTTPException(status_code=403)
