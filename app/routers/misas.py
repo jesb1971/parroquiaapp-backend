@@ -162,8 +162,37 @@ def listar_misas(db: Session = Depends(get_db)):
         lit = obtener_liturgia(misa.fecha, db)
         misa.tiempo = lit["tiempo"]
         misa.color = lit["color"]
+
+        # 🔥 combinar domingo + memoria
         if "celebracion" in lit:
-            misa.descripcion = lit["celebracion"]
+
+            # si viene del CSV (memoria)
+            if lit.get("es_memoria"):
+
+                # ⚠️ aquí NO podemos volver a llamar igual (bucle)
+                # así que usamos la lógica base SIN CSV
+                year = misa.fecha.year
+                pascua = calcular_pascua(year)
+                dias = (misa.fecha - pascua).days
+                dia_semana = misa.fecha.weekday()
+
+                domingos = {
+                    7: "II Domingo de Pascua",
+                    14: "III Domingo de Pascua",
+                    21: "IV Domingo de Pascua",
+                    28: "V Domingo de Pascua",
+                    35: "VI Domingo de Pascua",
+                    42: "VII Domingo de Pascua",
+                    49: "Domingo de Pentecostés"
+                }
+
+                if dia_semana == 6 and dias in domingos:
+                    misa.descripcion = f"{domingos[dias]} · {lit['celebracion']}"
+                else:
+                    misa.descripcion = lit["celebracion"]
+
+            else:
+                misa.descripcion = lit["celebracion"]
 
     return result
 
