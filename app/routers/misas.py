@@ -44,34 +44,53 @@ def calcular_pascua(year):
 
 
 # 🔥 CSV LOCAL
-def cargar_calendario_desde_csv(db: Session, year: int):
+@router.post("/cargar-calendario")
+def cargar_calendario(
+    request: Request,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
 
-    ruta = Path("app/data") / f"calendario_{year}.csv"
+    if request.cookies.get("admin") != "1":
+        raise HTTPException(status_code=403)
 
-    if not ruta.exists():
-        print(f"⚠️ No existe {ruta}")
-        return
+    contenido = file.file.read().decode("utf-8")
+    reader = csv.DictReader(StringIO(contenido))
 
-    with open(ruta, newline='', encoding='utf-8') as f:
-        reader = csv.DictReader(f)
+    # limpiar calendario anterior
+    db.query(models.FiestaParroquia).filter(
+        models.FiestaParroquia.parroquia_id == PARROQUIA_ID
+    ).delete()
 
-        for row in reader:
+    errores = 0
+
+    for row in reader:
+        try:
+            # ⚠️ validar campos
+            if not row.get("fecha") or not row.get("celebracion"):
+                continue
+
             fecha = datetime.strptime(row["fecha"], "%Y-%m-%d").date()
 
-            existe = db.query(models.FiestaParroquia).filter(
-                models.FiestaParroquia.fecha == fecha,
-                models.FiestaParroquia.parroquia_id == PARROQUIA_ID
-            ).first()
+            color = row.get("color") or "verde"
 
-            if not existe:
-                db.add(models.FiestaParroquia(
-                    parroquia_id=PARROQUIA_ID,
-                    fecha=fecha,
-                    nombre=row["celebracion"],
-                    color=row["color"]
-                ))
+            db.add(models.FiestaParroquia(
+                parroquia_id=PARROQUIA_ID,
+                fecha=fecha,
+                nombre=row["celebracion"],
+                color=color
+            ))
+
+        except Exception as e:
+            print("Error fila:", row, e)
+            errores += 1
 
     db.commit()
+
+    return {
+        "ok": "Calendario cargado correctamente",
+        "errores": errores
+    }
 
 
 # 🔥 LITURGIA
