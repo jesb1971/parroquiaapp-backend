@@ -239,7 +239,7 @@ def actualizar_misa(misa_id:int,payload:dict,request:Request,db:Session=Depends(
 @router.post("/regenerar", status_code=202)
 def regenerar_calendario(meses:int=Query(3),db:Session=Depends(get_db)):
 
-    # 🔥 SOLO BORRAR MISAS (NO FIESTAS)
+    # ❌ NO BORRAR calendario litúrgico
     db.query(models.Misa).delete()
     db.commit()
 
