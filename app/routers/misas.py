@@ -254,32 +254,43 @@ def regenerar_calendario(meses:int=Query(3),db:Session=Depends(get_db)):
 from fastapi import UploadFile, File
 
 @router.post("/cargar-calendario")
-def cargar_calendario(
-    request: Request,
-    file: UploadFile = File(...),
-    db: Session = Depends(get_db)
-):
+def cargar_calendario(request: Request, file: UploadFile = File(...), db: Session = Depends(get_db)):
 
     if request.cookies.get("admin") != "1":
         raise HTTPException(status_code=403)
 
     contenido = file.file.read().decode("utf-8")
-    reader = csv.DictReader(StringIO(contenido))
+    reader = csv.reader(StringIO(contenido))
 
-    db.query(models.FiestaParroquia).filter(
-        models.FiestaParroquia.parroquia_id == PARROQUIA_ID
-    ).delete()
+    # saltar cabecera
+    next(reader, None)
+
+    # limpiar calendario anterior
+    db.query(models.FiestaParroquia).delete()
+
+    insertados = 0
 
     for row in reader:
-        fecha = datetime.strptime(row["fecha"], "%Y-%m-%d").date()
+        try:
+            if len(row) < 3:
+                continue
 
-        db.add(models.FiestaParroquia(
-            parroquia_id=PARROQUIA_ID,
-            fecha=fecha,
-            nombre=row["celebracion"],
-            color=row["color"]
-        ))
+            fecha = datetime.strptime(row[0].strip(), "%Y-%m-%d").date()
+            celebracion = row[1].strip()
+            color = row[2].strip()
+
+            db.add(models.FiestaParroquia(
+                parroquia_id=PARROQUIA_ID,
+                fecha=fecha,
+                nombre=celebracion,
+                color=color
+            ))
+
+            insertados += 1
+
+        except Exception as e:
+            print("Error fila:", row, e)
 
     db.commit()
 
-    return {"ok": "Calendario cargado correctamente"}
+    return {"ok": f"{insertados} registros insertados"}
