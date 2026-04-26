@@ -170,11 +170,11 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
             "celebracion": f"{nombres_dias[dia_semana]} de la {numero_romano(semana)} Semana de Pascua"
         }
 
-    # =========================
+       # =========================
     # 🟢 TIEMPO ORDINARIO (REAL)
     # =========================
 
-        dias_post = (fecha - inicio_ordinario_post).days
+    dias_post = (fecha - inicio_ordinario_post).days
     semana_total = 8 + (dias_post // 7)
 
     # 🔹 Conversión a romano segura
