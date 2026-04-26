@@ -42,7 +42,7 @@ def calcular_pascua(year):
 def cargar_calendario(file: UploadFile = File(...), db: Session = Depends(get_db)):
 
     contenido = file.file.read().decode("utf-8")
-    reader = csv.reader(StringIO(contenido))
+    reader = csv.reader(StringIO(contenido), delimiter=';')
 
     next(reader, None)  # saltar cabecera
 
