@@ -85,7 +85,7 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
     ).all()
 
     fiesta = next(
-        (f for f in fiestas if str(f.fecha)[:10] == fecha.strftime("%Y-%m-%d")),
+        (f for f in fiestas if f.fecha == fecha.date()),
         None
     )
 
