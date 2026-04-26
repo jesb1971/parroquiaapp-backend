@@ -104,10 +104,6 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
     pentecostes = pascua + timedelta(days=49)
     inicio_ordinario_post = pentecostes + timedelta(days=1)
 
-    # 🔹 BAUTISMO DEL SEÑOR (simplificado)
-    bautismo = datetime(year, 1, 12)  # válido en la mayoría de casos prácticos
-    inicio_ordinario_pre = bautismo + timedelta(days=1)
-
     # =========================
     # 🔵 CUARESMA
     # =========================
@@ -170,33 +166,32 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
             "celebracion": f"{nombres_dias[dia_semana]} de la {numero_romano(semana)} Semana de Pascua"
         }
 
-# =========================
-# 🟢 TIEMPO ORDINARIO (REAL)
-# =========================
+    # =========================
+    # 🟢 TIEMPO ORDINARIO (REAL)
+    # =========================
 
-dias_post = (fecha - inicio_ordinario_post).days
-semana_total = 8 + (dias_post // 7)
+    dias_post = (fecha - inicio_ordinario_post).days
+    semana_total = 8 + (dias_post // 7)
 
-# 🔹 Si es domingo, pasa a la siguiente semana
-if dia_semana == 6:
-    semana_total += 1
+    # 🔹 Domingo inicia nueva semana
+    if dia_semana == 6:
+        semana_total += 1
 
-# 🔹 Conversión a romano segura
-romanos = {
-    1:"I",2:"II",3:"III",4:"IV",5:"V",6:"VI",7:"VII",8:"VIII",9:"IX",10:"X",
-    11:"XI",12:"XII",13:"XIII",14:"XIV",15:"XV",16:"XVI",17:"XVII",18:"XVIII",
-    19:"XIX",20:"XX",21:"XXI",22:"XXII",23:"XXIII",24:"XXIV",25:"XXV",
-    26:"XXVI",27:"XXVII",28:"XXVIII",29:"XXIX",30:"XXX",31:"XXXI",
-    32:"XXXII",33:"XXXIII",34:"XXXIV"
-}
+    romanos = {
+        1:"I",2:"II",3:"III",4:"IV",5:"V",6:"VI",7:"VII",8:"VIII",9:"IX",10:"X",
+        11:"XI",12:"XII",13:"XIII",14:"XIV",15:"XV",16:"XVI",17:"XVII",18:"XVIII",
+        19:"XIX",20:"XX",21:"XXI",22:"XXII",23:"XXIII",24:"XXIV",25:"XXV",
+        26:"XXVI",27:"XXVII",28:"XXVIII",29:"XXIX",30:"XXX",31:"XXXI",
+        32:"XXXII",33:"XXXIII",34:"XXXIV"
+    }
 
-semana_romana = romanos.get(semana_total, str(semana_total))
+    semana_romana = romanos.get(semana_total, str(semana_total))
 
-return {
-    "tiempo": "ordinario",
-    "color": "verde",
-    "celebracion": f"{nombres_dias[dia_semana]} de la {semana_romana} Semana del Tiempo Ordinario"
-}    
+    return {
+        "tiempo": "ordinario",
+        "color": "verde",
+        "celebracion": f"{nombres_dias[dia_semana]} de la {semana_romana} Semana del Tiempo Ordinario"
+    }
 # LISTAR
 @router.get("/", response_model=list[schemas.MisaOut])
 def listar_misas(db: Session = Depends(get_db)):
