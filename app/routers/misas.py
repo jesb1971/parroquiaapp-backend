@@ -174,17 +174,8 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
     # 🟢 TIEMPO ORDINARIO (REAL)
     # =========================
 
-    # 🔹 SEMANAS ANTES DE CUARESMA
-    semanas_pre = 0
-    if fecha >= inicio_ordinario_pre:
-        dias_pre = (miercoles_ceniza - inicio_ordinario_pre).days
-        semanas_pre = dias_pre // 7
-
-    # 🔹 SEMANAS DESPUÉS DE PENTECOSTÉS
     dias_post = (fecha - inicio_ordinario_post).days
-    semanas_post = dias_post // 7
-
-    semana_total = semanas_pre + semanas_post + 1
+    semana_total = 8 + (dias_post // 7)
 
     return {
         "tiempo": "ordinario",
