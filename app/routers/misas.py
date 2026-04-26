@@ -76,14 +76,18 @@ def cargar_calendario(file: UploadFile = File(...), db: Session = Depends(get_db
     return {"ok": f"{insertados} registros insertados"}
 
 
-# 🔥 LITURGIA CORREGIDA (CLAVE)
+# 🔥 LITURGIA (DEFINITIVA Y ESTABLE)
 def obtener_liturgia(fecha: datetime, db: Session) -> dict:
 
-    # 🔥 COMPARACIÓN SEGURA
-    fiesta = db.query(models.FiestaParroquia).filter(
-        func.strftime("%Y-%m-%d", models.FiestaParroquia.fecha) == fecha.strftime("%Y-%m-%d"),
+    # 🔥 BUSCAR MEMORIA (SIN func, SIN ERRORES)
+    fiestas = db.query(models.FiestaParroquia).filter(
         models.FiestaParroquia.parroquia_id == PARROQUIA_ID
-    ).first()
+    ).all()
+
+    fiesta = next(
+        (f for f in fiestas if str(f.fecha)[:10] == fecha.strftime("%Y-%m-%d")),
+        None
+    )
 
     if fiesta:
         return {
@@ -93,6 +97,7 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
             "es_memoria": True
         }
 
+    # 🔹 LÓGICA NORMAL
     year = fecha.year
     pascua = calcular_pascua(year)
 
@@ -105,9 +110,11 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
     dias = (fecha - pascua).days
     dia_semana = fecha.weekday()
 
+    # Domingo de Pascua
     if dias == 0:
         return {"tiempo": "pascua", "color": "blanco", "celebracion": "Domingo de Pascua"}
 
+    # Octava
     if 1 <= dias <= 6:
         nombres = [
             "Lunes de la Octava de Pascua",
@@ -119,6 +126,7 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
         ]
         return {"tiempo": "pascua", "color": "blanco", "celebracion": nombres[dias - 1]}
 
+    # Domingos
     domingos = {
         7: "II Domingo de Pascua",
         14: "III Domingo de Pascua",
@@ -136,6 +144,7 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
             "celebracion": domingos[dias]
         }
 
+    # Semana normal
     dias_post_octava = dias - 7
     semana = (dias_post_octava // 7) + 2
 
@@ -146,7 +155,6 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
         "color": "blanco",
         "celebracion": f"{nombres_dias[dia_semana]} de la {numero_romano(semana)} Semana de Pascua"
     }
-
 
 # LISTAR
 @router.get("/", response_model=list[schemas.MisaOut])
