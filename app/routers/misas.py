@@ -178,10 +178,7 @@ def listar_misas(db: Session = Depends(get_db)):
         misa.tiempo = lit["tiempo"]
         misa.color = lit["color"]
 
-        if lit.get("es_memoria"):
-            misa.descripcion = f"{lit['celebracion']}"
-        else:
-            misa.descripcion = lit["celebracion"]
+        misa.descripcion = lit.get("celebracion", "Sin descripción")
 
     return result
 
