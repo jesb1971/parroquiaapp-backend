@@ -56,7 +56,7 @@ def cargar_calendario(file: UploadFile = File(...), db: Session = Depends(get_db
                 continue
 
             fecha = datetime.strptime(row[0].strip(), "%Y-%m-%d").date()
-            celebracion = row[1].strip()
+            celebracion = row[1].strip().replace('"', '')
             color = row[2].strip()
 
             db.add(models.FiestaParroquia(
