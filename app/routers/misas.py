@@ -80,14 +80,13 @@ def cargar_calendario(file: UploadFile = File(...), db: Session = Depends(get_db
 def obtener_liturgia(fecha: datetime, db: Session) -> dict:
 
     # 🔥 BUSCAR MEMORIA
-    fiestas = db.query(models.FiestaParroquia).filter(
-        models.FiestaParroquia.parroquia_id == PARROQUIA_ID
-    ).all()
+    def obtener_liturgia(fecha: datetime, db: Session) -> dict:
 
-    fiesta = next(
-        (f for f in fiestas if str(f.fecha)[:10] == fecha.strftime("%Y-%m-%d")),
-        None
-    )
+    # 🔹 PRIORIDAD 1: CSV
+    fiesta = db.query(models.FiestaParroquia).filter(
+        models.FiestaParroquia.fecha == fecha.date(),
+        models.FiestaParroquia.parroquia_id == PARROQUIA_ID
+    ).first()
 
     if fiesta:
         return {
@@ -97,35 +96,23 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
             "es_memoria": True
         }
 
+    # 🔹 LÓGICA BASE
     year = fecha.year
     pascua = calcular_pascua(year)
 
-    # ✅ SIEMPRE devolver celebracion
+    dia_semana = fecha.weekday()
+    nombres_dias = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"]
+
+    # Cuaresma
     if fecha < pascua:
         return {
             "tiempo": "cuaresma",
             "color": "morado",
-            "celebracion": "Tiempo de Cuaresma"
+            "celebracion": f"{nombres_dias[dia_semana]} de Cuaresma"
         }
 
-    # 🔥 TIEMPO ORDINARIO (MEJORADO)
-    if fecha > pascua + timedelta(days=49):
-
-        inicio_ordinario = pascua + timedelta(days=50)
-        dias = (fecha - inicio_ordinario).days
-        semana = (dias // 7) + 1
-
-        nombres_dias = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"]
-        dia_semana = fecha.weekday()
-
-        return {
-            "tiempo": "ordinario",
-            "color": "verde",
-            "celebracion": f"{nombres_dias[dia_semana]} de la {numero_romano(semana)} Semana del Tiempo Ordinario"
-        }
-
+    # Pascua
     dias = (fecha - pascua).days
-    dia_semana = fecha.weekday()
 
     if dias == 0:
         return {
@@ -166,15 +153,23 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
             "celebracion": domingos[dias]
         }
 
-    dias_post_octava = dias - 7
-    semana = (dias_post_octava // 7) + 2
+    if dias <= 49:
+        semana = ((dias - 7) // 7) + 2
+        return {
+            "tiempo": "pascua",
+            "color": "blanco",
+            "celebracion": f"{nombres_dias[dia_semana]} de la {numero_romano(semana)} Semana de Pascua"
+        }
 
-    nombres_dias = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"]
+    # 🔹 TIEMPO ORDINARIO
+    inicio_ordinario = pascua + timedelta(days=50)
+    dias_ord = (fecha - inicio_ordinario).days
+    semana = (dias_ord // 7) + 1
 
     return {
-        "tiempo": "pascua",
-        "color": "blanco",
-        "celebracion": f"{nombres_dias[dia_semana]} de la {numero_romano(semana)} Semana de Pascua"
+        "tiempo": "ordinario",
+        "color": "verde",
+        "celebracion": f"{nombres_dias[dia_semana]} de la {numero_romano(semana)} Semana del Tiempo Ordinario"
     }
     
 # LISTAR
