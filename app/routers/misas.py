@@ -79,97 +79,95 @@ def cargar_calendario(file: UploadFile = File(...), db: Session = Depends(get_db
 # 🔥 LITURGIA (DEFINITIVA Y ESTABLE)
 def obtener_liturgia(fecha: datetime, db: Session) -> dict:
 
-    try:
-        # 🔥 BUSCAR MEMORIA
-        fiestas = db.query(models.FiestaParroquia).filter(
-            models.FiestaParroquia.parroquia_id == PARROQUIA_ID
-        ).all()
+    # 🔥 BUSCAR MEMORIA
+    fiestas = db.query(models.FiestaParroquia).filter(
+        models.FiestaParroquia.parroquia_id == PARROQUIA_ID
+    ).all()
 
-        fiesta = next(
-            (f for f in fiestas if f.fecha == fecha.date()),
-            None
-        )
+    fiesta = next(
+        (f for f in fiestas if str(f.fecha)[:10] == fecha.strftime("%Y-%m-%d")),
+        None
+    )
 
-        if fiesta:
-            return {
-                "tiempo": "calendario",
-                "color": fiesta.color,
-                "celebracion": fiesta.nombre,
-                "es_memoria": True
-            }
+    if fiesta:
+        return {
+            "tiempo": "calendario",
+            "color": fiesta.color,
+            "celebracion": fiesta.nombre,
+            "es_memoria": True
+        }
 
-        # 🔹 LÓGICA NORMAL
-        year = fecha.year
-        pascua = calcular_pascua(year)
+    year = fecha.year
+    pascua = calcular_pascua(year)
 
-        if fecha < pascua:
-    return {
-        "tiempo": "cuaresma",
-        "color": "morado",
-        "celebracion": "Tiempo de Cuaresma"
-    }
+    # ✅ SIEMPRE devolver celebracion
+    if fecha < pascua:
+        return {
+            "tiempo": "cuaresma",
+            "color": "morado",
+            "celebracion": "Tiempo de Cuaresma"
+        }
 
     if fecha > pascua + timedelta(days=49):
         return {
             "tiempo": "ordinario",
             "color": "verde",
             "celebracion": "Tiempo Ordinario"
-    }
-
-        dias = (fecha - pascua).days
-        dia_semana = fecha.weekday()
-
-        if dias == 0:
-            return {"tiempo": "pascua", "color": "blanco", "celebracion": "Domingo de Pascua"}
-
-        if 1 <= dias <= 6:
-            nombres = [
-                "Lunes de la Octava de Pascua",
-                "Martes de la Octava de Pascua",
-                "Miércoles de la Octava de Pascua",
-                "Jueves de la Octava de Pascua",
-                "Viernes de la Octava de Pascua",
-                "Sábado de la Octava de Pascua",
-            ]
-            return {"tiempo": "pascua", "color": "blanco", "celebracion": nombres[dias - 1]}
-
-        domingos = {
-            7: "II Domingo de Pascua",
-            14: "III Domingo de Pascua",
-            21: "IV Domingo de Pascua",
-            28: "V Domingo de Pascua",
-            35: "VI Domingo de Pascua",
-            42: "VII Domingo de Pascua",
-            49: "Domingo de Pentecostés"
         }
 
-        if dia_semana == 6 and dias in domingos:
-            return {
-                "tiempo": "pascua",
-                "color": "blanco",
-                "celebracion": domingos[dias]
-            }
+    dias = (fecha - pascua).days
+    dia_semana = fecha.weekday()
 
-        dias_post_octava = dias - 7
-        semana = (dias_post_octava // 7) + 2
-
-        nombres_dias = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"]
-
+    if dias == 0:
         return {
             "tiempo": "pascua",
             "color": "blanco",
-            "celebracion": f"{nombres_dias[dia_semana]} de la {numero_romano(semana)} Semana de Pascua"
+            "celebracion": "Domingo de Pascua"
         }
 
-    except Exception as e:
-        print("🔥 ERROR EN LITURGIA:", e)
-
+    if 1 <= dias <= 6:
+        nombres = [
+            "Lunes de la Octava de Pascua",
+            "Martes de la Octava de Pascua",
+            "Miércoles de la Octava de Pascua",
+            "Jueves de la Octava de Pascua",
+            "Viernes de la Octava de Pascua",
+            "Sábado de la Octava de Pascua",
+        ]
         return {
-            "tiempo": "error",
-            "color": "rojo",
-            "celebracion": "Error en liturgia"
+            "tiempo": "pascua",
+            "color": "blanco",
+            "celebracion": nombres[dias - 1]
         }
 
+    domingos = {
+        7: "II Domingo de Pascua",
+        14: "III Domingo de Pascua",
+        21: "IV Domingo de Pascua",
+        28: "V Domingo de Pascua",
+        35: "VI Domingo de Pascua",
+        42: "VII Domingo de Pascua",
+        49: "Domingo de Pentecostés"
+    }
+
+    if dia_semana == 6 and dias in domingos:
+        return {
+            "tiempo": "pascua",
+            "color": "blanco",
+            "celebracion": domingos[dias]
+        }
+
+    dias_post_octava = dias - 7
+    semana = (dias_post_octava // 7) + 2
+
+    nombres_dias = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"]
+
+    return {
+        "tiempo": "pascua",
+        "color": "blanco",
+        "celebracion": f"{nombres_dias[dia_semana]} de la {numero_romano(semana)} Semana de Pascua"
+    }
+    
 # LISTAR
 @router.get("/", response_model=list[schemas.MisaOut])
 def listar_misas(db: Session = Depends(get_db)):
