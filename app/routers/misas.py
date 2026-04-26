@@ -108,7 +108,7 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
         "color": "morado",
         "celebracion": "Tiempo de Cuaresma"
     }
-        
+
     if fecha > pascua + timedelta(days=49):
         return {
             "tiempo": "ordinario",
