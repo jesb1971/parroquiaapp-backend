@@ -163,7 +163,7 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
     # Tiempo Ordinario
     inicio_ordinario = pascua + timedelta(days=50)
     dias_ord = (fecha - inicio_ordinario).days
-    semana = (dias_ord // 7) + 1
+    semana = 8 + (dias_ord // 7)
 
     return {
         "tiempo": "ordinario",
