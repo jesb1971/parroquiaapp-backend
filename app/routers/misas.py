@@ -177,6 +177,10 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
     dias_post = (fecha - inicio_ordinario_post).days
     semana_total = 8 + (dias_post // 7)
 
+# 🔹 Si es domingo, pasa a la siguiente semana
+     if dia_semana == 6:
+     semana_total += 1
+
     # 🔹 Conversión a romano segura
     romanos = {
         1:"I",2:"II",3:"III",4:"IV",5:"V",6:"VI",7:"VII",8:"VIII",9:"IX",10:"X",
