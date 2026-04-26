@@ -93,24 +93,36 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
             "es_memoria": True
         }
 
-    # 🔹 LÓGICA BASE
     year = fecha.year
     pascua = calcular_pascua(year)
 
     nombres_dias = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"]
     dia_semana = fecha.weekday()
 
-    # Cuaresma
-    if fecha < pascua:
+    # 🔹 FECHAS CLAVE
+    miercoles_ceniza = pascua - timedelta(days=46)
+    pentecostes = pascua + timedelta(days=49)
+    inicio_ordinario_post = pentecostes + timedelta(days=1)
+
+    # 🔹 BAUTISMO DEL SEÑOR (simplificado)
+    bautismo = datetime(year, 1, 12)  # válido en la mayoría de casos prácticos
+    inicio_ordinario_pre = bautismo + timedelta(days=1)
+
+    # =========================
+    # 🔵 CUARESMA
+    # =========================
+    if miercoles_ceniza <= fecha < pascua:
         return {
             "tiempo": "cuaresma",
             "color": "morado",
             "celebracion": f"{nombres_dias[dia_semana]} de Cuaresma"
         }
 
+    # =========================
+    # 🟡 PASCUA
+    # =========================
     dias = (fecha - pascua).days
 
-    # Domingo de Pascua
     if dias == 0:
         return {
             "tiempo": "pascua",
@@ -118,7 +130,6 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
             "celebracion": "Domingo de Pascua"
         }
 
-    # Octava
     if 1 <= dias <= 6:
         nombres = [
             "Lunes de la Octava de Pascua",
@@ -151,7 +162,6 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
             "celebracion": domingos[dias]
         }
 
-    # Tiempo Pascual (entre semana)
     if dias <= 49:
         semana = ((dias - 7) // 7) + 2
         return {
@@ -160,15 +170,26 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
             "celebracion": f"{nombres_dias[dia_semana]} de la {numero_romano(semana)} Semana de Pascua"
         }
 
-    # Tiempo Ordinario
-    inicio_ordinario = pascua + timedelta(days=50)
-    dias_ord = (fecha - inicio_ordinario).days
-    semana = 8 + (dias_ord // 7)
+    # =========================
+    # 🟢 TIEMPO ORDINARIO (REAL)
+    # =========================
+
+    # 🔹 SEMANAS ANTES DE CUARESMA
+    semanas_pre = 0
+    if fecha >= inicio_ordinario_pre:
+        dias_pre = (miercoles_ceniza - inicio_ordinario_pre).days
+        semanas_pre = dias_pre // 7
+
+    # 🔹 SEMANAS DESPUÉS DE PENTECOSTÉS
+    dias_post = (fecha - inicio_ordinario_post).days
+    semanas_post = dias_post // 7
+
+    semana_total = semanas_pre + semanas_post + 1
 
     return {
         "tiempo": "ordinario",
         "color": "verde",
-        "celebracion": f"{nombres_dias[dia_semana]} de la {numero_romano(semana)} Semana del Tiempo Ordinario"
+        "celebracion": f"{nombres_dias[dia_semana]} de la {numero_romano(semana_total)} Semana del Tiempo Ordinario"
     }
     
 # LISTAR
