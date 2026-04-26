@@ -98,10 +98,10 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
 
     # PRIORIDAD: CSV
     fiesta = db.query(models.FiestaParroquia).filter(
-        models.FiestaParroquia.fecha == fecha.date(),
+        models.FiestaParroquia.fecha >= fecha.replace(hour=0, minute=0, second=0),
+        models.FiestaParroquia.fecha <= fecha.replace(hour=23, minute=59, second=59),
         models.FiestaParroquia.parroquia_id == PARROQUIA_ID
     ).first()
-
     if fiesta:
         return {
             "tiempo": "calendario",
