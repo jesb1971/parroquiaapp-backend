@@ -108,11 +108,20 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
             "celebracion": "Tiempo de Cuaresma"
         }
 
+    # 🔥 TIEMPO ORDINARIO (MEJORADO)
     if fecha > pascua + timedelta(days=49):
+
+        inicio_ordinario = pascua + timedelta(days=50)
+        dias = (fecha - inicio_ordinario).days
+        semana = (dias // 7) + 1
+
+        nombres_dias = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"]
+        dia_semana = fecha.weekday()
+
         return {
             "tiempo": "ordinario",
             "color": "verde",
-            "celebracion": "Tiempo Ordinario"
+            "celebracion": f"{nombres_dias[dia_semana]} de la {numero_romano(semana)} Semana del Tiempo Ordinario"
         }
 
     dias = (fecha - pascua).days
