@@ -256,8 +256,8 @@ from fastapi import UploadFile, File
 @router.post("/cargar-calendario")
 def cargar_calendario(request: Request, file: UploadFile = File(...), db: Session = Depends(get_db)):
 
-    if request.cookies.get("admin") != "1":
-        raise HTTPException(status_code=403)
+    #if request.cookies.get("admin") != "1":
+        #raise HTTPException(status_code=403)
 
     contenido = file.file.read().decode("utf-8")
     reader = csv.reader(StringIO(contenido))
