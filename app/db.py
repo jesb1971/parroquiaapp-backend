@@ -3,7 +3,7 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 import os
 
 # Lee la URL de la base de datos desde variable de entorno (o usa SQLite por defecto)
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./parroquia.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:////var/data/parroquia.db")
 
 # Crear motor de conexión
 engine = create_engine(

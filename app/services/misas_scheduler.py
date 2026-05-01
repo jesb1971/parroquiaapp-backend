@@ -14,8 +14,7 @@ def _add_if_missing(db: Session, dt: datetime, descripcion: str, parroquia_id: i
         db.add(Misa(
             parroquia_id=parroquia_id,
             fecha=dt,
-            descripcion=descripcion,
-            es_festiva=False
+            descripcion=descripcion
         ))
 
 def generar_misas(db: Session, semanas: int = 12, parroquia_id: int = 1):
@@ -23,19 +22,18 @@ def generar_misas(db: Session, semanas: int = 12, parroquia_id: int = 1):
     Genera misas para las próximas `semanas` con el horario de Cruz del Señor:
       - Martes a sábado 19:00 (sábado = 'Misa de víspera')
       - Domingo 10:00 y 12:00
-    No crea duplicados si ya existen en esa fecha/hora.
     """
     try:
-        # 🔥 LIMPIAR CALENDARIO ANTES DE GENERAR
+        # 🔥 LIMPIAR CALENDARIO
         db.query(Misa).filter(Misa.parroquia_id == parroquia_id).delete()
         db.commit()
 
-        hoy = datetime.now().date()  # NAIVE (local)
+        hoy = datetime.now().date()
         fin = hoy + timedelta(weeks=semanas)
 
         d = hoy
         while d <= fin:
-            wd = d.weekday()  # 0=Lun ... 5=Sáb, 6=Dom
+            wd = d.weekday()
 
             if wd in (1, 2, 3, 4, 5):  # Mar-Sáb
                 desc = "Misa de víspera" if wd == 5 else "Misa diaria"
@@ -50,6 +48,5 @@ def generar_misas(db: Session, semanas: int = 12, parroquia_id: int = 1):
         db.commit()
 
     except Exception as e:
-        if hasattr(db, "rollback"):
-            db.rollback()
+        db.rollback()
         raise RuntimeError(f"Error en generar_misas: {type(e).__name__} -> {e}") from e
