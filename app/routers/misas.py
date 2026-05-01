@@ -195,7 +195,7 @@ def listar_misas(db: Session = Depends(get_db)):
         misa.color = lit["color"]
 
         # 🔥 SOLO SI NO TIENE DESCRIPCIÓN
-        if not misa.descripcion:
+        if not misa.descripcion or misa.descripcion.strip() == "":
             misa.descripcion = lit["celebracion"]
 
     return misas

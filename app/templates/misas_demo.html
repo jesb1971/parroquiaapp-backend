@@ -164,7 +164,7 @@ document.getElementById("formCalendario")?.addEventListener("submit", function(e
 // GUARDAR
 function guardarMisa(id) {
 
-    const desc = document.getElementById(`desc-${id}`).value;
+    const desc = document.getElementById(`desc-${id}`).value.trim();
 
     fetch(`/misas/${id}`, {
         method: "PUT",
