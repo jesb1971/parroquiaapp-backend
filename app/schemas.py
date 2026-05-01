@@ -41,7 +41,7 @@ class MisaUpdate(BaseModel):
     descripcion: Optional[str] = None
     sacerdote: Optional[str] = None
     es_festiva: Optional[bool] = None
-
+    hora: str | None = None   # 🔥 ESTE ES EL QUE FALTA
 
 class MisaOut(MisaBase):
     id: int
