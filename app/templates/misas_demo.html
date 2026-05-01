@@ -107,17 +107,31 @@ onclick="guardarMisa({{ misa.id }})">
 </button>
 
 <!-- 🔥 NUEVOS BOTONES -->
+<div class="mb-2">
+
+<input type="date"
+id="fecha-{{ misa.id }}"
+class="form-control form-control-sm mb-1"
+value="{{ misa.fecha.strftime('%Y-%m-%d') }}">
+
+<input type="time"
+id="hora-{{ misa.id }}"
+class="form-control form-control-sm mb-2"
+value="{{ misa.fecha.strftime('%H:%M') }}">
+
+<button class="btn btn-sm btn-warning w-100 mb-2"
+onclick="editarMisaCompleta({{ misa.id }})">
+✏️ Actualizar fecha y hora
+</button>
+
 <div class="d-flex gap-2">
+    <button class="btn btn-sm btn-danger w-100"
+    onclick="eliminarMisa({{ misa.id }})">
+    ❌ Eliminar
+    </button>
+</div>
 
-<button class="btn btn-sm btn-warning w-50"
-onclick="editarHora({{ misa.id }})">
-✏️ Hora
-</button>
-
-<button class="btn btn-sm btn-danger w-50"
-onclick="eliminarMisa({{ misa.id }})">
-❌ Eliminar
-</button>
+</div>
 
 </div>
 
@@ -181,12 +195,18 @@ function guardarMisa(id) {
 }
 
 
-// EDITAR HORA
-function editarHora(id) {
+// 🔥 EDITAR FECHA + HORA (SIN PROMPT)
+function editarMisaCompleta(id) {
 
-    const nuevaHora = prompt("Nueva hora (HH:MM):");
+    const fecha = document.getElementById(`fecha-${id}`)?.value;
+    const hora = document.getElementById(`hora-${id}`)?.value;
 
-    if (!nuevaHora) return;
+    if (!fecha || !hora) {
+        alert("Fecha y hora obligatorias");
+        return;
+    }
+
+    const fechaCompleta = fecha + "T" + hora + ":00";
 
     fetch(`/misas/${id}`, {
         method: "PUT",
@@ -194,21 +214,21 @@ function editarHora(id) {
             "Content-Type": "application/json"
         },
         body: JSON.stringify({
-            hora: nuevaHora
+            fecha: fechaCompleta
         })
     })
     .then(res => {
         if (res.ok) {
-            alert("Hora actualizada");
+            alert("Misa actualizada correctamente");
             window.location.href = window.location.href + "?t=" + new Date().getTime();
         } else {
-            alert("Error al actualizar hora");
+            alert("Error al actualizar");
         }
     });
 }
 
 
-// ELIMINAR
+// ❌ ELIMINAR
 function eliminarMisa(id) {
 
     if (!confirm("¿Eliminar esta misa?")) return;
@@ -227,7 +247,7 @@ function eliminarMisa(id) {
 }
 
 
-// 🔥 NUEVA FUNCIÓN: CREAR MISA
+// ➕ CREAR MISA (MEJORADO)
 function crearMisa() {
 
     const fecha = prompt("Fecha (YYYY-MM-DD):");
@@ -236,13 +256,15 @@ function crearMisa() {
     const hora = prompt("Hora (HH:MM):");
     if (!hora) return;
 
+    const fechaCompleta = fecha + "T" + hora + ":00";
+
     fetch("/misas", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
         },
         body: JSON.stringify({
-            fecha: fecha + "T" + hora + ":00"
+            fecha: fechaCompleta
         })
     })
     .then(res => {
@@ -256,7 +278,7 @@ function crearMisa() {
 }
 
 
-// REGENERAR
+// 🔄 REGENERAR
 function regenerar() {
 
     if (!confirm("¿Seguro que quieres regenerar el calendario?")) return;
