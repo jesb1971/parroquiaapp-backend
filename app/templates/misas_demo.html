@@ -25,7 +25,6 @@
 Horarios de misas – {{ parroquia.nombre }}
 </h1>
 
-<!-- 🔐 ADMIN -->
 {% if es_admin %}
 
 <div class="mb-2 text-end">
@@ -46,19 +45,19 @@ onclick="crearMisa()">
 ➕ Nueva misa
 </button>
 
-    <select id="meses" class="form-select form-select-sm" style="width:150px;">
-        <option value="1">1 mes</option>
-        <option value="3" selected>3 meses</option>
-        <option value="6">6 meses</option>
-    </select>
+<select id="meses" class="form-select form-select-sm" style="width:150px;">
+    <option value="1">1 mes</option>
+    <option value="3" selected>3 meses</option>
+    <option value="6">6 meses</option>
+</select>
 
-    <button class="btn btn-sm btn-success" onclick="regenerar()">
-        🔄 Regenerar calendario
-    </button>
+<button class="btn btn-sm btn-success" onclick="regenerar()">
+🔄 Regenerar calendario
+</button>
 
-    <a href="/logout" class="btn btn-sm btn-outline-secondary">
-        Cerrar sesión
-    </a>
+<a href="/logout" class="btn btn-sm btn-outline-secondary">
+Cerrar sesión
+</a>
 
 </div>
 
@@ -71,9 +70,7 @@ onclick="crearMisa()">
 {% set es_domingo = misa.fecha.weekday() == 6 %}
 
 <div class="col">
-
 <div class="card shadow-sm h-100 {{ misa.color }}">
-
 <div class="card-body">
 
 <h5 class="card-title {% if es_domingo %}text-warning{% else %}text-primary{% endif %}">
@@ -106,7 +103,7 @@ onclick="guardarMisa({{ misa.id }})">
 💾 Guardar cambios
 </button>
 
-<!-- 🔥 NUEVOS BOTONES -->
+<!-- 🔥 BLOQUE CORREGIDO -->
 <div class="mb-2">
 
 <input type="date"
@@ -124,14 +121,10 @@ onclick="editarMisaCompleta({{ misa.id }})">
 ✏️ Actualizar fecha y hora
 </button>
 
-<div class="d-flex gap-2">
-    <button class="btn btn-sm btn-danger w-100"
-    onclick="eliminarMisa({{ misa.id }})">
-    ❌ Eliminar
-    </button>
-</div>
-
-</div>
+<button class="btn btn-sm btn-danger w-100"
+onclick="eliminarMisa({{ misa.id }})">
+❌ Eliminar
+</button>
 
 </div>
 
@@ -139,7 +132,6 @@ onclick="editarMisaCompleta({{ misa.id }})">
 
 </div>
 </div>
-
 </div>
 
 {% endfor %}
@@ -162,40 +154,34 @@ document.getElementById("formCalendario")?.addEventListener("submit", function(e
     .then(res => {
         if (res.ok) {
             alert("Calendario cargado correctamente");
-            window.location.href = window.location.href + "?t=" + new Date().getTime();
+            location.reload();
         } else {
             alert("Error al subir el calendario");
         }
     });
 });
 
-
-// GUARDAR DESCRIPCIÓN
+// GUARDAR
 function guardarMisa(id) {
 
     const desc = document.getElementById(`desc-${id}`).value;
 
     fetch(`/misas/${id}`, {
         method: "PUT",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            descripcion: desc
-        })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ descripcion: desc })
     })
     .then(res => {
         if (res.ok) {
             alert("Guardado correctamente");
-            window.location.href = window.location.href + "?t=" + new Date().getTime();
+            location.reload();
         } else {
             alert("Error al guardar");
         }
     });
 }
 
-
-// 🔥 EDITAR FECHA + HORA (SIN PROMPT)
+// EDITAR FECHA + HORA
 function editarMisaCompleta(id) {
 
     const fecha = document.getElementById(`fecha-${id}`)?.value;
@@ -210,44 +196,36 @@ function editarMisaCompleta(id) {
 
     fetch(`/misas/${id}`, {
         method: "PUT",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            fecha: fechaCompleta
-        })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fecha: fechaCompleta })
     })
     .then(res => {
         if (res.ok) {
             alert("Misa actualizada correctamente");
-            window.location.href = window.location.href + "?t=" + new Date().getTime();
+            location.reload();
         } else {
             alert("Error al actualizar");
         }
     });
 }
 
-
-// ❌ ELIMINAR
+// ELIMINAR
 function eliminarMisa(id) {
 
     if (!confirm("¿Eliminar esta misa?")) return;
 
-    fetch(`/misas/${id}`, {
-        method: "DELETE"
-    })
+    fetch(`/misas/${id}`, { method: "DELETE" })
     .then(res => {
         if (res.ok) {
             alert("Misa eliminada");
-            window.location.href = window.location.href + "?t=" + new Date().getTime();
+            location.reload();
         } else {
             alert("Error al eliminar");
         }
     });
 }
 
-
-// ➕ CREAR MISA (MEJORADO)
+// CREAR
 function crearMisa() {
 
     const fecha = prompt("Fecha (YYYY-MM-DD):");
@@ -260,25 +238,20 @@ function crearMisa() {
 
     fetch("/misas", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            fecha: fechaCompleta
-        })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fecha: fechaCompleta })
     })
     .then(res => {
         if (res.ok) {
             alert("Misa creada");
-            window.location.href = window.location.href + "?t=" + new Date().getTime();
+            location.reload();
         } else {
             alert("Error al crear misa");
         }
     });
 }
 
-
-// 🔄 REGENERAR
+// REGENERAR
 function regenerar() {
 
     if (!confirm("¿Seguro que quieres regenerar el calendario?")) return;
@@ -291,7 +264,7 @@ function regenerar() {
     .then(res => {
         if (res.ok) {
             alert("Calendario regenerado");
-            window.location.href = window.location.href + "?t=" + new Date().getTime();
+            location.reload();
         } else {
             alert("Error al regenerar");
         }
