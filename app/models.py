@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Date
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from .db import Base
@@ -29,12 +29,12 @@ class User(Base):
 class Contenido(Base):
     __tablename__ = "contenidos"
     id = Column(Integer, primary_key=True, index=True)
-    tipo = Column(String(30), index=True)  # reflexion | homilia | testimonio | serie_cap
+    tipo = Column(String(30), index=True)
     titulo = Column(String(200), nullable=False)
     cuerpo_md = Column(Text, nullable=False)
     audio_url = Column(String(255))
     imagen_url = Column(String(255))
-    etiquetas = Column(String(255))  # CSV simple: jovenes,familia
+    etiquetas = Column(String(255))
     parroquia_id = Column(Integer, ForeignKey("parroquias.id"))
     publicado_at = Column(DateTime)
     programado_at = Column(DateTime)
@@ -63,7 +63,7 @@ class Habito(Base):
     id = Column(Integer, primary_key=True, index=True)
     titulo = Column(String(200), nullable=False)
     descripcion = Column(Text)
-    periodicidad = Column(String(20), default="daily")  # daily | weekly
+    periodicidad = Column(String(20), default="daily")
 
 
 class UserHabito(Base):
@@ -75,9 +75,8 @@ class UserHabito(Base):
     completado = Column(Boolean, default=True)
 
 # ─────────────────────────────────────────────────────────────
-# Módulo de Misas (Cruz del Señor)
+# Módulo de Misas (CORREGIDO)
 # ─────────────────────────────────────────────────────────────
-from sqlalchemy import Column, Integer, DateTime, String
 
 class Misa(Base):
     __tablename__ = "misas"
@@ -85,9 +84,9 @@ class Misa(Base):
     id = Column(Integer, primary_key=True, index=True)
     fecha = Column(DateTime, nullable=False)
 
-    # 🔥 AÑADIR ESTO
-    descripcion = Column(String, nullable=Tes_manual = Column(Boolean, default=False)  # 👈 AÑADE ESTOe)
-    es_manual = Column(Boolean, default=False)  # 👈 AÑADE ESTO
+    descripcion = Column(String, nullable=True)
+    es_manual = Column(Boolean, default=False)
+
     parroquia_id = Column(Integer, nullable=False)
 
 # ─────────────────────────────────────────────────────────────
@@ -101,11 +100,10 @@ class Aviso(Base):
     cuerpo = Column(Text, nullable=False)
     publicado_at = Column(DateTime, default=datetime.utcnow)
     parroquia_id = Column(Integer, ForeignKey("parroquias.id"))
-    
-    # ─────────────────────────────────────────────
+
+# ─────────────────────────────────────────────
 # 🎉 FIESTAS PROPIAS DE LA PARROQUIA
 # ─────────────────────────────────────────────
-from sqlalchemy import Column, Integer, String, Date, ForeignKey
 
 class FiestaParroquia(Base):
     __tablename__ = "fiestas_parroquia"
