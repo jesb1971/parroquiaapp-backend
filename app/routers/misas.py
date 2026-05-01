@@ -224,3 +224,42 @@ def regenerar_calendario(meses:int=Query(3),db:Session=Depends(get_db)):
     generar_misas(db, semanas=semanas, parroquia_id=PARROQUIA_ID)
 
     return {"detail": f"Calendario regenerado ({meses} meses)"}
+    
+    # ✏️ EDITAR MISA
+@router.put("/{misa_id}")
+def editar_misa(misa_id: int, datos: schemas.MisaUpdate, db: Session = Depends(get_db)):
+
+    misa = db.query(models.Misa).filter(models.Misa.id == misa_id).first()
+
+    if not misa:
+        raise HTTPException(status_code=404, detail="Misa no encontrada")
+
+    # 🔹 Actualización flexible
+    if datos.fecha:
+        misa.fecha = datos.fecha
+
+    if datos.hora:
+        misa.hora = datos.hora
+
+    if datos.descripcion is not None:
+        misa.descripcion = datos.descripcion
+
+    db.commit()
+    db.refresh(misa)
+
+    return {"ok": "Misa actualizada"}
+
+
+# ❌ ELIMINAR MISA
+@router.delete("/{misa_id}")
+def eliminar_misa(misa_id: int, db: Session = Depends(get_db)):
+
+    misa = db.query(models.Misa).filter(models.Misa.id == misa_id).first()
+
+    if not misa:
+        raise HTTPException(status_code=404, detail="Misa no encontrada")
+
+    db.delete(misa)
+    db.commit()
+
+    return {"ok": "Misa eliminada"}

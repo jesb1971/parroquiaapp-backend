@@ -17,19 +17,35 @@ class ContenidoOut(BaseModel):
     publicado_at: Optional[datetime] = None
 
     class Config:
-        from_attributes = True  # Permite crear desde ORM (SQLAlchemy) en Pydantic v2
+        from_attributes = True
 
 
 # ─────────────────────────────────────────────────────────────
-# Misas
+# Misas (VERSIÓN ÚNICA Y LIMPIA)
 # ─────────────────────────────────────────────────────────────
 
-class MisaOut(BaseModel):
+class MisaBase(BaseModel):
+    fecha: datetime
+    descripcion: Optional[str] = None
+    sacerdote: Optional[str] = None
+    es_festiva: bool = False
+    parroquia_id: int = 1
+
+
+class MisaCreate(MisaBase):
+    pass
+
+
+class MisaUpdate(BaseModel):
+    fecha: Optional[datetime] = None
+    descripcion: Optional[str] = None
+    sacerdote: Optional[str] = None
+    es_festiva: Optional[bool] = None
+
+
+class MisaOut(MisaBase):
     id: int
-    fecha_hora: datetime
-    templo: Optional[str] = None
-    celebrante: Optional[str] = None
-    notas: Optional[str] = None
+    creada_en: datetime
 
     class Config:
         from_attributes = True
@@ -48,34 +64,3 @@ class AvisoOut(BaseModel):
 
     class Config:
         from_attributes = True
-        
-from pydantic import BaseModel
-from datetime import datetime
-
-# ─────────────────────────────────────────────────────────────
-# Schemas de Misas
-# ─────────────────────────────────────────────────────────────
-
-class MisaBase(BaseModel):
-    fecha: datetime
-    descripcion: str | None = None
-    sacerdote: str | None = None
-    es_festiva: bool = False
-    parroquia_id: int = 1
-
-class MisaCreate(MisaBase):
-    pass
-
-class MisaUpdate(BaseModel):
-    fecha: datetime | None = None
-    descripcion: str | None = None
-    sacerdote: str | None = None
-    es_festiva: bool | None = None
-
-class MisaOut(MisaBase):
-    id: int
-    creada_en: datetime
-
-    class Config:
-        from_attributes = True
-
