@@ -223,25 +223,25 @@ def editar_misa(misa_id: int, datos: schemas.MisaUpdate, db: Session = Depends(g
     misa = db.query(models.Misa).filter(models.Misa.id == misa_id).first()
 
     if not misa:
-        raise HTTPException(404, "No encontrada")
+        raise HTTPException(status_code=404, detail="Misa no encontrada")
 
+    # 🔹 Actualizar fecha (incluye hora)
+    if datos.fecha:
+        misa.fecha = datos.fecha
+
+        # 🔥 SOLO recalcular si no hay descripción personalizada
+        if not datos.descripcion:
+            lit = obtener_liturgia(misa.fecha, db)
+            misa.descripcion = lit.get("celebracion")
+
+    # 🔹 Si el usuario escribe manualmente → manda él
     if datos.descripcion is not None:
         misa.descripcion = datos.descripcion
 
-    if datos.hora:
-        try:
-            h, m = map(int, datos.hora.split(":"))
-            misa.fecha = datetime(
-                misa.fecha.year,
-                misa.fecha.month,
-                misa.fecha.day,
-                h, m
-            )
-        except:
-            raise HTTPException(400, "Hora inválida")
-
     db.commit()
-    return {"ok": "Actualizada"}
+    db.refresh(misa)
+
+    return {"ok": "Misa actualizada"}
 
 
 # =========================
