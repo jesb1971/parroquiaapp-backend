@@ -41,6 +41,11 @@ Horarios de misas – {{ parroquia.nombre }}
 
 <div class="d-flex justify-content-end align-items-center gap-2 mb-3">
 
+<button class="btn btn-sm btn-primary"
+onclick="crearMisa()">
+➕ Nueva misa
+</button>
+
     <select id="meses" class="form-select form-select-sm" style="width:150px;">
         <option value="1">1 mes</option>
         <option value="3" selected>3 meses</option>
@@ -131,7 +136,7 @@ onclick="eliminarMisa({{ misa.id }})">
 <script>
 
 // SUBIR CSV
-document.getElementById("formCalendario").addEventListener("submit", function(e) {
+document.getElementById("formCalendario")?.addEventListener("submit", function(e) {
     e.preventDefault();
 
     const formData = new FormData(this);
@@ -217,6 +222,35 @@ function eliminarMisa(id) {
             window.location.href = window.location.href + "?t=" + new Date().getTime();
         } else {
             alert("Error al eliminar");
+        }
+    });
+}
+
+
+// 🔥 NUEVA FUNCIÓN: CREAR MISA
+function crearMisa() {
+
+    const fecha = prompt("Fecha (YYYY-MM-DD):");
+    if (!fecha) return;
+
+    const hora = prompt("Hora (HH:MM):");
+    if (!hora) return;
+
+    fetch("/misas", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            fecha: fecha + "T" + hora + ":00"
+        })
+    })
+    .then(res => {
+        if (res.ok) {
+            alert("Misa creada");
+            window.location.href = window.location.href + "?t=" + new Date().getTime();
+        } else {
+            alert("Error al crear misa");
         }
     });
 }
