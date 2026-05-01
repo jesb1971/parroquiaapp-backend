@@ -1,8 +1,8 @@
 """Rutas de misas (definitivas)."""
-from fastapi import APIRouter, Depends, HTTPException, Request, Query, UploadFile, File
+
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from sqlalchemy.orm import Session
-from sqlalchemy import func
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 import csv
 from io import StringIO
 
@@ -14,11 +14,23 @@ router = APIRouter(prefix="/misas", tags=["misas"])
 PARROQUIA_ID = 1
 
 
+# =========================
+# 🔢 NÚMEROS ROMANOS
+# =========================
 def numero_romano(n):
-    romanos = {1:"I",2:"II",3:"III",4:"IV",5:"V",6:"VI",7:"VII"}
+    romanos = {
+        1:"I",2:"II",3:"III",4:"IV",5:"V",6:"VI",7:"VII",8:"VIII",9:"IX",10:"X",
+        11:"XI",12:"XII",13:"XIII",14:"XIV",15:"XV",16:"XVI",17:"XVII",18:"XVIII",
+        19:"XIX",20:"XX",21:"XXI",22:"XXII",23:"XXIII",24:"XXIV",25:"XXV",
+        26:"XXVI",27:"XXVII",28:"XXVIII",29:"XXIX",30:"XXX",31:"XXXI",
+        32:"XXXII",33:"XXXIII",34:"XXXIV"
+    }
     return romanos.get(n, str(n))
 
 
+# =========================
+# 📅 PASCUA
+# =========================
 def calcular_pascua(year):
     a = year % 19
     b = year // 100
@@ -37,49 +49,44 @@ def calcular_pascua(year):
     return datetime(year, month, day)
 
 
-# 🔥 ÚNICO ENDPOINT CSV (sin duplicados)
+# =========================
+# 📂 CARGAR CSV
+# =========================
 @router.post("/cargar-calendario")
 def cargar_calendario(file: UploadFile = File(...), db: Session = Depends(get_db)):
 
     contenido = file.file.read().decode("utf-8")
     reader = csv.reader(StringIO(contenido), delimiter=';')
 
-    next(reader, None)  # saltar cabecera
+    next(reader, None)
 
     db.query(models.FiestaParroquia).delete()
 
-    insertados = 0
-
     for row in reader:
         try:
-            if len(row) < 3:
-                continue
-
             fecha = datetime.strptime(row[0].strip(), "%Y-%m-%d").date()
-            celebracion = row[1].strip().replace('"', '')
+            nombre = row[1].strip()
             color = row[2].strip()
 
             db.add(models.FiestaParroquia(
                 parroquia_id=PARROQUIA_ID,
                 fecha=fecha,
-                nombre=celebracion,
+                nombre=nombre,
                 color=color
             ))
-
-            insertados += 1
-
-        except Exception as e:
-            print("Error fila:", row, e)
+        except:
+            pass
 
     db.commit()
+    return {"ok": "Calendario cargado"}
 
-    return {"ok": f"{insertados} registros insertados"}
 
+# =========================
+# 🧠 LITURGIA
+# =========================
+def obtener_liturgia(fecha: datetime, db: Session):
 
-# 🔥 LITURGIA (DEFINITIVA Y ESTABLE)
-def obtener_liturgia(fecha: datetime, db: Session) -> dict:
-
-    # 🔹 PRIORIDAD 1: CSV
+    # PRIORIDAD CSV
     fiesta = db.query(models.FiestaParroquia).filter(
         models.FiestaParroquia.fecha == fecha.date(),
         models.FiestaParroquia.parroquia_id == PARROQUIA_ID
@@ -89,8 +96,7 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
         return {
             "tiempo": "calendario",
             "color": fiesta.color,
-            "celebracion": fiesta.nombre,
-            "es_memoria": True
+            "celebracion": fiesta.nombre
         }
 
     year = fecha.year
@@ -99,14 +105,11 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
     nombres_dias = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"]
     dia_semana = fecha.weekday()
 
-    # 🔹 FECHAS CLAVE
     miercoles_ceniza = pascua - timedelta(days=46)
     pentecostes = pascua + timedelta(days=49)
     inicio_ordinario_post = pentecostes + timedelta(days=1)
 
-    # =========================
-    # 🔵 CUARESMA
-    # =========================
+    # CUARESMA
     if miercoles_ceniza <= fecha < pascua:
         return {
             "tiempo": "cuaresma",
@@ -114,11 +117,9 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
             "celebracion": f"{nombres_dias[dia_semana]} de Cuaresma"
         }
 
-    # =========================
-    # 🟡 PASCUA
-    # =========================
     dias = (fecha - pascua).days
 
+    # PASCUA
     if dias == 0:
         return {
             "tiempo": "pascua",
@@ -166,100 +167,95 @@ def obtener_liturgia(fecha: datetime, db: Session) -> dict:
             "celebracion": f"{nombres_dias[dia_semana]} de la {numero_romano(semana)} Semana de Pascua"
         }
 
-    # =========================
-    # 🟢 TIEMPO ORDINARIO (REAL)
-    # =========================
-
+    # TIEMPO ORDINARIO REAL
     dias_post = (fecha - inicio_ordinario_post).days
-    semana_total = 8 + (dias_post // 7)
+    semana = 8 + (dias_post // 7)
 
-    # 🔹 Domingo inicia nueva semana
     if dia_semana == 6:
-        semana_total += 1
-
-    romanos = {
-        1:"I",2:"II",3:"III",4:"IV",5:"V",6:"VI",7:"VII",8:"VIII",9:"IX",10:"X",
-        11:"XI",12:"XII",13:"XIII",14:"XIV",15:"XV",16:"XVI",17:"XVII",18:"XVIII",
-        19:"XIX",20:"XX",21:"XXI",22:"XXII",23:"XXIII",24:"XXIV",25:"XXV",
-        26:"XXVI",27:"XXVII",28:"XXVIII",29:"XXIX",30:"XXX",31:"XXXI",
-        32:"XXXII",33:"XXXIII",34:"XXXIV"
-    }
-
-    semana_romana = romanos.get(semana_total, str(semana_total))
+        semana += 1
 
     return {
         "tiempo": "ordinario",
         "color": "verde",
-        "celebracion": f"{nombres_dias[dia_semana]} de la {semana_romana} Semana del Tiempo Ordinario"
+        "celebracion": f"{nombres_dias[dia_semana]} de la {numero_romano(semana)} Semana del Tiempo Ordinario"
     }
-# LISTAR
+
+
+# =========================
+# 📋 LISTAR
+# =========================
 @router.get("/", response_model=list[schemas.MisaOut])
 def listar_misas(db: Session = Depends(get_db)):
 
-    result = db.query(models.Misa)\
+    misas = db.query(models.Misa)\
         .filter(models.Misa.parroquia_id == PARROQUIA_ID)\
         .order_by(models.Misa.fecha.asc())\
         .all()
 
-    for misa in result:
-
+    for misa in misas:
         lit = obtener_liturgia(misa.fecha, db)
-
-        misa.tiempo = lit["tiempo"]
+        misa.descripcion = lit["celebracion"]
         misa.color = lit["color"]
 
-        misa.descripcion = lit.get("celebracion", "Sin descripción")
-
-    return result
+    return misas
 
 
-# REGENERAR
-@router.post("/regenerar", status_code=202)
-def regenerar_calendario(meses:int=Query(3),db:Session=Depends(get_db)):
+# =========================
+# 🔄 REGENERAR
+# =========================
+@router.post("/regenerar")
+def regenerar(meses: int = Query(3), db: Session = Depends(get_db)):
 
     db.query(models.Misa).delete()
     db.commit()
 
-    semanas = meses * 4
-    generar_misas(db, semanas=semanas, parroquia_id=PARROQUIA_ID)
+    generar_misas(db, semanas=meses * 4, parroquia_id=PARROQUIA_ID)
 
-    return {"detail": f"Calendario regenerado ({meses} meses)"}
-    
-    # ✏️ EDITAR MISA
+    return {"ok": "Regenerado"}
+
+
+# =========================
+# ✏️ EDITAR
+# =========================
 @router.put("/{misa_id}")
 def editar_misa(misa_id: int, datos: schemas.MisaUpdate, db: Session = Depends(get_db)):
 
     misa = db.query(models.Misa).filter(models.Misa.id == misa_id).first()
 
     if not misa:
-        raise HTTPException(status_code=404, detail="Misa no encontrada")
-
-    # 🔹 Actualización flexible
-    if datos.fecha:
-        misa.fecha = datos.fecha
-
-    if datos.hora:
-        misa.hora = datos.hora
+        raise HTTPException(404, "No encontrada")
 
     if datos.descripcion is not None:
         misa.descripcion = datos.descripcion
 
+    if datos.hora:
+        try:
+            h, m = map(int, datos.hora.split(":"))
+            misa.fecha = datetime(
+                misa.fecha.year,
+                misa.fecha.month,
+                misa.fecha.day,
+                h, m
+            )
+        except:
+            raise HTTPException(400, "Hora inválida")
+
     db.commit()
-    db.refresh(misa)
-
-    return {"ok": "Misa actualizada"}
+    return {"ok": "Actualizada"}
 
 
-# ❌ ELIMINAR MISA
+# =========================
+# ❌ ELIMINAR
+# =========================
 @router.delete("/{misa_id}")
 def eliminar_misa(misa_id: int, db: Session = Depends(get_db)):
 
     misa = db.query(models.Misa).filter(models.Misa.id == misa_id).first()
 
     if not misa:
-        raise HTTPException(status_code=404, detail="Misa no encontrada")
+        raise HTTPException(404, "No encontrada")
 
     db.delete(misa)
     db.commit()
 
-    return {"ok": "Misa eliminada"}
+    return {"ok": "Eliminada"}
