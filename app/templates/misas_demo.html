@@ -1,248 +1,262 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Horarios de misas</title>
+"""Rutas de misas (definitivas)."""
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
+from sqlalchemy.orm import Session
+from datetime import datetime, timedelta
+import csv
+from io import StringIO
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+from ..db import get_db
+from .. import models, schemas
+from ..services.misas_scheduler import generar_misas
 
-<style>
-.rojo { border-left: 6px solid red; }
-.verde { border-left: 6px solid green; }
-.morado { border-left: 6px solid purple; }
-.blanco { border-left: 6px solid #ccc; }
-.rosa { border-left: 6px solid pink; }
-</style>
+router = APIRouter(prefix="/misas", tags=["misas"])
+PARROQUIA_ID = 1
 
-</head>
 
-<body class="bg-light">
+# =============================
+# 🔹 ROMANOS
+# =============================
+def numero_romano(n):
+    romanos = {
+        1:"I",2:"II",3:"III",4:"IV",5:"V",6:"VI",7:"VII",8:"VIII",9:"IX",10:"X",
+        11:"XI",12:"XII",13:"XIII",14:"XIV",15:"XV",16:"XVI",17:"XVII",18:"XVIII",
+        19:"XIX",20:"XX",21:"XXI",22:"XXII",23:"XXIII",24:"XXIV",25:"XXV",
+        26:"XXVI",27:"XXVII",28:"XXVIII",29:"XXIX",30:"XXX",31:"XXXI",
+        32:"XXXII",33:"XXXIII",34:"XXXIV"
+    }
+    return romanos.get(n, str(n))
 
-<div class="container py-5">
 
-<h1 class="text-center text-primary mb-4">
-Horarios de misas – {{ parroquia.nombre }}
-</h1>
+# =============================
+# 🔹 PASCUA
+# =============================
+def calcular_pascua(year):
+    a = year % 19
+    b = year // 100
+    c = year % 100
+    d = b // 4
+    e = b % 4
+    f = (b + 8) // 25
+    g = (b - f + 1) // 3
+    h = (19*a + b - d - g + 15) % 30
+    i = c // 4
+    k = c % 4
+    l = (32 + 2*e + 2*i - h - k) % 7
+    m = (a + 11*h + 22*l) // 451
+    month = (h + l - 7*m + 114) // 31
+    day = ((h + l - 7*m + 114) % 31) + 1
+    return datetime(year, month, day)
 
-<!-- 🔐 ADMIN -->
-{% if es_admin %}
 
-<div class="mb-2 text-end">
-    <form id="formCalendario" enctype="multipart/form-data" class="d-inline-flex gap-2">
-        <input type="file" name="file" accept=".csv"
-               class="form-control form-control-sm"
-               style="width:200px;" required>
-        <button type="submit" class="btn btn-sm btn-success">
-            📂 Subir calendario
-        </button>
-    </form>
-</div>
+# =============================
+# 📥 CARGAR CSV
+# =============================
+@router.post("/cargar-calendario")
+def cargar_calendario(file: UploadFile = File(...), db: Session = Depends(get_db)):
 
-<div class="d-flex justify-content-end align-items-center gap-2 mb-3">
+    contenido = file.file.read().decode("utf-8")
+    reader = csv.reader(StringIO(contenido), delimiter=';')
 
-    <select id="meses" class="form-select form-select-sm" style="width:150px;">
-        <option value="1">1 mes</option>
-        <option value="3" selected>3 meses</option>
-        <option value="6">6 meses</option>
-    </select>
+    next(reader, None)
 
-    <button class="btn btn-sm btn-success" onclick="regenerar()">
-        🔄 Regenerar calendario
-    </button>
+    db.query(models.FiestaParroquia).delete()
 
-    <a href="/logout" class="btn btn-sm btn-outline-secondary">
-        Cerrar sesión
-    </a>
+    for row in reader:
+        try:
+            if len(row) < 3:
+                continue
 
-</div>
+            fecha = datetime.strptime(row[0].strip(), "%Y-%m-%d").date()
+            celebracion = row[1].strip()
+            color = row[2].strip()
 
-{% endif %}
+            db.add(models.FiestaParroquia(
+                parroquia_id=PARROQUIA_ID,
+                fecha=fecha,
+                nombre=celebracion,
+                color=color
+            ))
 
-<div class="row row-cols-1 row-cols-md-3 g-4">
+        except Exception as e:
+            print("Error fila:", row, e)
 
-{% for misa in misas %}
+    db.commit()
+    return {"ok": "Calendario cargado"}
 
-{% set es_domingo = misa.fecha.weekday() == 6 %}
 
-<div class="col">
+# =============================
+# 📅 LITURGIA
+# =============================
+def obtener_liturgia(fecha: datetime, db: Session):
 
-<div class="card shadow-sm h-100 {{ misa.color }}">
+    fiesta = db.query(models.FiestaParroquia).filter(
+        models.FiestaParroquia.fecha == fecha.date(),
+        models.FiestaParroquia.parroquia_id == PARROQUIA_ID
+    ).first()
 
-<div class="card-body">
-
-<h5 class="card-title {% if es_domingo %}text-warning{% else %}text-primary{% endif %}">
-📅 {{ misa.fecha.strftime("%d/%m/%Y") }}
-</h5>
-
-<p>
-⏰ <strong>{{ misa.fecha.strftime("%H:%M") }}</strong>
-</p>
-
-{% if es_domingo %}
-<span class="badge bg-warning text-dark mb-2">Domingo</span>
-{% endif %}
-
-{% if not es_admin %}
-<p class="fw-bold">
-{{ misa.descripcion }}
-</p>
-{% endif %}
-
-{% if es_admin %}
-
-<input type="text"
-id="desc-{{ misa.id }}"
-class="form-control form-control-sm mb-2"
-value="{{ misa.descripcion }}">
-
-<button class="btn btn-sm btn-primary w-100 mb-2"
-onclick="guardarMisa({{ misa.id }})">
-💾 Guardar cambios
-</button>
-
-<!-- 🔥 NUEVOS BOTONES -->
-<div class="d-flex gap-2">
-
-<button class="btn btn-sm btn-warning w-50"
-onclick="editarHora({{ misa.id }})">
-✏️ Hora
-</button>
-
-<button class="btn btn-sm btn-danger w-50"
-onclick="eliminarMisa({{ misa.id }})">
-❌ Eliminar
-</button>
-
-</div>
-
-{% endif %}
-
-</div>
-</div>
-
-</div>
-
-{% endfor %}
-
-</div>
-</div>
-
-<script>
-
-// SUBIR CSV
-document.getElementById("formCalendario").addEventListener("submit", function(e) {
-    e.preventDefault();
-
-    const formData = new FormData(this);
-
-    fetch("/misas/cargar-calendario", {
-        method: "POST",
-        body: formData
-    })
-    .then(res => {
-        if (res.ok) {
-            alert("Calendario cargado correctamente");
-            location.reload();
-        } else {
-            alert("Error al subir el calendario");
+    if fiesta:
+        return {
+            "tiempo": "calendario",
+            "color": fiesta.color,
+            "celebracion": fiesta.nombre
         }
-    });
-});
 
+    year = fecha.year
+    pascua = calcular_pascua(year)
 
-// GUARDAR DESCRIPCIÓN
-function guardarMisa(id) {
+    nombres_dias = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"]
+    dia_semana = fecha.weekday()
 
-    const desc = document.getElementById(`desc-${id}`).value;
+    miercoles_ceniza = pascua - timedelta(days=46)
+    pentecostes = pascua + timedelta(days=49)
+    inicio_ordinario_post = pentecostes + timedelta(days=1)
 
-    fetch(`/misas/${id}`, {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            descripcion: desc
-        })
-    })
-    .then(res => {
-        if (res.ok) {
-            alert("Guardado correctamente");
-            location.reload();
-        } else {
-            alert("Error al guardar");
+    # CUARESMA
+    if miercoles_ceniza <= fecha < pascua:
+        return {
+            "tiempo": "cuaresma",
+            "color": "morado",
+            "celebracion": f"{nombres_dias[dia_semana]} de Cuaresma"
         }
-    });
-}
 
+    dias = (fecha - pascua).days
 
-// EDITAR HORA
-function editarHora(id) {
+    # PASCUA
+    if dias == 0:
+        return {"tiempo":"pascua","color":"blanco","celebracion":"Domingo de Pascua"}
 
-    const nuevaHora = prompt("Nueva hora (HH:MM):");
+    if 1 <= dias <= 6:
+        nombres = [
+            "Lunes de la Octava de Pascua",
+            "Martes de la Octava de Pascua",
+            "Miércoles de la Octava de Pascua",
+            "Jueves de la Octava de Pascua",
+            "Viernes de la Octava de Pascua",
+            "Sábado de la Octava de Pascua",
+        ]
+        return {"tiempo":"pascua","color":"blanco","celebracion":nombres[dias-1]}
 
-    if (!nuevaHora) return;
+    domingos = {
+        7:"II Domingo de Pascua",
+        14:"III Domingo de Pascua",
+        21:"IV Domingo de Pascua",
+        28:"V Domingo de Pascua",
+        35:"VI Domingo de Pascua",
+        42:"VII Domingo de Pascua",
+        49:"Domingo de Pentecostés"
+    }
 
-    fetch(`/misas/${id}`, {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            hora: nuevaHora
-        })
-    })
-    .then(res => {
-        if (res.ok) {
-            alert("Hora actualizada");
-            location.reload();
-        } else {
-            alert("Error al actualizar hora");
+    if dia_semana == 6 and dias in domingos:
+        return {"tiempo":"pascua","color":"blanco","celebracion":domingos[dias]}
+
+    if dias <= 49:
+        semana = ((dias - 7)//7)+2
+        return {
+            "tiempo":"pascua",
+            "color":"blanco",
+            "celebracion":f"{nombres_dias[dia_semana]} de la {numero_romano(semana)} Semana de Pascua"
         }
-    });
-}
+
+    # TIEMPO ORDINARIO
+    dias_post = (fecha - inicio_ordinario_post).days
+    semana_total = 8 + (dias_post // 7)
+
+    if dia_semana == 6:
+        semana_total += 1
+
+    return {
+        "tiempo":"ordinario",
+        "color":"verde",
+        "celebracion":f"{nombres_dias[dia_semana]} de la {numero_romano(semana_total)} Semana del Tiempo Ordinario"
+    }
 
 
-// ELIMINAR
-function eliminarMisa(id) {
+# =============================
+# 📋 LISTAR
+# =============================
+@router.get("/", response_model=list[schemas.MisaOut])
+def listar_misas(db: Session = Depends(get_db)):
 
-    if (!confirm("¿Eliminar esta misa?")) return;
+    result = db.query(models.Misa)\
+        .filter(models.Misa.parroquia_id == PARROQUIA_ID)\
+        .order_by(models.Misa.fecha.asc())\
+        .all()
 
-    fetch(`/misas/${id}`, {
-        method: "DELETE"
-    })
-    .then(res => {
-        if (res.ok) {
-            alert("Misa eliminada");
-            location.reload();
-        } else {
-            alert("Error al eliminar");
-        }
-    });
-}
+    for misa in result:
+        lit = obtener_liturgia(misa.fecha, db)
+        misa.tiempo = lit["tiempo"]
+        misa.color = lit["color"]
+        misa.descripcion = lit.get("celebracion", "Sin descripción")
+
+    return result
 
 
-// REGENERAR
-function regenerar() {
+# =============================
+# 🔁 REGENERAR
+# =============================
+@router.post("/regenerar", status_code=202)
+def regenerar_calendario(meses:int=Query(3),db:Session=Depends(get_db)):
 
-    if (!confirm("¿Seguro que quieres regenerar el calendario?")) return;
+    db.query(models.Misa).delete()
+    db.commit()
 
-    const meses = document.getElementById("meses").value;
+    generar_misas(db, semanas=meses*4, parroquia_id=PARROQUIA_ID)
 
-    fetch(`/misas/regenerar?meses=${meses}`, {
-        method: "POST"
-    })
-    .then(res => {
-        if (res.ok) {
-            alert("Calendario regenerado");
-            location.reload();
-        } else {
-            alert("Error al regenerar");
-        }
-    });
-}
+    return {"detail":"Calendario regenerado"}
 
-</script>
 
-</body>
-</html>
+# =============================
+# ✏️ EDITAR MISA (CORREGIDO)
+# =============================
+@router.put("/{misa_id}")
+def editar_misa(misa_id:int, datos:schemas.MisaUpdate, db:Session=Depends(get_db)):
+
+    misa = db.query(models.Misa).filter(models.Misa.id == misa_id).first()
+
+    if not misa:
+        raise HTTPException(404,"No encontrada")
+
+    if datos.fecha:
+        misa.fecha = datos.fecha
+
+    if datos.hora:
+        try:
+            h, m = map(int, datos.hora.split(":"))
+
+            nueva_fecha = datetime(
+                misa.fecha.year,
+                misa.fecha.month,
+                misa.fecha.day,
+                h,
+                m
+            )
+
+            misa.fecha = nueva_fecha
+
+        except:
+            raise HTTPException(400, "Formato de hora inválido")
+
+    if datos.descripcion is not None:
+        misa.descripcion = datos.descripcion
+
+    db.commit()
+    db.refresh(misa)
+
+    return {"ok":"actualizada"}
+
+
+# =============================
+# ❌ ELIMINAR
+# =============================
+@router.delete("/{misa_id}")
+def eliminar_misa(misa_id:int, db:Session=Depends(get_db)):
+
+    misa = db.query(models.Misa).filter(models.Misa.id == misa_id).first()
+
+    if not misa:
+        raise HTTPException(404,"No encontrada")
+
+    db.delete(misa)
+    db.commit()
+
+    return {"ok":"eliminada"}
