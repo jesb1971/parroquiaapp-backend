@@ -196,9 +196,8 @@ def listar_misas(db: Session = Depends(get_db)):
         misa.color = lit["color"]
 
         # 🔥 PRIORIDAD TOTAL AL TEXTO MANUAL
-        if misa.descripcion and misa.descripcion.strip():
+        if getattr(misa, "es_manual", False):
             continue
-
         # 🔹 Si está vacío o None → usar liturgia
         misa.descripcion = lit["celebracion"]
 
@@ -229,21 +228,19 @@ def editar_misa(misa_id: int, datos: schemas.MisaUpdate, db: Session = Depends(g
     if not misa:
         raise HTTPException(status_code=404, detail="Misa no encontrada")
 
+    # 🔥 GUARDAR DESCRIPCIÓN SIEMPRE
+    if datos.descripcion is not None:
+        misa.descripcion = datos.descripcion.strip()
+        misa.es_manual = True
+
+    # 🔹 ACTUALIZAR FECHA SI VIENE
     if datos.fecha:
         misa.fecha = datos.fecha
-
-        # 🔥 recalcular SIEMPRE al cambiar fecha
-        lit = obtener_liturgia(misa.fecha, db)
-        misa.descripcion = lit["celebracion"]
-
-    if datos.descripcion is not None:
-        misa.descripcion = datos.descripcion
 
     db.commit()
     db.refresh(misa)
 
     return {"ok": "Misa actualizada"}
-
 
 # =========================
 # ❌ ELIMINAR

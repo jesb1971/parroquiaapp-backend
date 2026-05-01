@@ -164,17 +164,21 @@ document.getElementById("formCalendario")?.addEventListener("submit", function(e
 // GUARDAR
 function guardarMisa(id) {
 
-    const desc = document.getElementById(`desc-${id}`).value;
+    const desc = document.getElementById(`desc-${id}`).value.trim();
 
     fetch(`/misas/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ descripcion: desc })
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            descripcion: desc
+        })
     })
     .then(res => {
         if (res.ok) {
             alert("Guardado correctamente");
-            location.reload();
+            window.location.href = window.location.href + "?t=" + new Date().getTime();
         } else {
             alert("Error al guardar");
         }

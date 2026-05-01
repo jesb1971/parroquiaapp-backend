@@ -77,15 +77,18 @@ class UserHabito(Base):
 # ─────────────────────────────────────────────────────────────
 # Módulo de Misas (Cruz del Señor)
 # ─────────────────────────────────────────────────────────────
+from sqlalchemy import Column, Integer, DateTime, String
+
 class Misa(Base):
     __tablename__ = "misas"
+
     id = Column(Integer, primary_key=True, index=True)
-    fecha = Column(DateTime, nullable=False)  # ← antes era fecha_hora
-    descripcion = Column(Text)
-    sacerdote = Column(String(120))
-    es_festiva = Column(Boolean, default=False)
-    parroquia_id = Column(Integer, ForeignKey("parroquias.id"))
-    creada_en = Column(DateTime, default=datetime.utcnow)
+    fecha = Column(DateTime, nullable=False)
+
+    # 🔥 AÑADIR ESTO
+    descripcion = Column(String, nullable=Tes_manual = Column(Boolean, default=False)  # 👈 AÑADE ESTOe)
+    es_manual = Column(Boolean, default=False)  # 👈 AÑADE ESTO
+    parroquia_id = Column(Integer, nullable=False)
 
 # ─────────────────────────────────────────────────────────────
 # Módulo de Avisos / Noticias
