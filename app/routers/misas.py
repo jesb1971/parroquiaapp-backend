@@ -86,7 +86,6 @@ def cargar_calendario(file: UploadFile = File(...), db: Session = Depends(get_db
 # =========================
 def obtener_liturgia(fecha: datetime, db: Session):
 
-    # PRIORIDAD CSV
     fiesta = db.query(models.FiestaParroquia).filter(
         models.FiestaParroquia.fecha == fecha.date(),
         models.FiestaParroquia.parroquia_id == PARROQUIA_ID
@@ -109,7 +108,6 @@ def obtener_liturgia(fecha: datetime, db: Session):
     pentecostes = pascua + timedelta(days=49)
     inicio_ordinario_post = pentecostes + timedelta(days=1)
 
-    # CUARESMA
     if miercoles_ceniza <= fecha < pascua:
         return {
             "tiempo": "cuaresma",
@@ -119,7 +117,6 @@ def obtener_liturgia(fecha: datetime, db: Session):
 
     dias = (fecha - pascua).days
 
-    # PASCUA
     if dias == 0:
         return {
             "tiempo": "pascua",
@@ -167,7 +164,6 @@ def obtener_liturgia(fecha: datetime, db: Session):
             "celebracion": f"{nombres_dias[dia_semana]} de la {numero_romano(semana)} Semana de Pascua"
         }
 
-    # TIEMPO ORDINARIO REAL
     dias_post = (fecha - inicio_ordinario_post).days
     semana = 8 + (dias_post // 7)
 
@@ -182,7 +178,7 @@ def obtener_liturgia(fecha: datetime, db: Session):
 
 
 # =========================
-# 📋 LISTAR
+# 📋 LISTAR (CORREGIDO)
 # =========================
 @router.get("/", response_model=list[schemas.MisaOut])
 def listar_misas(db: Session = Depends(get_db)):
@@ -193,9 +189,14 @@ def listar_misas(db: Session = Depends(get_db)):
         .all()
 
     for misa in misas:
+
         lit = obtener_liturgia(misa.fecha, db)
-        misa.descripcion = lit["celebracion"]
+
         misa.color = lit["color"]
+
+        # 🔥 SOLO SI NO TIENE DESCRIPCIÓN
+        if not misa.descripcion:
+            misa.descripcion = lit["celebracion"]
 
     return misas
 
@@ -225,16 +226,13 @@ def editar_misa(misa_id: int, datos: schemas.MisaUpdate, db: Session = Depends(g
     if not misa:
         raise HTTPException(status_code=404, detail="Misa no encontrada")
 
-    # 🔹 Actualizar fecha (incluye hora)
     if datos.fecha:
         misa.fecha = datos.fecha
 
-        # 🔥 SOLO recalcular si no hay descripción personalizada
-        if not datos.descripcion:
-            lit = obtener_liturgia(misa.fecha, db)
-            misa.descripcion = lit.get("celebracion")
+        # 🔥 recalcular SIEMPRE al cambiar fecha
+        lit = obtener_liturgia(misa.fecha, db)
+        misa.descripcion = lit["celebracion"]
 
-    # 🔹 Si el usuario escribe manualmente → manda él
     if datos.descripcion is not None:
         misa.descripcion = datos.descripcion
 
@@ -259,14 +257,19 @@ def eliminar_misa(misa_id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return {"ok": "Eliminada"}
-    
-    # ➕ CREAR MISA (manual)
+
+
+# =========================
+# ➕ CREAR
+# =========================
 @router.post("")
 def crear_misa(datos: schemas.MisaCreate, db: Session = Depends(get_db)):
 
+    lit = obtener_liturgia(datos.fecha, db)
+
     nueva_misa = models.Misa(
         fecha=datos.fecha,
-        descripcion=datos.descripcion or "",
+        descripcion=lit["celebracion"],
         parroquia_id=PARROQUIA_ID
     )
 
