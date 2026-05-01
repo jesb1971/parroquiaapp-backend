@@ -28,7 +28,6 @@ Horarios de misas – {{ parroquia.nombre }}
 <!-- 🔐 ADMIN -->
 {% if es_admin %}
 
-<!-- 🔥 FILA 1 (BOTÓN CSV SOLO) -->
 <div class="mb-2 text-end">
     <form id="formCalendario" enctype="multipart/form-data" class="d-inline-flex gap-2">
         <input type="file" name="file" accept=".csv"
@@ -40,7 +39,6 @@ Horarios de misas – {{ parroquia.nombre }}
     </form>
 </div>
 
-<!-- 🔥 FILA 2 -->
 <div class="d-flex justify-content-end align-items-center gap-2 mb-3">
 
     <select id="meses" class="form-select form-select-sm" style="width:150px;">
@@ -92,15 +90,32 @@ Horarios de misas – {{ parroquia.nombre }}
 {% endif %}
 
 {% if es_admin %}
+
 <input type="text"
 id="desc-{{ misa.id }}"
 class="form-control form-control-sm mb-2"
 value="{{ misa.descripcion }}">
 
-<button class="btn btn-sm btn-primary w-100"
+<button class="btn btn-sm btn-primary w-100 mb-2"
 onclick="guardarMisa({{ misa.id }})">
 💾 Guardar cambios
 </button>
+
+<!-- 🔥 NUEVOS BOTONES -->
+<div class="d-flex gap-2">
+
+<button class="btn btn-sm btn-warning w-50"
+onclick="editarHora({{ misa.id }})">
+✏️ Hora
+</button>
+
+<button class="btn btn-sm btn-danger w-50"
+onclick="eliminarMisa({{ misa.id }})">
+❌ Eliminar
+</button>
+
+</div>
+
 {% endif %}
 
 </div>
@@ -115,7 +130,7 @@ onclick="guardarMisa({{ misa.id }})">
 
 <script>
 
-// 🔥 SUBIR CSV (CLAVE - ESTO FALTABA)
+// SUBIR CSV
 document.getElementById("formCalendario").addEventListener("submit", function(e) {
     e.preventDefault();
 
@@ -128,27 +143,23 @@ document.getElementById("formCalendario").addEventListener("submit", function(e)
     .then(res => {
         if (res.ok) {
             alert("Calendario cargado correctamente");
+            location.reload();
         } else {
             alert("Error al subir el calendario");
         }
-    })
-    .catch(err => {
-        alert("Error de conexión");
-        console.error(err);
     });
 });
 
 
-// GUARDAR
+// GUARDAR DESCRIPCIÓN
 function guardarMisa(id) {
 
     const desc = document.getElementById(`desc-${id}`).value;
 
     fetch(`/misas/${id}`, {
-        method: "PATCH",
+        method: "PUT",
         headers: {
-            "Content-Type": "application/json",
-            "x-admin": "1234"
+            "Content-Type": "application/json"
         },
         body: JSON.stringify({
             descripcion: desc
@@ -160,6 +171,52 @@ function guardarMisa(id) {
             location.reload();
         } else {
             alert("Error al guardar");
+        }
+    });
+}
+
+
+// EDITAR HORA
+function editarHora(id) {
+
+    const nuevaHora = prompt("Nueva hora (HH:MM):");
+
+    if (!nuevaHora) return;
+
+    fetch(`/misas/${id}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            hora: nuevaHora
+        })
+    })
+    .then(res => {
+        if (res.ok) {
+            alert("Hora actualizada");
+            location.reload();
+        } else {
+            alert("Error al actualizar hora");
+        }
+    });
+}
+
+
+// ELIMINAR
+function eliminarMisa(id) {
+
+    if (!confirm("¿Eliminar esta misa?")) return;
+
+    fetch(`/misas/${id}`, {
+        method: "DELETE"
+    })
+    .then(res => {
+        if (res.ok) {
+            alert("Misa eliminada");
+            location.reload();
+        } else {
+            alert("Error al eliminar");
         }
     });
 }
