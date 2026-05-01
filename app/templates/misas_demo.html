@@ -164,7 +164,7 @@ document.getElementById("formCalendario")?.addEventListener("submit", function(e
 // GUARDAR
 function guardarMisa(id) {
 
-    const desc = document.getElementById(`desc-${id}`).value.trim();
+    const desc = document.getElementById(`desc-${id}`).value;
 
     fetch(`/misas/${id}`, {
         method: "PUT",
@@ -186,6 +186,7 @@ function editarMisaCompleta(id) {
 
     const fecha = document.getElementById(`fecha-${id}`)?.value;
     const hora = document.getElementById(`hora-${id}`)?.value;
+    const desc = document.getElementById(`desc-${id}`)?.value;
 
     if (!fecha || !hora) {
         alert("Fecha y hora obligatorias");
@@ -196,13 +197,18 @@ function editarMisaCompleta(id) {
 
     fetch(`/misas/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fecha: fechaCompleta })
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            fecha: fechaCompleta,
+            descripcion: desc   // 🔥 ESTA ES LA CLAVE
+        })
     })
     .then(res => {
         if (res.ok) {
             alert("Misa actualizada correctamente");
-            location.reload();
+            window.location.href = window.location.href + "?t=" + new Date().getTime();
         } else {
             alert("Error al actualizar");
         }
