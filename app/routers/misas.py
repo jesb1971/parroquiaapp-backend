@@ -190,16 +190,16 @@ def listar_misas(db: Session = Depends(get_db)):
 
     for misa in misas:
 
-    lit = obtener_liturgia(misa.fecha, db)
+        lit = obtener_liturgia(misa.fecha, db)
 
-    misa.color = lit["color"]
+        misa.color = lit["color"]
 
-    # 🔥 PRIORIDAD ABSOLUTA: lo que escriba el usuario
-    if misa.descripcion and misa.descripcion.strip() != "":
-        continue
+        # 🔥 PRIORIDAD ABSOLUTA: lo que escriba el usuario
+        if misa.descripcion and misa.descripcion.strip() != "":
+            continue
 
-    # 🔹 si no hay nada, usa liturgia (CSV o automática)
-    misa.descripcion = lit["celebracion"]
+        # 🔹 si no hay nada, usa liturgia (CSV o automática)
+        misa.descripcion = lit["celebracion"]
 
     return misas
 
