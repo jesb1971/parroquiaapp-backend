@@ -259,3 +259,19 @@ def eliminar_misa(misa_id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return {"ok": "Eliminada"}
+    
+    # ➕ CREAR MISA (manual)
+@router.post("")
+def crear_misa(datos: schemas.MisaCreate, db: Session = Depends(get_db)):
+
+    nueva_misa = models.Misa(
+        fecha=datos.fecha,
+        descripcion=datos.descripcion or "",
+        parroquia_id=PARROQUIA_ID
+    )
+
+    db.add(nueva_misa)
+    db.commit()
+    db.refresh(nueva_misa)
+
+    return {"ok": "Misa creada"}
