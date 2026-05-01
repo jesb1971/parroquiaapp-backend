@@ -180,7 +180,7 @@ def obtener_liturgia(fecha: datetime, db: Session):
 # =========================
 # 📋 LISTAR (CORREGIDO)
 # =========================
-@@router.get("/", response_model=list[schemas.MisaOut])
+@router.get("/", response_model=list[schemas.MisaOut])
 def listar_misas(db: Session = Depends(get_db)):
 
     misas = db.query(models.Misa)\
@@ -195,7 +195,7 @@ def listar_misas(db: Session = Depends(get_db)):
         # Siempre actualiza el color
         misa.color = lit["color"]
 
-        # 🔥 PRIORIDAD TOTAL AL TEXTO MANUAL (bien validado)
+        # 🔥 PRIORIDAD TOTAL AL TEXTO MANUAL
         if misa.descripcion and misa.descripcion.strip():
             continue
 
