@@ -85,10 +85,21 @@ Cerrar sesión
 <span class="badge bg-warning text-dark mb-2">Domingo</span>
 {% endif %}
 
+<!-- 🔥 NUEVA VISUALIZACIÓN LIMPIA -->
 {% if not es_admin %}
-<p class="fw-bold">
-{{ misa.descripcion }}
+
+{% set partes = misa.descripcion.split('|') %}
+
+<p class="fw-bold mb-1">
+{{ partes[0] }}
 </p>
+
+{% if partes|length > 1 %}
+<span class="badge bg-light text-dark">
+{{ partes[1] }}
+</span>
+{% endif %}
+
 {% endif %}
 
 {% if es_admin %}
@@ -103,7 +114,6 @@ onclick="guardarMisa({{ misa.id }})">
 💾 Guardar cambios
 </button>
 
-<!-- 🔥 BLOQUE CORREGIDO -->
 <div class="mb-2">
 
 <input type="date"
@@ -178,14 +188,14 @@ function guardarMisa(id) {
     .then(res => {
         if (res.ok) {
             alert("Guardado correctamente");
-            window.location.href = window.location.href + "?t=" + new Date().getTime();
+            location.reload();
         } else {
             alert("Error al guardar");
         }
     });
 }
 
-// EDITAR FECHA + HORA
+// EDITAR
 function editarMisaCompleta(id) {
 
     const fecha = document.getElementById(`fecha-${id}`)?.value;
@@ -206,13 +216,13 @@ function editarMisaCompleta(id) {
         },
         body: JSON.stringify({
             fecha: fechaCompleta,
-            descripcion: desc   // 🔥 ESTA ES LA CLAVE
+            descripcion: desc
         })
     })
     .then(res => {
         if (res.ok) {
             alert("Misa actualizada correctamente");
-            window.location.href = window.location.href + "?t=" + new Date().getTime();
+            location.reload();
         } else {
             alert("Error al actualizar");
         }
