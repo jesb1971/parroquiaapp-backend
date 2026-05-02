@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from ..db import get_db
 from .. import models
+from app.routers.misas import obtener_liturgia  # 🔥 IMPORTANTE
 
 router = APIRouter(tags=["frontend"])
 templates = Jinja2Templates(directory="app/templates")
@@ -29,23 +30,21 @@ def demo_misas(request: Request, db: Session = Depends(get_db)):
         .all()
     )
 
-    # 🔥 SOLO aplicar color y liturgia SI EXISTE CALENDARIO
-   for misa in misas:
-    lit = obtener_liturgia(misa.fecha, db)
+    # 🔥 APLICAR LITURGIA CORRECTAMENTE
+    for misa in misas:
+        lit = obtener_liturgia(misa.fecha, db)
 
-    # ✔ color siempre
-    misa.color = lit.get("color", "blanco")
+        # ✔ color siempre
+        misa.color = lit.get("color", "blanco")
 
-    celebracion = lit.get("celebracion", "").strip()
+        celebracion = lit.get("celebracion", "").strip()
 
-    # 🔥 evitar duplicados y textos raros
-    if celebracion:
-        if misa.descripcion and misa.descripcion.strip():
-            # evitar duplicar si ya contiene la liturgia
-            if celebracion not in misa.descripcion:
-                misa.descripcion = f"{misa.descripcion} | 🎉 {celebracion}"
-        else:
-            misa.descripcion = f"🎉 {celebracion}"
+        if celebracion:
+            if misa.descripcion and misa.descripcion.strip():
+                if celebracion not in misa.descripcion:
+                    misa.descripcion = f"{misa.descripcion} | 🎉 {celebracion}"
+            else:
+                misa.descripcion = f"🎉 {celebracion}"
 
     return templates.TemplateResponse(
         "misas_demo.html",
