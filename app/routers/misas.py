@@ -259,39 +259,3 @@ def eliminar_misa(misa_id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return {"ok": "Eliminada"}
-
-
-# =========================
-# ➕ CREAR
-# =========================
-function crearMisa() {
-
-    const fecha = prompt("Fecha (YYYY-MM-DD):");
-    if (!fecha) return;
-
-    const hora = prompt("Hora (HH:MM):");
-    if (!hora) return;
-
-    const descripcion = prompt("Descripción de la misa:");
-    
-    const fechaCompleta = fecha + "T" + hora + ":00";
-
-    fetch("/misas", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            fecha: fechaCompleta,
-            descripcion: descripcion
-        })
-    })
-    .then(res => {
-        if (res.ok) {
-            alert("Misa creada correctamente");
-            location.reload();
-        } else {
-            alert("Error al crear misa");
-        }
-    });
-}
