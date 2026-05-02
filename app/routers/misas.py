@@ -192,12 +192,19 @@ def listar_misas(db: Session = Depends(get_db)):
 
         lit = obtener_liturgia(misa.fecha, db)
 
-        # Siempre color
-        misa.color = lit["color"]
+        # ✔ color siempre
+        misa.color = lit.get("color", "blanco")
 
-        # 🔥 SOLO si está vacío → liturgia
-        if not (misa.descripcion and misa.descripcion.strip()):
-            misa.descripcion = lit["celebracion"]
+        # ✔ descripción litúrgica
+        descripcion_liturgica = lit.get("celebracion", "")
+
+        # 🔥 LÓGICA DEFINITIVA
+        if misa.descripcion and misa.descripcion.strip():
+            # combinar manual + liturgia
+            misa.descripcion = f"{misa.descripcion} | 🎉 {descripcion_liturgica}"
+        else:
+            # solo liturgia
+            misa.descripcion = f"🎉 {descripcion_liturgica}"
 
     return misas
     
