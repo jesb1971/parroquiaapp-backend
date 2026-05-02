@@ -13,7 +13,6 @@ templates = Jinja2Templates(directory="app/templates")
 @router.get("/demo", response_class=HTMLResponse)
 def demo_misas(request: Request, db: Session = Depends(get_db)):
 
-    # 🔐 comprobar login
     admin_cookie = request.cookies.get("admin", "0")
 
     parroquia = (
@@ -30,9 +29,21 @@ def demo_misas(request: Request, db: Session = Depends(get_db)):
         .all()
     )
 
-    # 🔥 IMPORTANTE:
-    # NO tocar liturgia aquí
-    # ya viene calculada desde el backend (misas.py)
+    # 🔥 SOLO aplicar color y liturgia SI EXISTE CALENDARIO
+    for misa in misas:
+        lit = obtener_liturgia(misa.fecha, db)
+
+        misa.color = lit.get("color", "blanco")
+
+        # 🔥 SOLO añadir liturgia si viene del calendario o cálculo
+        if "celebracion" in lit:
+
+            if misa.descripcion and misa.descripcion.strip():
+                # combinar
+                misa.descripcion = f"{misa.descripcion} | 🎉 {lit['celebracion']}"
+            else:
+                # solo liturgia
+                misa.descripcion = f"🎉 {lit['celebracion']}"
 
     return templates.TemplateResponse(
         "misas_demo.html",
