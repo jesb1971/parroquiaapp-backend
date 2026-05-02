@@ -36,10 +36,13 @@ def demo_misas(request: Request, db: Session = Depends(get_db)):
         lit = obtener_liturgia(misa.fecha, db)
         misa.color = lit["color"]
 
-        # 🔥 SOLO si NO tiene descripción → usar liturgia
-        if not (misa.descripcion and misa.descripcion.strip()):
-            if "celebracion" in lit:
-                misa.descripcion = f"🎉 {lit['celebracion']}"
+        # 🎯 LÓGICA LIMPIA (DENTRO DEL FOR)
+        if misa.descripcion and misa.descripcion.strip():
+            # texto manual → respetar
+            pass
+        else:
+            # sin texto → usar liturgia
+            misa.descripcion = lit["celebracion"]
 
     return templates.TemplateResponse(
         "misas_demo.html",
