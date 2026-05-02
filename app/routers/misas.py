@@ -198,12 +198,12 @@ def listar_misas(db: Session = Depends(get_db)):
         # ✔ descripción litúrgica
         descripcion_liturgica = lit.get("celebracion", "")
 
-        # 🔥 LÓGICA DEFINITIVA
+        # 🔥 LÓGICA DEFINITIVA (CORRECTAMENTE INDENTADA)
         if misa.descripcion and misa.descripcion.strip():
-            # combinar manual + liturgia
-            misa.descripcion = f"{misa.descripcion} | 🎉 {descripcion_liturgica}"
+            # 🔥 SI es manual → respetar SIN modificar
+            pass
         else:
-            # solo liturgia
+            # 🔥 SI está vacío → aplicar liturgia
             misa.descripcion = f"🎉 {descripcion_liturgica}"
 
     return misas
