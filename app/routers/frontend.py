@@ -36,12 +36,14 @@ def demo_misas(request: Request, db: Session = Depends(get_db)):
     # ✔ color siempre
     misa.color = lit.get("color", "blanco")
 
-    # ✔ asegurar que existe celebracion
-    celebracion = lit.get("celebracion")
+    celebracion = lit.get("celebracion", "").strip()
 
+    # 🔥 evitar duplicados y textos raros
     if celebracion:
         if misa.descripcion and misa.descripcion.strip():
-            misa.descripcion = f"{misa.descripcion} | 🎉 {celebracion}"
+            # evitar duplicar si ya contiene la liturgia
+            if celebracion not in misa.descripcion:
+                misa.descripcion = f"{misa.descripcion} | 🎉 {celebracion}"
         else:
             misa.descripcion = f"🎉 {celebracion}"
 
