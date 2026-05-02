@@ -228,14 +228,14 @@ def editar_misa(misa_id: int, datos: schemas.MisaUpdate, db: Session = Depends(g
     if not misa:
         raise HTTPException(status_code=404, detail="Misa no encontrada")
 
-    # 🔥 GUARDAR DESCRIPCIÓN SIEMPRE
-    if datos.descripcion is not None:
-        misa.descripcion = datos.descripcion.strip()
-        misa.es_manual = True
-
-    # 🔹 ACTUALIZAR FECHA SI VIENE
+    # 🔹 Si cambia fecha
     if datos.fecha:
         misa.fecha = datos.fecha
+
+    # 🔥 CLAVE: si el usuario escribe → marcar como manual
+    if datos.descripcion is not None:
+        misa.descripcion = datos.descripcion
+        misa.es_manual = True
 
     db.commit()
     db.refresh(misa)
