@@ -43,11 +43,14 @@ class MisaUpdate(BaseModel):
     es_festiva: Optional[bool] = None
     hora: str | None = None   # 🔥 ESTE ES EL QUE FALTA
 
-class MisaOut(MisaBase):
+from pydantic import BaseModel
+from datetime import datetime
+
+class MisaOut(BaseModel):
     id: int
+    fecha: datetime
     descripcion: str | None = None
     color: str | None = None
-    creada_en: datetime
 
     class Config:
         from_attributes = True
