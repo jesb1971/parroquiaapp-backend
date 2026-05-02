@@ -34,7 +34,7 @@ def demo_misas(request: Request, db: Session = Depends(get_db)):
     # 🔥 APLICAR LITURGIA (CLAVE)
     for misa in misas:
         lit = obtener_liturgia(misa.fecha, db)
-        misa.color = lit["color"]
+        misa.color = lit.get("color", "blanco")
 
         # 🎯 LÓGICA LIMPIA (DENTRO DEL FOR)
         if misa.descripcion and misa.descripcion.strip():
