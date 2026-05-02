@@ -244,16 +244,23 @@ function crearMisa() {
     const hora = prompt("Hora (HH:MM):");
     if (!hora) return;
 
+    const descripcion = prompt("Descripción de la misa:");
+    
     const fechaCompleta = fecha + "T" + hora + ":00";
 
     fetch("/misas", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fecha: fechaCompleta })
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            fecha: fechaCompleta,
+            descripcion: descripcion
+        })
     })
     .then(res => {
         if (res.ok) {
-            alert("Misa creada");
+            alert("Misa creada correctamente");
             location.reload();
         } else {
             alert("Error al crear misa");

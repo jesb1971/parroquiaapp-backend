@@ -264,19 +264,34 @@ def eliminar_misa(misa_id: int, db: Session = Depends(get_db)):
 # =========================
 # ➕ CREAR
 # =========================
-@router.post("")
-def crear_misa(datos: schemas.MisaCreate, db: Session = Depends(get_db)):
+function crearMisa() {
 
-    lit = obtener_liturgia(datos.fecha, db)
+    const fecha = prompt("Fecha (YYYY-MM-DD):");
+    if (!fecha) return;
 
-    nueva_misa = models.Misa(
-        fecha=datos.fecha,
-        descripcion=lit["celebracion"],
-        parroquia_id=PARROQUIA_ID
-    )
+    const hora = prompt("Hora (HH:MM):");
+    if (!hora) return;
 
-    db.add(nueva_misa)
-    db.commit()
-    db.refresh(nueva_misa)
+    const descripcion = prompt("Descripción de la misa:");
+    
+    const fechaCompleta = fecha + "T" + hora + ":00";
 
-    return {"ok": "Misa creada"}
+    fetch("/misas", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            fecha: fechaCompleta,
+            descripcion: descripcion
+        })
+    })
+    .then(res => {
+        if (res.ok) {
+            alert("Misa creada correctamente");
+            location.reload();
+        } else {
+            alert("Error al crear misa");
+        }
+    });
+}
