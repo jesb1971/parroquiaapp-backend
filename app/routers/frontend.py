@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from ..db import get_db
 from .. import models
-from app.routers.misas import obtener_liturgia, listar_misas  # 🔥 AÑADIDO listar_misas
+from app.routers.misas import listar_misas  # 🔥 SOLO esto, quitamos obtener_liturgia
 
 router = APIRouter(tags=["frontend"])
 templates = Jinja2Templates(directory="app/templates")
@@ -22,23 +22,10 @@ def demo_misas(request: Request, db: Session = Depends(get_db)):
         .first()
     )
 
-    # 🔥 CAMBIO CLAVE: usar la lógica del backend
+    # 🔥 USAR SOLO LA LÓGICA DEL BACKEND
     misas = listar_misas(db)
 
-    # 🔥 APLICAR LITURGIA (lo dejamos de momento, no lo tocamos aún)
-    for misa in misas:
-        lit = obtener_liturgia(misa.fecha, db)
-
-        misa.color = lit.get("color", "blanco")
-
-        celebracion = lit.get("celebracion", "").strip()
-
-        if celebracion:
-            if misa.descripcion and misa.descripcion.strip():
-                if celebracion not in misa.descripcion:
-                    misa.descripcion = f"{misa.descripcion} | 🎉 {celebracion}"
-            else:
-                misa.descripcion = f"🎉 {celebracion}"
+    # 🔥 NO tocar liturgia aquí
 
     return templates.TemplateResponse(
         "misas_demo.html",
