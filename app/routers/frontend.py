@@ -30,20 +30,20 @@ def demo_misas(request: Request, db: Session = Depends(get_db)):
     )
 
     # 🔥 SOLO aplicar color y liturgia SI EXISTE CALENDARIO
-    for misa in misas:
-        lit = obtener_liturgia(misa.fecha, db)
+   for misa in misas:
+    lit = obtener_liturgia(misa.fecha, db)
 
-        misa.color = lit.get("color", "blanco")
+    # ✔ color siempre
+    misa.color = lit.get("color", "blanco")
 
-        # 🔥 SOLO añadir liturgia si viene del calendario o cálculo
-        if "celebracion" in lit:
+    # ✔ asegurar que existe celebracion
+    celebracion = lit.get("celebracion")
 
-            if misa.descripcion and misa.descripcion.strip():
-                # combinar
-                misa.descripcion = f"{misa.descripcion} | 🎉 {lit['celebracion']}"
-            else:
-                # solo liturgia
-                misa.descripcion = f"🎉 {lit['celebracion']}"
+    if celebracion:
+        if misa.descripcion and misa.descripcion.strip():
+            misa.descripcion = f"{misa.descripcion} | 🎉 {celebracion}"
+        else:
+            misa.descripcion = f"🎉 {celebracion}"
 
     return templates.TemplateResponse(
         "misas_demo.html",
