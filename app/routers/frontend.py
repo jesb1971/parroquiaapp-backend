@@ -31,18 +31,21 @@ def demo_misas(request: Request, db: Session = Depends(get_db)):
         .all()
     )
 
-    # 🔥 APLICAR LITURGIA (CLAVE)
+    # 🔥 APLICAR LITURGIA (CORRECTO Y COMPLETO)
     for misa in misas:
         lit = obtener_liturgia(misa.fecha, db)
+
+        # ✔ color siempre
         misa.color = lit.get("color", "blanco")
 
-        # 🎯 LÓGICA LIMPIA (DENTRO DEL FOR)
+        # ✔ descripción litúrgica
+        descripcion_liturgica = f"🎉 {lit['celebracion']}" if "celebracion" in lit else ""
+
+        # ✔ combinar con tipo de misa (lo que viene de BD)
         if misa.descripcion and misa.descripcion.strip():
-            # texto manual → respetar
-            pass
+            misa.descripcion = f"{misa.descripcion} | {descripcion_liturgica}"
         else:
-            # sin texto → usar liturgia
-            misa.descripcion = f"🎉 {lit['celebracion']}"
+            misa.descripcion = descripcion_liturgica
 
     return templates.TemplateResponse(
         "misas_demo.html",
