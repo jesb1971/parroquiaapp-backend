@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends, Request
+ fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from ..db import get_db
-from .. import models
+from .. import 
 from app.routers.misas import obtener_liturgia  # 🔥 IMPORTANTE
 
 router = APIRouter(tags=["frontend"])
@@ -36,8 +36,10 @@ def demo_misas(request: Request, db: Session = Depends(get_db)):
         lit = obtener_liturgia(misa.fecha, db)
         misa.color = lit["color"]
 
-        if "celebracion" in lit:
-            misa.descripcion = f"🎉 {lit['celebracion']}"
+        # 🔥 SOLO si NO tiene descripción → usar liturgia
+        if not (misa.descripcion and misa.descripcion.strip()):
+            if "celebracion" in lit:
+                misa.descripcion = f"🎉 {lit['celebracion']}"
 
     return templates.TemplateResponse(
         "misas_demo.html",
