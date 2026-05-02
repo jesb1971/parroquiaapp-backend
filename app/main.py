@@ -40,3 +40,23 @@ def root():
 @app.get("/app", response_class=HTMLResponse)
 def app_home(request: Request):
     return templates.TemplateResponse("home_demo.html", {"request": request})
+    
+import shutil
+import os
+from datetime import datetime
+
+def backup_db():
+    try:
+        origen = "/var/data/parroquia.db"
+        destino = f"/var/data/backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
+        
+        if os.path.exists(origen):
+            shutil.copy(origen, destino)
+            print(f"Backup creado: {destino}")
+    except Exception as e:
+        print("Error backup:", e)
+
+
+@app.on_event("shutdown")
+def shutdown_event():
+    backup_db()
