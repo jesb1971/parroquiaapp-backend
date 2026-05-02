@@ -196,12 +196,14 @@ def listar_misas(db: Session = Depends(get_db)):
         misa.color = lit["color"]
 
         # 🔥 PRIORIDAD TOTAL AL TEXTO MANUAL
-        if getattr(misa, "es_manual", False):
+        # 🔥 SI YA TIENE DESCRIPCIÓN → NO TOCAR
+        if misa.descripcion and misa.descripcion.strip(     ):
             continue
-        # 🔹 Si está vacío o None → usar liturgia
+
+        # 🔹 SI ESTÁ VACÍA → usar liturgia
         misa.descripcion = lit["celebracion"]
 
-    return misas
+        return misas
     
 # =========================
 # 🔄 REGENERAR
