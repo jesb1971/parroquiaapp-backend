@@ -203,7 +203,7 @@ def listar_misas(db: Session = Depends(get_db)):
         # 🔹 SI ESTÁ VACÍA → usar liturgia
         misa.descripcion = lit["celebracion"]
 
-        return misas
+    return misas
     
 # =========================
 # 🔄 REGENERAR
