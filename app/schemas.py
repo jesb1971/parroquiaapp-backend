@@ -45,6 +45,8 @@ class MisaUpdate(BaseModel):
 
 class MisaOut(MisaBase):
     id: int
+    descripcion: str | None = None
+    color: str | None = None
     creada_en: datetime
 
     class Config:
