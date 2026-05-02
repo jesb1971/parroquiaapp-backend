@@ -42,7 +42,7 @@ def demo_misas(request: Request, db: Session = Depends(get_db)):
             pass
         else:
             # sin texto → usar liturgia
-            misa.descripcion = lit["celebracion"]
+            misa.descripcion = f"🎉 {lit['celebracion']}"
 
     return templates.TemplateResponse(
         "misas_demo.html",
