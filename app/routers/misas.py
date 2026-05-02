@@ -178,7 +178,7 @@ def obtener_liturgia(fecha: datetime, db: Session):
 
 
 # =========================
-# 📋 LISTAR (CORREGIDO BIEN)
+# 📋 LISTAR (ESTABLE)
 # =========================
 @router.get("/", response_model=list[schemas.MisaOut])
 def listar_misas(db: Session = Depends(get_db)):
@@ -195,16 +195,17 @@ def listar_misas(db: Session = Depends(get_db)):
         # ✔ color siempre
         misa.color = lit.get("color", "blanco")
 
-        # ✔ descripción litúrgica
-        descripcion_liturgica = lit.get("celebracion", "")
+        # ✔ celebración litúrgica
+        celebracion = lit.get("celebracion", "")
 
-        # 🔥 LÓGICA DEFINITIVA (CORRECTAMENTE INDENTADA)
-        if misa.descripcion and misa.descripcion.strip():
-            # 🔥 SI es manual → respetar SIN modificar
-            pass
-        else:
-            # 🔥 SI está vacío → aplicar liturgia
-            misa.descripcion = f"🎉 {descripcion_liturgica}"
+        # 🔥 VOLVEMOS A LO QUE FUNCIONABA
+        if celebracion:
+            if misa.descripcion and misa.descripcion.strip():
+                # combinar tipo misa + liturgia
+                if celebracion not in misa.descripcion:
+                    misa.descripcion = f"{misa.descripcion} | 🎉 {celebracion}"
+            else:
+                misa.descripcion = f"🎉 {celebracion}"
 
     return misas
     
