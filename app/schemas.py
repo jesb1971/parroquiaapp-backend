@@ -60,6 +60,11 @@ class MisaOut(BaseModel):
 # Avisos / Noticias
 # ─────────────────────────────────────────────────────────────
 
+from pydantic import BaseModel
+from datetime import datetime
+from typing import Optional
+
+
 class AvisoOut(BaseModel):
     id: int
     titulo: str
@@ -69,3 +74,9 @@ class AvisoOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class AvisoCreate(BaseModel):
+    titulo: str
+    cuerpo: str
+    parroquia_id: Optional[int] = None

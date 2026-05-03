@@ -29,3 +29,20 @@ def crear_aviso_demo(db: Session = Depends(get_db)):
     db.commit()
     db.refresh(aviso)
     return aviso
+    
+@router.post("/", response_model=schemas.AvisoOut)
+def crear_aviso(aviso: schemas.AvisoCreate, db: Session = Depends(get_db)):
+    """Crea un aviso real desde datos enviados (formulario o API)."""
+    
+    nuevo_aviso = models.Aviso(
+        titulo=aviso.titulo,
+        cuerpo=aviso.cuerpo,
+        publicado_at=datetime.utcnow(),
+        parroquia_id=aviso.parroquia_id,
+    )
+
+    db.add(nuevo_aviso)
+    db.commit()
+    db.refresh(nuevo_aviso)
+
+    return nuevo_aviso
