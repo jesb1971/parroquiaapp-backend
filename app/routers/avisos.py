@@ -46,3 +46,15 @@ def crear_aviso(aviso: schemas.AvisoCreate, db: Session = Depends(get_db)):
     db.refresh(nuevo_aviso)
 
     return nuevo_aviso
+    
+@router.delete("/{aviso_id}")
+def eliminar_aviso(aviso_id: int, db: Session = Depends(get_db)):
+    aviso = db.query(models.Aviso).filter(models.Aviso.id == aviso_id).first()
+
+    if not aviso:
+        return {"error": "Aviso no encontrado"}
+
+    db.delete(aviso)
+    db.commit()
+
+    return {"mensaje": "Aviso eliminado"}

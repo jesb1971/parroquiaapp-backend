@@ -60,6 +60,12 @@ async function cargarAvisos() {
             <strong>${aviso.titulo}</strong><br>
             ${aviso.cuerpo}<br>
             <small>${new Date(aviso.publicado_at).toLocaleString()}</small>
+
+            <div class="mt-2">
+                <button class="btn btn-sm btn-danger" onclick="eliminarAviso(${aviso.id})">
+                    🗑 Eliminar
+                </button>
+            </div>
         `;
 
         lista.appendChild(li);
@@ -97,6 +103,29 @@ async function crearAviso() {
             cargarAvisos();
         } else {
             alert("❌ Error al crear el aviso");
+        }
+
+    } catch (error) {
+        alert("❌ Error de conexión");
+    }
+}
+
+async function eliminarAviso(id) {
+
+    if (!confirm("¿Seguro que quieres eliminar este aviso?")) {
+        return;
+    }
+
+    try {
+        const res = await fetch(API_URL + id, {
+            method: "DELETE"
+        });
+
+        if (res.ok) {
+            alert("🗑 Aviso eliminado");
+            cargarAvisos();
+        } else {
+            alert("❌ Error al eliminar");
         }
 
     } catch (error) {
