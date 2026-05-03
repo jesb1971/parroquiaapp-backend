@@ -68,3 +68,7 @@ def admin_panel(request: Request):
 @app.get("/admin/avisos", response_class=HTMLResponse)
 def admin_avisos(request: Request):
     return templates.TemplateResponse("admin_avisos.html", {"request": request})
+    
+@app.get("/avisos-publicos", response_class=HTMLResponse)
+def avisos_publicos(request: Request):
+    return templates.TemplateResponse("avisos_publicos.html", {"request": request})
