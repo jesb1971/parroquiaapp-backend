@@ -58,3 +58,12 @@ def eliminar_aviso(aviso_id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return {"mensaje": "Aviso eliminado"}
+
+@router.get("/{aviso_id}")
+def obtener_aviso(aviso_id: int, db: Session = Depends(get_db)):
+    aviso = db.query(models.Aviso).filter(models.Aviso.id == aviso_id).first()
+
+    if not aviso:
+        return {"error": "Aviso no encontrado"}
+
+    return aviso

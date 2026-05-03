@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aviso</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-50 text-gray-800">
+
+<div class="max-w-2xl mx-auto py-6 px-4">
+
+    <a href="/avisos-publicos" class="text-sm text-gray-500 hover:underline">← Volver</a>
+
+    <div id="detalleAviso" class="mt-4 bg-white p-4 rounded-lg shadow-sm"></div>
+
+</div>
+
+<script>
+const avisoId = "{{ aviso_id }}";
+
+async function cargarDetalle() {
+    try {
+        const res = await fetch("/avisos/" + avisoId);
+        const aviso = await res.json();
+
+        const contenedor = document.getElementById("detalleAviso");
+
+        if (aviso.error) {
+            contenedor.innerHTML = "<p>No encontrado</p>";
+            return;
+        }
+
+        contenedor.innerHTML = `
+            <h2 class="text-xl font-bold text-blue-700">${aviso.titulo}</h2>
+            <p class="text-gray-600 mt-2">${aviso.cuerpo}</p>
+            <p class="text-xs text-gray-400 mt-3">
+                ${new Date(aviso.publicado_at).toLocaleString()}
+            </p>
+        `;
+
+    } catch (error) {
+        console.error("Error");
+    }
+}
+
+cargarDetalle();
+</script>
+
+</body>
+</html>
