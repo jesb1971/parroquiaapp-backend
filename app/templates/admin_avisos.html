@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestión de Avisos</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+
+<div class="container py-4">
+
+<h2 class="mb-4 text-center">📢 Gestión de Avisos</h2>
+
+<!-- FORMULARIO -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h5>Crear Aviso</h5>
+
+        <input type="text" id="titulo" class="form-control mb-2" placeholder="Título">
+        <textarea id="cuerpo" class="form-control mb-2" placeholder="Descripción"></textarea>
+
+        <button onclick="crearAviso()" class="btn btn-primary w-100">
+            Crear Aviso
+        </button>
+    </div>
+</div>
+
+<!-- LISTA -->
+<div class="card">
+    <div class="card-body">
+        <h5>Listado de Avisos</h5>
+        <ul id="listaAvisos" class="list-group"></ul>
+    </div>
+</div>
+
+<div class="mt-4 text-center">
+    <a href="/admin" class="btn btn-secondary">← Volver</a>
+</div>
+
+</div>
+
+<script>
+const API_URL = "/avisos/";
+
+async function cargarAvisos() {
+    const res = await fetch(API_URL);
+    const data = await res.json();
+
+    const lista = document.getElementById("listaAvisos");
+    lista.innerHTML = "";
+
+    data.forEach(aviso => {
+        const li = document.createElement("li");
+        li.className = "list-group-item";
+
+        li.innerHTML = `
+            <strong>${aviso.titulo}</strong><br>
+            ${aviso.cuerpo}<br>
+            <small>${new Date(aviso.publicado_at).toLocaleString()}</small>
+        `;
+
+        lista.appendChild(li);
+    });
+}
+
+async function crearAviso() {
+    const titulo = document.getElementById("titulo").value;
+    const cuerpo = document.getElementById("cuerpo").value;
+
+    await fetch(API_URL, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            titulo: titulo,
+            cuerpo: cuerpo,
+            parroquia_id: null
+        })
+    });
+
+    document.getElementById("titulo").value = "";
+    document.getElementById("cuerpo").value = "";
+
+    cargarAvisos();
+}
+
+cargarAvisos();
+</script>
+
+</body>
+</html>
