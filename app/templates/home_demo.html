@@ -41,9 +41,9 @@
             <div class="bg-white shadow rounded-lg p-4">
                 <h2 class="font-semibold text-lg text-blue-700">📢 Avisos / Noticias</h2>
                 <p class="text-sm text-gray-500">Comunicados y novedades de la parroquia.</p>
-                <button class="mt-2 inline-block px-4 py-2 bg-gray-300 text-gray-600 rounded cursor-not-allowed">
-                    Próximamente
-                </button>
+
+                <!-- CONTENEDOR DINÁMICO -->
+                <div id="avisosPublicos" class="mt-3 space-y-2"></div>
             </div>
 
             <!-- Evangelización -->
@@ -74,5 +74,43 @@
             </div>
         </div>
     </div>
+
+<script>
+async function cargarAvisosPublicos() {
+    try {
+        const res = await fetch("/avisos/");
+        const data = await res.json();
+
+        const contenedor = document.getElementById("avisosPublicos");
+        contenedor.innerHTML = "";
+
+        if (data.length === 0) {
+            contenedor.innerHTML = "<p class='text-gray-400 text-sm'>No hay avisos disponibles</p>";
+            return;
+        }
+
+        data.slice(0, 3).forEach(aviso => {
+            const div = document.createElement("div");
+            div.className = "bg-gray-100 p-2 rounded";
+
+            div.innerHTML = `
+                <p class="font-semibold">${aviso.titulo}</p>
+                <p class="text-sm text-gray-600">${aviso.cuerpo}</p>
+                <p class="text-xs text-gray-400">
+                    ${new Date(aviso.publicado_at).toLocaleString()}
+                </p>
+            `;
+
+            contenedor.appendChild(div);
+        });
+
+    } catch (error) {
+        console.error("Error cargando avisos");
+    }
+}
+
+cargarAvisosPublicos();
+</script>
+
 </body>
 </html>
