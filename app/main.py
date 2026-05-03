@@ -60,3 +60,7 @@ def backup_db():
 @app.on_event("shutdown")
 def shutdown_event():
     backup_db()
+
+@app.get("/admin", response_class=HTMLResponse)
+def admin_panel(request: Request):
+    return templates.TemplateResponse("admin_panel.html", {"request": request})
