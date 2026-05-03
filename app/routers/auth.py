@@ -21,7 +21,7 @@ def login_form(request: Request):
 def login(usuario: str = Form(...), password: str = Form(...)):
 
     if usuario == ADMIN_USER and password == ADMIN_PASS:
-        response = RedirectResponse(url="/demo", status_code=302)
+        response = RedirectResponse(url="/admin", status_code=302)
         response.set_cookie(key="admin", value="1")
         return response
 
