@@ -64,3 +64,7 @@ def shutdown_event():
 @app.get("/admin", response_class=HTMLResponse)
 def admin_panel(request: Request):
     return templates.TemplateResponse("admin_panel.html", {"request": request})
+    
+@app.get("/admin/avisos", response_class=HTMLResponse)
+def admin_avisos(request: Request):
+    return templates.TemplateResponse("admin_avisos.html", {"request": request})
