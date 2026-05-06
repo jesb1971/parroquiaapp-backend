@@ -36,3 +36,7 @@ def demo_misas(request: Request, db: Session = Depends(get_db)):
             "es_admin": admin_cookie == "1"
         }
     )
+    
+@router.get("/contacto", response_class=HTMLResponse)
+def contacto_page(request: Request):
+    return templates.TemplateResponse("contacto.html", {"request": request})
