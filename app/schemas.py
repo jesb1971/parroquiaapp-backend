@@ -63,6 +63,7 @@ class MisaOut(BaseModel):
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
+from pydantic import BaseModel
 
 
 class AvisoOut(BaseModel):
@@ -80,3 +81,9 @@ class AvisoCreate(BaseModel):
     titulo: str
     cuerpo: str
     parroquia_id: Optional[int] = None
+    
+    
+class ContactoCreate(BaseModel):
+    nombre: str
+    email: str
+    mensaje: str

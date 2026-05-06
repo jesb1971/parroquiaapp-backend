@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contacto — Parroquia Cruz del Señor</title>
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-50 text-gray-800">
+
+<div class="max-w-4xl mx-auto py-8 px-4">
+
+    <!-- Título -->
+    <h1 class="text-3xl font-bold text-center mb-6">
+        Contacto
+    </h1>
+
+    <!-- Información parroquia -->
+    <div class="bg-white shadow-md rounded-2xl p-6 mb-6">
+        <h2 class="text-xl font-semibold mb-4">Parroquia Cruz del Señor</h2>
+
+        <p class="mb-2">📍 Dirección: Santa Cruz de Tenerife</p>
+        <p class="mb-2">📞 Teléfono: 922 000 000</p>
+        <p class="mb-2">📧 Email: parroquia@email.com</p>
+    </div>
+
+    <!-- Formulario -->
+    <div class="bg-white shadow-md rounded-2xl p-6">
+        <h2 class="text-xl font-semibold mb-4">Envíanos un mensaje</h2>
+
+        <form id="formContacto" class="space-y-4">
+
+            <!-- Nombre -->
+            <input type="text" id="nombre" placeholder="Nombre"
+                class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
+                required>
+
+            <!-- Email -->
+            <input type="email" id="email" placeholder="Correo electrónico"
+                class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
+                required>
+
+            <!-- Mensaje -->
+            <textarea id="mensaje" rows="4" placeholder="Escribe tu mensaje..."
+                class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
+                required></textarea>
+
+            <!-- Botón -->
+            <button type="submit"
+                class="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition">
+                Enviar mensaje
+            </button>
+
+        </form>
+
+        <!-- Mensaje éxito -->
+        <p id="respuesta" class="text-green-600 mt-4 hidden">
+            Mensaje enviado correctamente 🙏
+        </p>
+    </div>
+
+</div>
+
+<script>
+document.getElementById("formContacto").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const nombre = document.getElementById("nombre").value;
+    const email = document.getElementById("email").value;
+    const mensaje = document.getElementById("mensaje").value;
+
+    try {
+        const response = await fetch("/contacto", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                nombre,
+                email,
+                mensaje
+            })
+        });
+
+        if (response.ok) {
+            document.getElementById("respuesta").classList.remove("hidden");
+            document.getElementById("formContacto").reset();
+        } else {
+            alert("Error al enviar el mensaje");
+        }
+
+    } catch (error) {
+        alert("Error de conexión con el servidor");
+    }
+});
+</script>
+
+</body>
+</html>
