@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mensajes de contacto</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 text-gray-800">
+
+<div class="max-w-5xl mx-auto py-8 px-4">
+
+    <h1 class="text-3xl font-bold mb-6 text-center">
+        📩 Mensajes de contacto
+    </h1>
+
+    {% if mensajes %}
+        <div class="space-y-4">
+            {% for m in mensajes %}
+                <div class="bg-white p-5 rounded-xl shadow">
+                    <p class="font-semibold text-blue-600">
+                        {{ m.nombre }} ({{ m.email }})
+                    </p>
+                    <p class="mt-2 text-gray-700">
+                        {{ m.mensaje }}
+                    </p>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-center text-gray-500">
+            No hay mensajes aún
+        </p>
+    {% endif %}
+
+</div>
+
+</body>
+</html>

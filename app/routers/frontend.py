@@ -40,3 +40,26 @@ def demo_misas(request: Request, db: Session = Depends(get_db)):
 @router.get("/contacto", response_class=HTMLResponse)
 def contacto_page(request: Request):
     return templates.TemplateResponse("contacto.html", {"request": request})
+    
+from sqlalchemy.orm import Session
+from fastapi import Depends
+from app.db import SessionLocal
+from app import models
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+@router.get("/admin/contacto", response_class=HTMLResponse)
+def admin_contacto(request: Request, db: Session = Depends(get_db)):
+
+    mensajes = db.query(models.Contacto).order_by(models.Contacto.id.desc()).all()
+
+    return templates.TemplateResponse("admin_contacto.html", {
+        "request": request,
+        "mensajes": mensajes
+    })
