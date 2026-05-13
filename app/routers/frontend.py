@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Body
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -41,7 +41,10 @@ def contacto_page(request: Request):
 
 
 @router.post("/contacto")
-def enviar_contacto(data: schemas.ContactoCreate, db: Session = Depends(get_db)):
+def enviar_contacto(
+    data: schemas.ContactoCreate = Body(...),
+    db: Session = Depends(get_db)
+):
 
     nuevo = models.Contacto(
         nombre=data.nombre,
