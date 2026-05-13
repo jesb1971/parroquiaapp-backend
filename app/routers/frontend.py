@@ -63,3 +63,20 @@ def admin_contacto(request: Request, db: Session = Depends(get_db)):
         "request": request,
         "mensajes": mensajes
     })
+    
+    from app import schemas
+
+@router.post("/contacto")
+def enviar_contacto(data: schemas.ContactoCreate, db: Session = Depends(get_db)):
+
+    nuevo = models.Contacto(
+        nombre=data.nombre,
+        email=data.email,
+        mensaje=data.mensaje
+    )
+
+    db.add(nuevo)
+    db.commit()
+    db.refresh(nuevo)
+
+    return {"ok": True}
