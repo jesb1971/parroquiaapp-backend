@@ -41,15 +41,14 @@ def contacto_page(request: Request):
 
 
 @router.post("/contacto")
-def enviar_contacto(
-    data: schemas.ContactoCreate = Body(...),
-    db: Session = Depends(get_db)
-):
+async def enviar_contacto(request: Request, db: Session = Depends(get_db)):
+
+    data = await request.json()
 
     nuevo = models.Contacto(
-        nombre=data.nombre,
-        email=data.email,
-        mensaje=data.mensaje
+        nombre=data.get("nombre"),
+        email=data.get("email"),
+        mensaje=data.get("mensaje")
     )
 
     db.add(nuevo)
