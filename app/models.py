@@ -125,4 +125,3 @@ class Contacto(Base):
     nombre = Column(String, nullable=False)
     email = Column(String, nullable=False)
     mensaje = Column(String, nullable=False)
-    fecha = Column(DateTime, default=datetime.utcnow)
