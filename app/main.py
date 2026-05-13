@@ -8,7 +8,7 @@ from fastapi.templating import Jinja2Templates
 from .db import Base, engine
 
 # 🔥 IMPORTANTE: importar models para que cree TODAS las tablas
-from app import models
+from app.models import *
 
 # Routers
 from app.routers import evangelizacion, misas, avisos, auth, frontend
