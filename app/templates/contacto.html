@@ -73,7 +73,7 @@ document.getElementById("formContacto").addEventListener("submit", async functio
     const mensaje = document.getElementById("mensaje").value;
 
     try {
-        const response = await fetch("/contacto", {
+        const response = await fetch(window.location.origin + "/contacto", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
