@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from ..db import get_db
 from .. import models, schemas
-from app.routers.misas import listar_misas  # 🔥 SOLO esto, quitamos obtener_liturgia
+from app.routers.misas import listar_misas
 
 router = APIRouter(tags=["frontend"])
 templates = Jinja2Templates(directory="app/templates")
@@ -22,10 +22,7 @@ def demo_misas(request: Request, db: Session = Depends(get_db)):
         .first()
     )
 
-    # 🔥 USAR SOLO LA LÓGICA DEL BACKEND
     misas = listar_misas(db)
-
-    # 🔥 NO tocar liturgia aquí
 
     return templates.TemplateResponse(
         "misas_demo.html",
@@ -36,35 +33,12 @@ def demo_misas(request: Request, db: Session = Depends(get_db)):
             "es_admin": admin_cookie == "1"
         }
     )
-    
+
+
 @router.get("/contacto", response_class=HTMLResponse)
 def contacto_page(request: Request):
     return templates.TemplateResponse("contacto.html", {"request": request})
-    
-from sqlalchemy.orm import Session
-from fastapi import Depends
-from app.db import SessionLocal
-from app import models
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-@router.get("/admin/contacto", response_class=HTMLResponse)
-def admin_contacto(request: Request, db: Session = Depends(get_db)):
-
-    mensajes = db.query(models.Contacto).order_by(models.Contacto.id.desc()).all()
-
-    return templates.TemplateResponse("admin_contacto.html", {
-        "request": request,
-        "mensajes": mensajes
-    })
-    
-    from app import schemas
 
 @router.post("/contacto")
 def enviar_contacto(data: schemas.ContactoCreate, db: Session = Depends(get_db)):
@@ -77,18 +51,16 @@ def enviar_contacto(data: schemas.ContactoCreate, db: Session = Depends(get_db))
 
     db.add(nuevo)
     db.commit()
-    db.refresh(nuevo)
 
     return {"ok": True}
-    
-    from fastapi.responses import RedirectResponse
 
-@router.get("/admin/contacto/eliminar/{id}")
-def eliminar_contacto(id: int, db: Session = Depends(get_db)):
-    mensaje = db.query(models.Contacto).filter(models.Contacto.id == id).first()
-    
-    if mensaje:
-        db.delete(mensaje)
-        db.commit()
 
-    return RedirectResponse(url="/admin/contacto", status_code=302)
+@router.get("/admin/contacto", response_class=HTMLResponse)
+def admin_contacto(request: Request, db: Session = Depends(get_db)):
+
+    mensajes = db.query(models.Contacto).order_by(models.Contacto.id.desc()).all()
+
+    return templates.TemplateResponse("admin_contacto.html", {
+        "request": request,
+        "mensajes": mensajes
+    })
