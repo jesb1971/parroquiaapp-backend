@@ -113,3 +113,15 @@ class FiestaParroquia(Base):
     fecha = Column(Date, nullable=False)
     nombre = Column(String, nullable=False)
     color = Column(String, default="blanco")
+    
+# ─────────────────────────────────────────────
+# Módulo de contacto
+# ─────────────────────────────────────────────
+
+class Contacto(Base):
+    __tablename__ = "contactos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nombre = Column(String, nullable=False)
+    email = Column(String, nullable=False)
+    mensaje = Column(String, nullable=False)
