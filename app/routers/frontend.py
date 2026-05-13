@@ -4,7 +4,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from ..db import get_db
-from .. import models
+from .. import models, Schemas
 from app.routers.misas import listar_misas  # 🔥 SOLO esto, quitamos obtener_liturgia
 
 router = APIRouter(tags=["frontend"])
