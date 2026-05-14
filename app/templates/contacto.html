@@ -86,10 +86,17 @@ document.getElementById("formContacto").addEventListener("submit", async functio
         });
 
         if (response.ok) {
-            document.getElementById("respuesta").classList.remove("hidden");
-            document.getElementById("formContacto").reset();
+            alert("Mensaje enviado correctamente 🙏");
+            document.getElementById("formContacto").reset();		
         } else {
-            alert("Error al enviar el mensaje");
+            let errorMsg = "Error al enviar el mensaje";
+            try {
+                const data = await response.json();
+                if (data && data.detail) {
+                    errorMsg = data.detail;
+                }
+            } catch (e) {}
+            alert(errorMsg);
         }
 
     } catch (error) {
