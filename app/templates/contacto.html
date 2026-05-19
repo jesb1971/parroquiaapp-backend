@@ -106,10 +106,40 @@ document.getElementById("formContacto").addEventListener("submit", async functio
             alert(errorMsg);
         }
 
+    document.getElementById("formContacto").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const nombre = document.getElementById("nombre").value;
+    const email = document.getElementById("email").value;
+    const mensaje = document.getElementById("mensaje").value;
+
+    let response;
+
+    try {
+        response = await fetch(window.location.origin + "/contacto", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                nombre,
+                email,
+                mensaje
+            })
+        });
     } catch (error) {
-        console.error("Error real:", error);
-		alert("No se pudo enviar en este momento. Inténtalo de nuevo.");
+        alert("No se pudo conectar con el servidor");
+        return;
     }
+
+    // 👉 FUERA del try/catch
+    if (response.ok) {
+        alert("Mensaje enviado correctamente 🙏");
+        document.getElementById("formContacto").reset();
+    } else {
+        alert("Error al enviar el mensaje");
+    }
+});
 });
 </script>
 
