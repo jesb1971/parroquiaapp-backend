@@ -86,8 +86,15 @@ document.getElementById("formContacto").addEventListener("submit", async functio
         });
 
         if (response.ok) {
-            alert("Mensaje enviado correctamente 🙏");
-            document.getElementById("formContacto").reset();		
+            const msg = document.getElementById("respuesta");
+            msg.textContent = "Mensaje enviado correctamente 🙏";
+			msg.classList.remove("hidden");
+			
+			ocument.getElementById("formContacto").reset();
+			
+			setTimeout(() => {
+				msg.classList.add("hidden");
+			}, 4000);
         } else {
             let errorMsg = "Error al enviar el mensaje";
             try {
