@@ -66,3 +66,15 @@ def admin_contacto(request: Request, db: Session = Depends(get_db)):
         "request": request,
         "mensajes": mensajes
     })
+    
+from fastapi.responses import RedirectResponse
+
+@router.get("/admin/contacto/eliminar/{id}")
+def eliminar_contacto(id: int, db: Session = Depends(get_db)):
+    mensaje = db.query(models.Contacto).filter(models.Contacto.id == id).first()
+    
+    if mensaje:
+        db.delete(mensaje)
+        db.commit()
+
+    return RedirectResponse(url="/admin/contacto", status_code=302)
