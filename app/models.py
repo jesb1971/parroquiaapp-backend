@@ -125,3 +125,18 @@ class Contacto(Base):
     nombre = Column(String, nullable=False)
     email = Column(String, nullable=False)
     mensaje = Column(String, nullable=False)
+    
+# ─────────────────────────────────────────────
+# Módulo de noticias
+# ─────────────────────────────────────────────
+
+from sqlalchemy import Column, Integer, String, DateTime
+
+
+class Noticia(Base):
+    __tablename__ = "noticias"
+
+    id = Column(Integer, primary_key=True, index=True)
+    titulo = Column(String, nullable=False)
+    contenido = Column(String, nullable=False)
+    fecha = Column(DateTime)

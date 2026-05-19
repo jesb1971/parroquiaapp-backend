@@ -3,6 +3,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from app.routers import noticias
 
 # Base de datos
 from .db import Base, engine
@@ -24,6 +25,7 @@ app.include_router(misas.router)
 app.include_router(avisos.router)
 app.include_router(auth.router)
 app.include_router(frontend.router)
+app.include_router(noticias.router)
 
 # Static
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
