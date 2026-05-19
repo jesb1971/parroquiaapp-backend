@@ -4,20 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contacto — Parroquia Cruz del Señor</title>
-	
-<div class="flex justify-between items-center mb-6">
 
-    <a href="/app"
-       class="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400">
-        ← Volver
-    </a>
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
 
-    <a href="/logout"
-       class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
-        Cerrar sesión
-    </a>
+<body class="bg-gray-50 text-gray-800">
 
-</div>
+<div class="max-w-4xl mx-auto py-8 px-4">
+
+    <!-- NAV -->
+    <div class="flex justify-between items-center mb-6">
+        <a href="/app"
+           class="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400">
+            ← Volver
+        </a>
+
+        <a href="/logout"
+           class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+            Cerrar sesión
+        </a>
+    </div>
 
     <!-- Título -->
     <h1 class="text-3xl font-bold text-center mb-6">
@@ -39,22 +46,18 @@
 
         <form id="formContacto" class="space-y-4">
 
-            <!-- Nombre -->
             <input type="text" id="nombre" placeholder="Nombre"
                 class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
                 required>
 
-            <!-- Email -->
             <input type="email" id="email" placeholder="Correo electrónico"
                 class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
                 required>
 
-            <!-- Mensaje -->
             <textarea id="mensaje" rows="4" placeholder="Escribe tu mensaje..."
                 class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
                 required></textarea>
 
-            <!-- Botón -->
             <button type="submit"
                 class="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition">
                 Enviar mensaje
@@ -62,7 +65,6 @@
 
         </form>
 
-        <!-- Mensaje éxito -->
         <p id="respuesta" class="text-green-600 mt-4 hidden">
             Mensaje enviado correctamente 🙏
         </p>
@@ -72,47 +74,6 @@
 
 <script>
 document.getElementById("formContacto").addEventListener("submit", async function(e) {
-    e.preventDefault();
-
-    const nombre = document.getElementById("nombre").value;
-    const email = document.getElementById("email").value;
-    const mensaje = document.getElementById("mensaje").value;
-
-    try {
-        const response = await fetch(window.location.origin + "/contacto", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                nombre,
-                email,
-                mensaje
-            })
-        });
-
-        if (response.ok) {
-            const msg = document.getElementById("respuesta");
-            msg.textContent = "Mensaje enviado correctamente 🙏";
-			msg.classList.remove("hidden");
-			
-			ocument.getElementById("formContacto").reset();
-			
-			setTimeout(() => {
-				msg.classList.add("hidden");
-			}, 4000);
-        } else {
-            let errorMsg = "Error al enviar el mensaje";
-            try {
-                const data = await response.json();
-                if (data && data.detail) {
-                    errorMsg = data.detail;
-                }
-            } catch (e) {}
-            alert(errorMsg);
-        }
-
-    document.getElementById("formContacto").addEventListener("submit", async function(e) {
     e.preventDefault();
 
     const nombre = document.getElementById("nombre").value;
@@ -138,14 +99,27 @@ document.getElementById("formContacto").addEventListener("submit", async functio
         return;
     }
 
-    // 👉 FUERA del try/catch
     if (response.ok) {
-        alert("Mensaje enviado correctamente 🙏");
+        const msg = document.getElementById("respuesta");
+        msg.textContent = "Mensaje enviado correctamente 🙏";
+        msg.classList.remove("hidden");
+
         document.getElementById("formContacto").reset();
+
+        setTimeout(() => {
+            msg.classList.add("hidden");
+        }, 4000);
+
     } else {
-        alert("Error al enviar el mensaje");
+        let errorMsg = "Error al enviar el mensaje";
+        try {
+            const data = await response.json();
+            if (data && data.detail) {
+                errorMsg = data.detail;
+            }
+        } catch (e) {}
+        alert(errorMsg);
     }
-});
 });
 </script>
 
