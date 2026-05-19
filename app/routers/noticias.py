@@ -15,9 +15,10 @@ def listar_noticias(db: Session = Depends(get_db)):
 @router.post("/crear")
 def crear_noticia(db: Session = Depends(get_db)):
     noticia = models.Noticia(
-        titulo="Noticia de ejemplo",
-        contenido="Contenido de prueba",
-        fecha=datetime.utcnow()
+        titulo="Día de la parroquia",
+        contenido="Celebración con actividades, música y convivencia.",
+        fecha=datetime.utcnow(),
+        imagen="https://images.unsplash.com/photo-1507692049790-de58290a4334"
     )
 
     db.add(noticia)
