@@ -107,7 +107,8 @@ document.getElementById("formContacto").addEventListener("submit", async functio
         }
 
     } catch (error) {
-        alert("Error de conexión con el servidor");
+        console.error("Error real:", error);
+		alert("No se pudo enviar en este momento. Inténtalo de nuevo.");
     }
 });
 </script>
