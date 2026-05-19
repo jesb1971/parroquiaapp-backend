@@ -140,3 +140,4 @@ class Noticia(Base):
     titulo = Column(String, nullable=False)
     contenido = Column(String, nullable=False)
     fecha = Column(DateTime)
+    imagen = Column(String, nullable=True)  # 👈 NUEVO
