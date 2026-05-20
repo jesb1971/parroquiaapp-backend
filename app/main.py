@@ -85,3 +85,7 @@ def vista_aviso(request: Request, aviso_id: int):
 @app.get("/noticias-publicas", response_class=HTMLResponse)
 def noticias_publicas(request: Request):
     return templates.TemplateResponse("noticias_publicas.html", {"request": request})
+    
+@app.get("/admin-noticias", response_class=HTMLResponse)
+def admin_noticias(request: Request):
+    return templates.TemplateResponse("admin_noticias.html", {"request": request})
