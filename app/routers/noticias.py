@@ -67,3 +67,15 @@ def crear_noticia_demo(db: Session = Depends(get_db)):
     db.refresh(noticia)
 
     return noticia
+    
+@router.delete("/{noticia_id}")
+def eliminar_noticia(noticia_id: int, db: Session = Depends(get_db)):
+    noticia = db.query(models.Noticia).filter(models.Noticia.id == noticia_id).first()
+
+    if not noticia:
+        return {"error": "Noticia no encontrada"}
+
+    db.delete(noticia)
+    db.commit()
+
+    return {"mensaje": "Noticia eliminada"}

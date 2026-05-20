@@ -60,7 +60,11 @@ async function cargarNoticias() {
         li.innerHTML = `
             <strong>${noticia.titulo}</strong><br>
             ${noticia.contenido}<br>
-            <small>${new Date(noticia.fecha).toLocaleString()}</small>
+            <small>${new Date(noticia.fecha).toLocaleString()}</small><br>
+
+            <button onclick="eliminarNoticia(${noticia.id})" class="btn btn-danger btn-sm mt-2">
+                Eliminar
+            </button>
         `;
 
         lista.appendChild(li);
@@ -89,9 +93,31 @@ async function crearNoticia() {
 
     if (res.ok) {
         alert("✅ Noticia creada");
+
+        // limpiar formulario
+        document.getElementById("titulo").value = "";
+        document.getElementById("contenido").value = "";
+        document.getElementById("imagen").value = "";
+
         cargarNoticias();
     } else {
         alert("❌ Error");
+    }
+}
+
+// 🔴 NUEVO: eliminar noticia
+async function eliminarNoticia(id) {
+    if (!confirm("¿Eliminar esta noticia?")) return;
+
+    const res = await fetch(`/noticias/${id}`, {
+        method: "DELETE"
+    });
+
+    if (res.ok) {
+        alert("🗑️ Noticia eliminada");
+        cargarNoticias();
+    } else {
+        alert("❌ Error al eliminar");
     }
 }
 
