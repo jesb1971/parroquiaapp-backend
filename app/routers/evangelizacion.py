@@ -1,6 +1,7 @@
 """Rutas de evangelización (MVP)."""
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Form
 from fastapi.templating import Jinja2Templates
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from datetime import datetime
 from app.schemas import ContenidoOut
@@ -54,4 +55,42 @@ def evangelizacion_view(request: Request, db: Session = Depends(get_db)):
             "request": request,
             "contenido": item
         }
+    )
+    
+@router.post("/admin/evangelizacion/crear")
+def crear_publicacion(
+    titulo: str = Form(...),
+    cita_biblica: str = Form(""),
+    reflexion: str = Form(...),
+    pregunta_reflexion: str = Form(""),
+    imagen_url: str = Form(""),
+    audio_url: str = Form(""),
+    db: Session = Depends(get_db)
+):
+
+    contenido = f"""
+📖 {cita_biblica}
+
+{reflexion}
+
+❓ {pregunta_reflexion}
+
+🎧 Audio:
+{audio_url}
+"""
+
+    nuevo = models.Contenido(
+        tipo="reflexion",
+        titulo=titulo,
+        cuerpo_md=contenido,
+        imagen_url=imagen_url,
+        publicado_at=datetime.utcnow()
+    )
+
+    db.add(nuevo)
+    db.commit()
+
+    return RedirectResponse(
+        url="/admin/evangelizacion",
+        status_code=303
     )
