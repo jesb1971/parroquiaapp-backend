@@ -141,3 +141,32 @@ class Noticia(Base):
     contenido = Column(String, nullable=False)
     fecha = Column(DateTime)
     imagen = Column(String, nullable=True)  # 👈 NUEVO
+    
+# ─────────────────────────────────────────────
+# Módulo de evangelización
+# ─────────────────────────────────────────────
+
+class Evangelizacion(Base):
+    __tablename__ = "evangelizacion"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    titulo = Column(String, nullable=False)
+
+    cita_biblica = Column(String, nullable=True)
+
+    reflexion = Column(Text, nullable=False)
+
+    pregunta_reflexion = Column(Text, nullable=True)
+
+    imagen_url = Column(String, nullable=True)
+
+    audio_url = Column(String, nullable=True)
+
+    video_url = Column(String, nullable=True)
+
+    autor = Column(String, default="Padre Sigfredo")
+
+    publicado = Column(Boolean, default=True)
+
+    fecha_publicacion = Column(DateTime, default=datetime.utcnow)
