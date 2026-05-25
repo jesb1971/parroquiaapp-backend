@@ -26,6 +26,7 @@ app.include_router(avisos.router)
 app.include_router(auth.router)
 app.include_router(frontend.router)
 app.include_router(noticias.router)
+app.include_router(evangelizacion.router)
 
 # Static
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
