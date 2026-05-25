@@ -1,12 +1,15 @@
 """Rutas de evangelización (MVP)."""
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
+from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from datetime import datetime
 from app.schemas import ContenidoOut
 from app import models
 from app.db import get_db
 
+
 router = APIRouter(prefix="/evangelizacion", tags=["evangelizacion"])
+templates = Jinja2Templates(directory="app/templates")
 
 @router.get("/hoy", response_model=ContenidoOut)
 def contenido_hoy(db: Session = Depends(get_db)):
@@ -32,4 +35,23 @@ def contenido_hoy(db: Session = Depends(get_db)):
             "**Reflexión (1 min)**: En el silencio cotidiano aprendemos a reconocer su voz."
         ),
         publicado_at=datetime.utcnow(),
+    )
+    
+@router.get("")
+def evangelizacion_view(request: Request, db: Session = Depends(get_db)):
+
+    item = (
+        db.query(models.Contenido)
+        .filter(models.Contenido.tipo == "reflexion")
+        .filter(models.Contenido.publicado_at != None)
+        .order_by(models.Contenido.publicado_at.desc())
+        .first()
+    )
+
+    return templates.TemplateResponse(
+        "evangelizacion.html",
+        {
+            "request": request,
+            "contenido": item
+        }
     )

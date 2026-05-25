@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Evangelización</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+</head>
+
+<body class="bg-gray-100">
+
+<div class="max-w-md mx-auto min-h-screen bg-white shadow-lg">
+
+    <!-- CABECERA -->
+    <div class="bg-blue-700 text-white p-4 flex items-center justify-between">
+
+        <a href="/app"
+           class="bg-white text-blue-700 px-3 py-1 rounded-lg text-sm font-semibold">
+            ← Volver
+        </a>
+
+        <h1 class="text-lg font-bold">
+            Evangelización
+        </h1>
+
+    </div>
+
+    <!-- CONTENIDO -->
+    <div class="p-4">
+
+        {% if contenido %}
+
+            <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+
+                {% if contenido.imagen_url %}
+                <img src="{{ contenido.imagen_url }}"
+                     class="w-full h-64 object-cover">
+                {% endif %}
+
+                <div class="p-4">
+
+                    <h2 class="text-2xl font-bold mb-3">
+                        {{ contenido.titulo }}
+                    </h2>
+
+                    <p class="text-blue-700 italic mb-4">
+                        {{ contenido.cuerpo_md }}
+                    </p>
+
+                </div>
+
+            </div>
+
+        {% else %}
+
+            <div class="bg-yellow-100 text-yellow-800 p-4 rounded-xl">
+                No hay contenido publicado todavía.
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+</body>
+</html>
