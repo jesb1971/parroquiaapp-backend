@@ -1,0 +1,146 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donativos — Parroquia Cruz del Señor</title>
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <main class="max-w-4xl mx-auto py-8 px-4">
+
+        <!-- Cabecera -->
+        <header class="text-center mb-8">
+            <img src="/static/crusDelSeñor.jpg"
+                 alt="Parroquia Cruz del Señor"
+                 class="mx-auto h-32 rounded-lg shadow-md">
+
+            <h1 class="text-2xl font-bold text-blue-700 mt-4">
+                Donativos
+            </h1>
+
+            <p class="text-gray-600 mt-3">
+                Tu colaboración ayuda a sostener la vida,
+                las actividades y la misión de nuestra parroquia.
+            </p>
+        </header>
+
+        <!-- Opciones de colaboración -->
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+            <!-- Bizum -->
+            <article class="bg-white shadow rounded-lg p-6 text-center">
+                <div class="text-4xl mb-3">📱</div>
+
+                <h2 class="text-xl font-semibold text-blue-700">
+                    Donar por Bizum
+                </h2>
+
+                <p class="text-gray-600 text-sm mt-3">
+                    Accede a Bizum desde la aplicación de tu banco,
+                    selecciona la opción de donativos e introduce
+                    el siguiente código:
+                </p>
+
+                <div class="bg-blue-50 rounded-lg p-4 mt-5">
+                    <p class="text-sm text-gray-500">
+                        Código Bizum de la parroquia
+                    </p>
+                    <p id="codigo-bizum"
+                       class="text-3xl font-bold text-blue-700 mt-1">
+                        {{ bizum_codigo }}
+                    </p>
+                </div>
+
+                <button type="button"
+                        onclick="copiarBizum()"
+                        class="mt-5 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
+                    Copiar código
+                </button>
+
+                <p id="mensaje-copia"
+                   role="status"
+                   aria-live="polite"
+                   class="text-sm text-green-700 mt-3"></p>
+            </article>
+
+            <!-- Plataforma oficial -->
+            <article class="bg-white shadow rounded-lg p-6 text-center">
+                <div class="text-4xl mb-3">💙</div>
+
+                <h2 class="text-xl font-semibold text-blue-700">
+                    Donar online
+                </h2>
+
+                <p class="text-gray-600 text-sm mt-3">
+                    Realiza tu aportación a través de la plataforma
+                    Dono a mi Iglesia, de la Conferencia Episcopal Española.
+                </p>
+
+                <p class="text-gray-600 text-sm mt-4">
+                    Podrás elegir el importe y realizar un donativo
+                    puntual o periódico.
+                </p>
+
+                <a href="{{ donativo_url }}"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   class="inline-block mt-6 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
+                    Realizar donativo
+                </a>
+
+                <p class="text-xs text-gray-500 mt-4">
+                    Serás dirigido a la plataforma oficial.
+                    Esta aplicación no recoge datos bancarios.
+                </p>
+            </article>
+
+        </section>
+
+        <!-- Agradecimiento -->
+        <section class="bg-white shadow rounded-lg p-6 mt-6 text-center">
+            <h2 class="text-lg font-semibold text-blue-700">
+                Gracias por tu generosidad
+            </h2>
+
+            <p class="text-gray-600 mt-3">
+                Cada aportación contribuye al mantenimiento
+                de nuestra parroquia y al desarrollo de su misión.
+            </p>
+        </section>
+
+        <!-- Volver -->
+        <div class="text-center mt-8">
+            <a href="/app"
+               class="inline-block bg-gray-200 text-gray-700 px-5 py-3 rounded-lg hover:bg-gray-300">
+                ← Volver al inicio
+            </a>
+        </div>
+
+    </main>
+
+    <script>
+        async function copiarBizum() {
+            const codigo = document.getElementById(
+                "codigo-bizum"
+            ).textContent.trim();
+
+            const mensaje = document.getElementById(
+                "mensaje-copia"
+            );
+
+            try {
+                await navigator.clipboard.writeText(codigo);
+                mensaje.textContent = "Código copiado correctamente.";
+            } catch (error) {
+                mensaje.textContent =
+                    "No se pudo copiar. Puedes seleccionar el código manualmente.";
+            }
+        }
+    </script>
+
+</body>
+</html>

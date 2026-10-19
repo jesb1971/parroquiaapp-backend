@@ -12,7 +12,7 @@ from .db import Base, engine
 from app.models import *
 
 # Routers
-from app.routers import evangelizacion, misas, avisos, auth, frontend
+from app.routers import evangelizacion, misas, avisos, auth, frontend, donativos
 
 app = FastAPI(title="ParroquiaApp")
 
@@ -27,6 +27,7 @@ app.include_router(auth.router)
 app.include_router(frontend.router)
 app.include_router(noticias.router)
 app.include_router(evangelizacion.router)
+app.include_router(donativos.router)
 
 # Static
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
