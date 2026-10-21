@@ -96,3 +96,151 @@ def crear_publicacion(
         url="/admin/evangelizacion",
         status_code=303
     )
+
+"""Rutas de evangelización de ParroquiaApp."""
+
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, Request, Form
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import RedirectResponse
+from sqlalchemy.orm import Session
+
+from app.schemas import ContenidoOut
+from app import models
+from app.db import get_db
+from app.security import exigir_administrador
+
+
+router = APIRouter(tags=["evangelizacion"])
+templates = Jinja2Templates(directory="app/templates")
+
+
+# =====================================
+# API: REFLEXIÓN DEL DÍA
+# =====================================
+
+@router.get("/evangelizacion/hoy", response_model=ContenidoOut)
+def contenido_hoy(db: Session = Depends(get_db)):
+
+    item = (
+        db.query(models.Contenido)
+        .filter(models.Contenido.tipo == "reflexion")
+        .filter(models.Contenido.publicado_at != None)
+        .order_by(models.Contenido.publicado_at.desc())
+        .first()
+    )
+
+    if item:
+        return item
+
+    return ContenidoOut(
+        id=0,
+        tipo="reflexion",
+        titulo="Dios habla en lo pequeño",
+        cuerpo_md=(
+            '**Versículo**: Sal 46:10 — '
+            '"Estad quietos, y conoced que yo soy Dios".\n\n'
+            "**Reflexión (1 min)**: En el silencio cotidiano "
+            "aprendemos a reconocer su voz."
+        ),
+        publicado_at=datetime.utcnow(),
+    )
+
+
+# =====================================
+# VISTA PÚBLICA
+# =====================================
+
+@router.get("/evangelizacion")
+def evangelizacion_view(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+
+    item = (
+        db.query(models.Contenido)
+        .filter(models.Contenido.tipo == "reflexion")
+        .filter(models.Contenido.publicado_at != None)
+        .order_by(models.Contenido.publicado_at.desc())
+        .first()
+    )
+
+    return templates.TemplateResponse(
+        "evangelizacion.html",
+        {
+            "request": request,
+            "contenido": item
+        }
+    )
+
+
+# =====================================
+# PANEL ADMINISTRADOR
+# =====================================
+
+@router.get("/admin/evangelizacion")
+def admin_evangelizacion(
+    request: Request,
+    db: Session = Depends(get_db),
+    admin: bool = Depends(exigir_administrador)
+):
+
+    publicaciones = (
+        db.query(models.Contenido)
+        .filter(models.Contenido.tipo == "reflexion")
+        .order_by(models.Contenido.publicado_at.desc())
+        .all()
+    )
+
+    return templates.TemplateResponse(
+        "admin_evangelizacion.html",
+        {
+            "request": request,
+            "publicaciones": publicaciones
+        }
+    )
+
+
+# =====================================
+# GUARDAR PUBLICACIÓN
+# =====================================
+
+@router.post("/admin/evangelizacion/crear")
+def crear_publicacion(
+    titulo: str = Form(...),
+    cita_biblica: str = Form(""),
+    reflexion: str = Form(...),
+    pregunta_reflexion: str = Form(""),
+    imagen_url: str = Form(""),
+    audio_url: str = Form(""),
+    db: Session = Depends(get_db),
+    admin: bool = Depends(exigir_administrador)
+):
+
+    contenido = f"""
+📖 {cita_biblica}
+
+{reflexion}
+
+❓ {pregunta_reflexion}
+
+🎧 Audio:
+{audio_url}
+"""
+
+    nuevo = models.Contenido(
+        tipo="reflexion",
+        titulo=titulo,
+        cuerpo_md=contenido,
+        imagen_url=imagen_url,
+        publicado_at=datetime.utcnow()
+    )
+
+    db.add(nuevo)
+    db.commit()
+
+    return RedirectResponse(
+        url="/admin/evangelizacion",
+        status_code=303
+    )
