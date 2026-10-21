@@ -1,89 +1,280 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gestión de Avisos</title>
+<title>Gestión de Avisos | Parroquia Cruz del Señor</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+    .texto-aviso {
+        white-space: pre-line;
+        overflow-wrap: anywhere;
+        line-height: 1.6;
+    }
+
+    #cuerpo {
+        min-height: 180px;
+        white-space: pre-wrap;
+    }
+</style>
 </head>
 
 <body class="bg-light">
 
-<div class="container py-4">
+<div class="container py-4" style="max-width: 850px;">
 
-<h2 class="mb-4 text-center">📢 Gestión de Avisos</h2>
+    <h2 class="mb-4 text-center">📢 Gestión de Avisos</h2>
 
-<!-- FORMULARIO -->
-<div class="card mb-4">
-    <div class="card-body">
-        <h5>Crear Aviso</h5>
+    <!-- FORMULARIO -->
+    <div class="card mb-4">
+        <div class="card-body">
 
-        <input type="text" id="titulo" class="form-control mb-2" placeholder="Título">
-        <textarea id="cuerpo" class="form-control mb-2" placeholder="Descripción"></textarea>
+            <h5 id="tituloFormulario">Crear Aviso</h5>
 
-        <button onclick="crearAviso()" class="btn btn-primary w-100">
-            Crear Aviso
-        </button>
+            <div id="mensaje" class="alert d-none" role="alert"></div>
+
+            <label for="titulo" class="form-label mt-2">
+                Título
+            </label>
+
+            <input type="text"
+                   id="titulo"
+                   class="form-control mb-3"
+                   maxlength="200"
+                   placeholder="Título del aviso">
+
+            <label for="cuerpo" class="form-label">
+                Descripción
+            </label>
+
+            <textarea id="cuerpo"
+                      class="form-control mb-3"
+                      rows="8"
+                      placeholder="Escribe el contenido del aviso"></textarea>
+
+            <button id="botonGuardar"
+                    type="button"
+                    onclick="guardarAviso()"
+                    class="btn btn-primary w-100">
+                Crear Aviso
+            </button>
+
+            <button id="botonCancelar"
+                    type="button"
+                    onclick="cancelarEdicion()"
+                    class="btn btn-outline-secondary w-100 mt-2 d-none">
+                Cancelar edición
+            </button>
+
+        </div>
     </div>
-</div>
 
-<!-- LISTA -->
-<div class="card">
-    <div class="card-body">
-        <h5>Listado de Avisos</h5>
-        <ul id="listaAvisos" class="list-group"></ul>
+    <!-- LISTADO -->
+    <div class="card">
+        <div class="card-body">
+
+            <h5 class="mb-3">Listado de Avisos</h5>
+
+            <div id="listaAvisos" class="list-group"></div>
+
+        </div>
     </div>
-</div>
 
-<div class="mt-4 text-center">
-    <a href="/admin" class="btn btn-secondary">← Volver</a>
-</div>
+    <div class="mt-4 text-center">
+        <a href="/admin" class="btn btn-secondary">
+            ← Volver
+        </a>
+    </div>
 
 </div>
 
 <script>
 const API_URL = "/avisos/";
 
-async function cargarAvisos() {
-    const res = await fetch(API_URL);
-    const data = await res.json();
+let avisosActuales = [];
+let avisoEnEdicion = null;
+let guardando = false;
 
-    const lista = document.getElementById("listaAvisos");
-    lista.innerHTML = "";
+const tituloInput = document.getElementById("titulo");
+const cuerpoInput = document.getElementById("cuerpo");
+const botonGuardar = document.getElementById("botonGuardar");
+const botonCancelar = document.getElementById("botonCancelar");
+const tituloFormulario = document.getElementById("tituloFormulario");
+const mensaje = document.getElementById("mensaje");
 
-    data.forEach(aviso => {
-        const li = document.createElement("li");
-        li.className = "list-group-item";
 
-        li.innerHTML = `
-            <strong>${aviso.titulo}</strong><br>
-            ${aviso.cuerpo}<br>
-            <small>${new Date(aviso.publicado_at).toLocaleString()}</small>
-
-            <div class="mt-2">
-                <button class="btn btn-sm btn-danger" onclick="eliminarAviso(${aviso.id})">
-                    🗑 Eliminar
-                </button>
-            </div>
-        `;
-
-        lista.appendChild(li);
-    });
+function mostrarMensaje(texto, tipo = "success") {
+    mensaje.className = "alert alert-" + tipo;
+    mensaje.textContent = texto;
 }
 
-async function crearAviso() {
-    const titulo = document.getElementById("titulo").value;
-    const cuerpo = document.getElementById("cuerpo").value;
 
-    if (!titulo || !cuerpo) {
-        alert("⚠️ Debes completar todos los campos");
+function ocultarMensaje() {
+    mensaje.className = "alert d-none";
+    mensaje.textContent = "";
+}
+
+
+async function cargarAvisos() {
+    const lista = document.getElementById("listaAvisos");
+
+    try {
+        const res = await fetch(API_URL);
+
+        if (!res.ok) {
+            throw new Error("No se pudieron cargar los avisos");
+        }
+
+        avisosActuales = await res.json();
+
+        lista.replaceChildren();
+
+        if (avisosActuales.length === 0) {
+            const vacio = document.createElement("p");
+            vacio.className = "text-muted mb-0";
+            vacio.textContent = "No hay avisos publicados.";
+            lista.appendChild(vacio);
+            return;
+        }
+
+        avisosActuales.forEach(aviso => {
+
+            const elemento = document.createElement("div");
+            elemento.className = "list-group-item p-3";
+
+            // TÍTULO
+            const titulo = document.createElement("h6");
+            titulo.className = "fw-bold text-primary mb-2";
+            titulo.textContent = aviso.titulo;
+
+            // DESCRIPCIÓN
+            const descripcion = document.createElement("p");
+            descripcion.className = "texto-aviso text-secondary mb-2";
+            descripcion.textContent = aviso.cuerpo;
+
+            // FECHA
+            const fecha = document.createElement("small");
+            fecha.className = "text-muted d-block mb-3";
+
+            if (aviso.publicado_at) {
+                const fechaAviso = new Date(aviso.publicado_at);
+
+                if (!Number.isNaN(fechaAviso.getTime())) {
+                    fecha.textContent = fechaAviso.toLocaleString("es-ES");
+                }
+            }
+
+            // BOTONES
+            const controles = document.createElement("div");
+            controles.className = "d-flex gap-2";
+
+            const editar = document.createElement("button");
+            editar.type = "button";
+            editar.className = "btn btn-sm btn-primary flex-fill";
+            editar.textContent = "✏️ Editar";
+            editar.addEventListener("click", () => iniciarEdicion(aviso.id));
+
+            const eliminar = document.createElement("button");
+            eliminar.type = "button";
+            eliminar.className = "btn btn-sm btn-danger flex-fill";
+            eliminar.textContent = "🗑 Eliminar";
+            eliminar.addEventListener("click", () => eliminarAviso(aviso.id));
+
+            controles.appendChild(editar);
+            controles.appendChild(eliminar);
+
+            elemento.appendChild(titulo);
+            elemento.appendChild(descripcion);
+            elemento.appendChild(fecha);
+            elemento.appendChild(controles);
+
+            lista.appendChild(elemento);
+        });
+
+    } catch (error) {
+        console.error(error);
+        mostrarMensaje("No se pudieron cargar los avisos.", "danger");
+    }
+}
+
+
+function iniciarEdicion(id) {
+    const aviso = avisosActuales.find(
+        elemento => elemento.id === id
+    );
+
+    if (!aviso) {
+        mostrarMensaje("No se encontró el aviso.", "danger");
         return;
     }
 
+    avisoEnEdicion = id;
+
+    tituloInput.value = aviso.titulo || "";
+    cuerpoInput.value = aviso.cuerpo || "";
+
+    tituloFormulario.textContent = "Editar Aviso";
+    botonGuardar.textContent = "Guardar cambios";
+    botonCancelar.classList.remove("d-none");
+
+    ocultarMensaje();
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+
+    tituloInput.focus();
+}
+
+
+function cancelarEdicion() {
+    avisoEnEdicion = null;
+
+    tituloInput.value = "";
+    cuerpoInput.value = "";
+
+    tituloFormulario.textContent = "Crear Aviso";
+    botonGuardar.textContent = "Crear Aviso";
+    botonCancelar.classList.add("d-none");
+
+    ocultarMensaje();
+}
+
+
+async function guardarAviso() {
+    if (guardando) {
+        return;
+    }
+
+    const titulo = tituloInput.value.trim();
+    const cuerpo = cuerpoInput.value.trim();
+
+    if (!titulo || !cuerpo) {
+        mostrarMensaje(
+            "Debes completar el título y la descripción.",
+            "warning"
+        );
+        return;
+    }
+
+    const editando = avisoEnEdicion !== null;
+
+    const url = editando
+        ? API_URL + avisoEnEdicion
+        : API_URL;
+
+    const metodo = editando ? "PUT" : "POST";
+
+    guardando = true;
+    botonGuardar.disabled = true;
+
     try {
-        const res = await fetch(API_URL, {
-            method: "POST",
+        const res = await fetch(url, {
+            method: metodo,
             headers: {
                 "Content-Type": "application/json"
             },
@@ -94,25 +285,51 @@ async function crearAviso() {
             })
         });
 
-        if (res.ok) {
-            alert("✅ Aviso creado correctamente");
-
-            document.getElementById("titulo").value = "";
-            document.getElementById("cuerpo").value = "";
-
-            cargarAvisos();
-        } else {
-            alert("❌ Error al crear el aviso");
+        if (!res.ok) {
+            throw new Error("Error al guardar el aviso");
         }
 
+        cancelarEdicion();
+
+        await cargarAvisos();
+
+        mostrarMensaje(
+            editando
+                ? "Aviso actualizado correctamente."
+                : "Aviso creado correctamente.",
+            "success"
+        );
+
     } catch (error) {
-        alert("❌ Error de conexión");
+        console.error(error);
+
+        mostrarMensaje(
+            "No se pudo guardar el aviso.",
+            "danger"
+        );
+
+    } finally {
+        guardando = false;
+        botonGuardar.disabled = false;
     }
 }
 
-async function eliminarAviso(id) {
 
-    if (!confirm("¿Seguro que quieres eliminar este aviso?")) {
+async function eliminarAviso(id) {
+    const aviso = avisosActuales.find(
+        elemento => elemento.id === id
+    );
+
+    if (!aviso) {
+        return;
+    }
+
+    const confirmado = confirm(
+        "¿Seguro que deseas eliminar este aviso?\n\n" +
+        aviso.titulo
+    );
+
+    if (!confirmado) {
         return;
     }
 
@@ -121,17 +338,31 @@ async function eliminarAviso(id) {
             method: "DELETE"
         });
 
-        if (res.ok) {
-            alert("🗑 Aviso eliminado");
-            cargarAvisos();
-        } else {
-            alert("❌ Error al eliminar");
+        if (!res.ok) {
+            throw new Error("Error al eliminar");
         }
 
+        if (avisoEnEdicion === id) {
+            cancelarEdicion();
+        }
+
+        await cargarAvisos();
+
+        mostrarMensaje(
+            "Aviso eliminado correctamente.",
+            "success"
+        );
+
     } catch (error) {
-        alert("❌ Error de conexión");
+        console.error(error);
+
+        mostrarMensaje(
+            "No se pudo eliminar el aviso.",
+            "danger"
+        );
     }
 }
+
 
 cargarAvisos();
 </script>
