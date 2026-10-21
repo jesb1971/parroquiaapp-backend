@@ -1,20 +1,37 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aviso</title>
+
+<title>Aviso | Parroquia Cruz del Señor</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+    .descripcion-aviso {
+        white-space: pre-line;
+        overflow-wrap: anywhere;
+        line-height: 1.8;
+    }
+</style>
 </head>
 
 <body class="bg-gray-50 text-gray-800">
 
 <div class="max-w-2xl mx-auto py-6 px-4">
 
-    <a href="/avisos-publicos" class="text-sm text-gray-500 hover:underline">← Volver</a>
+    <!-- VOLVER -->
+    <a href="/avisos-publicos"
+       class="inline-block text-sm text-gray-500 hover:text-blue-700 hover:underline">
+        ← Volver
+    </a>
 
-    <div id="detalleAviso" class="mt-4 bg-white p-4 rounded-lg shadow-sm"></div>
+    <!-- DETALLE -->
+    <article id="detalleAviso"
+             class="mt-4 bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+    </article>
 
 </div>
 
@@ -22,27 +39,80 @@
 const avisoId = "{{ aviso_id }}";
 
 async function cargarDetalle() {
+
+    const contenedor = document.getElementById("detalleAviso");
+
     try {
-        const res = await fetch("/avisos/" + avisoId);
+        const res = await fetch(
+            "/avisos/" + encodeURIComponent(avisoId)
+        );
+
+        if (!res.ok) {
+            throw new Error("Aviso no encontrado");
+        }
+
         const aviso = await res.json();
 
-        const contenedor = document.getElementById("detalleAviso");
+        contenedor.replaceChildren();
 
         if (aviso.error) {
-            contenedor.innerHTML = "<p>No encontrado</p>";
+            const mensaje = document.createElement("p");
+            mensaje.className = "text-gray-500";
+            mensaje.textContent = "Aviso no encontrado.";
+            contenedor.appendChild(mensaje);
             return;
         }
 
-        contenedor.innerHTML = `
-            <h2 class="text-xl font-bold text-blue-700">${aviso.titulo}</h2>
-            <p class="text-gray-600 mt-2">${aviso.cuerpo}</p>
-            <p class="text-xs text-gray-400 mt-3">
-                ${new Date(aviso.publicado_at).toLocaleString()}
-            </p>
-        `;
+        // TÍTULO
+        const titulo = document.createElement("h2");
+        titulo.className =
+            "text-xl font-bold text-blue-700 leading-snug";
+
+        titulo.textContent = aviso.titulo || "Aviso parroquial";
+
+        // DESCRIPCIÓN
+        const descripcion = document.createElement("div");
+        descripcion.className =
+            "descripcion-aviso text-gray-700 mt-4 text-base";
+
+        descripcion.textContent = aviso.cuerpo || "";
+
+        // FECHA
+        const fecha = document.createElement("p");
+        fecha.className =
+            "text-xs text-gray-400 mt-5";
+
+        if (aviso.publicado_at) {
+            const fechaAviso = new Date(aviso.publicado_at);
+
+            if (!Number.isNaN(fechaAviso.getTime())) {
+                fecha.textContent = fechaAviso.toLocaleString(
+                    "es-ES",
+                    {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit"
+                    }
+                );
+            }
+        }
+
+        contenedor.appendChild(titulo);
+        contenedor.appendChild(descripcion);
+        contenedor.appendChild(fecha);
 
     } catch (error) {
-        console.error("Error");
+
+        console.error("Error cargando aviso:", error);
+
+        const mensaje = document.createElement("p");
+        mensaje.className = "text-red-600";
+        mensaje.textContent =
+            "No se pudo cargar el aviso. Inténtalo de nuevo.";
+
+        contenedor.replaceChildren(mensaje);
     }
 }
 
