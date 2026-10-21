@@ -1,64 +1,127 @@
+
 # app/main.py
-from fastapi import FastAPI, Request
+
+import os
+import shutil
+from datetime import datetime
+
+from fastapi import FastAPI, Request, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from app.routers import noticias
 
 # Base de datos
 from .db import Base, engine
 
-# 🔥 IMPORTANTE: importar models para que cree TODAS las tablas
+# Importar modelos para registrar todas las tablas
 from app.models import *
 
 # Routers
-from app.routers import evangelizacion, misas, avisos, auth, frontend, donativos
+from app.routers import (
+    evangelizacion,
+    misas,
+    avisos,
+    auth,
+    frontend,
+    donativos,
+    noticias
+)
+
 from app.security import exigir_administrador
-from fastapi import Depends
+
+
+# =====================================
+# APLICACIÓN
+# =====================================
 
 app = FastAPI(title="ParroquiaApp")
 
-# ⚠️ Crear tablas automáticamente (incluye fiestas_parroquia)
+# Crear tablas automáticamente
 Base.metadata.create_all(bind=engine)
 
-# Routers
+
+# =====================================
+# ROUTERS
+# =====================================
+
 app.include_router(evangelizacion.router)
 app.include_router(misas.router)
 app.include_router(avisos.router)
 app.include_router(auth.router)
 app.include_router(frontend.router)
 app.include_router(noticias.router)
-app.include_router(evangelizacion.router)
 app.include_router(donativos.router)
 
-# Static
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
-# Templates
-templates = Jinja2Templates(directory="app/templates")
+# =====================================
+# ARCHIVOS ESTÁTICOS
+# =====================================
 
-# Root
+app.mount(
+    "/static",
+    StaticFiles(directory="app/static"),
+    name="static"
+)
+
+
+# =====================================
+# IMÁGENES DE EVANGELIZACIÓN
+# =====================================
+
+IMAGENES_DIR = "/var/data/evangelizacion/imagenes"
+
+os.makedirs(IMAGENES_DIR, exist_ok=True)
+
+app.mount(
+    "/media/evangelizacion",
+    StaticFiles(directory=IMAGENES_DIR),
+    name="media_evangelizacion"
+)
+
+
+# =====================================
+# PLANTILLAS
+# =====================================
+
+templates = Jinja2Templates(
+    directory="app/templates"
+)
+
+
+# =====================================
+# PÁGINA PRINCIPAL
+# =====================================
+
 @app.get("/")
 def root():
     return RedirectResponse(url="/app")
 
-# Portada
+
 @app.get("/app", response_class=HTMLResponse)
 def app_home(request: Request):
-    return templates.TemplateResponse("home_demo.html", {"request": request})
-    
-import shutil
-import os
-from datetime import datetime
+    return templates.TemplateResponse(
+        "home_demo.html",
+        {"request": request}
+    )
+
+
+# =====================================
+# COPIA DE SEGURIDAD
+# =====================================
 
 def backup_db():
     try:
         origen = "/var/data/parroquia.db"
-        destino = f"/var/data/backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
-        
+
+        destino = (
+            "/var/data/backup_"
+            f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
+        )
+
         if os.path.exists(origen):
             shutil.copy(origen, destino)
             print(f"Backup creado: {destino}")
+
     except Exception as e:
         print("Error backup:", e)
 
@@ -67,34 +130,73 @@ def backup_db():
 def shutdown_event():
     backup_db()
 
+
+# =====================================
+# PANEL ADMINISTRADOR
+# =====================================
+
 @app.get("/admin", response_class=HTMLResponse)
 def admin_panel(
     request: Request,
-     admin: bool = Depends(exigir_administrador)
+    admin: bool = Depends(exigir_administrador)
 ):
     return templates.TemplateResponse(
         "admin_panel.html",
-        {"request": request})
-    
+        {"request": request}
+    )
+
+
+# =====================================
+# ADMINISTRACIÓN DE AVISOS
+# =====================================
+
 @app.get("/admin/avisos", response_class=HTMLResponse)
 def admin_avisos(request: Request):
-    return templates.TemplateResponse("admin_avisos.html", {"request": request})
-    
+    return templates.TemplateResponse(
+        "admin_avisos.html",
+        {"request": request}
+    )
+
+
+# =====================================
+# AVISOS PÚBLICOS
+# =====================================
+
 @app.get("/avisos-publicos", response_class=HTMLResponse)
 def avisos_publicos(request: Request):
-    return templates.TemplateResponse("avisos_publicos.html", {"request": request})
-    
+    return templates.TemplateResponse(
+        "avisos_publicos.html",
+        {"request": request}
+    )
+
+
 @app.get("/aviso/{aviso_id}", response_class=HTMLResponse)
 def vista_aviso(request: Request, aviso_id: int):
-    return templates.TemplateResponse("aviso_detalle.html", {
-        "request": request,
-        "aviso_id": aviso_id
-    })
-    
+    return templates.TemplateResponse(
+        "aviso_detalle.html",
+        {
+            "request": request,
+            "aviso_id": aviso_id
+        }
+    )
+
+
+# =====================================
+# NOTICIAS PÚBLICAS
+# =====================================
+
 @app.get("/noticias-publicas", response_class=HTMLResponse)
 def noticias_publicas(request: Request):
-    return templates.TemplateResponse("noticias_publicas.html", {"request": request})
-    
+    return templates.TemplateResponse(
+        "noticias_publicas.html",
+        {"request": request}
+    )
+
+
+# =====================================
+# ADMINISTRACIÓN DE NOTICIAS
+# =====================================
+
 @app.get("/admin-noticias", response_class=HTMLResponse)
 def admin_noticias(
     request: Request,
