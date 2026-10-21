@@ -67,7 +67,7 @@ TIPOS_AUDIO = {
     ".opus": {"audio/ogg", "audio/opus", "application/ogg"},
     ".ogg": {"audio/ogg", "application/ogg"},
     ".mp3": {"audio/mpeg", "audio/mp3"},
-     ".mpeg": {"audio/mpeg", "audio/mp3", "audio/x-mpeg"},
+     ".mpeg": {"audio/mpeg", "audio/mp3", "audio/x-mpeg", "video/mpeg"},
     ".m4a": {"audio/mp4", "audio/x-m4a"},
     ".aac": {"audio/aac", "audio/x-aac"}
 }
