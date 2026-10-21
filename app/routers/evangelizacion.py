@@ -199,6 +199,39 @@ def evangelizacion_view(
             "publicaciones": publicaciones
         }
     )
+    
+
+# =====================================
+# VISTA INDIVIDUAL DE REFLEXIÓN
+# =====================================
+
+@router.get("/evangelizacion/{publicacion_id}")
+def ver_reflexion(
+    publicacion_id: int,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+
+    publicacion = (
+        consultar_reflexiones(db)
+        .filter(models.Contenido.id == publicacion_id)
+        .first()
+    )
+
+    if publicacion is None:
+        raise HTTPException(
+            status_code=404,
+            detail="La reflexión no existe."
+        )
+
+    return templates.TemplateResponse(
+        "evangelizacion_detalle.html",
+        {
+            "request": request,
+            "publicacion": publicacion
+        }
+    )
+
 
 
 # =====================================

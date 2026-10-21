@@ -30,10 +30,6 @@
         width: 100%;
         height: 48px;
     }
-
-    .panel-oculto {
-        display: none;
-    }
 </style>
 </head>
 
@@ -59,7 +55,7 @@
 
         {% if publicaciones %}
 
-        <!-- PUBLICACIÓN MÁS RECIENTE -->
+        <!-- REFLEXIÓN MÁS RECIENTE -->
         {% set actual = publicaciones[0] %}
 
         <section id="publicacion-actual">
@@ -72,6 +68,7 @@
 
             <article class="bg-white border-b border-gray-200 pb-6">
 
+                <!-- IMAGEN -->
                 {% if actual.imagen_url %}
                 <div class="w-full bg-gray-100">
                     <img src="{{ actual.imagen_url }}"
@@ -80,6 +77,7 @@
                 </div>
                 {% endif %}
 
+                <!-- CONTENIDO -->
                 <div class="px-5 pt-4">
 
                     {% if actual.publicado_at %}
@@ -103,6 +101,7 @@
                         Leer más
                     </button>
 
+                    <!-- AUDIO -->
                     {% if actual.audio_url %}
                     <section class="mt-5 bg-blue-50 border border-blue-100 rounded-xl p-4">
 
@@ -122,13 +121,14 @@
                     {% endif %}
 
                 </div>
+
             </article>
         </section>
 
         <!-- HISTORIAL -->
         {% if publicaciones|length > 1 %}
 
-        <section class="px-4 pt-7">
+        <section id="historial" class="px-4 pt-7 scroll-mt-20">
 
             <h2 class="text-lg font-bold text-blue-800 mb-4">
                 📚 Reflexiones anteriores
@@ -138,93 +138,56 @@
 
                 {% for anterior in publicaciones[1:] %}
 
-                <div class="border border-gray-200 rounded-xl overflow-hidden bg-white">
+                <a href="/evangelizacion/{{ anterior.id }}"
+                   class="flex items-center gap-3 p-3 border border-gray-200 rounded-xl bg-white hover:bg-blue-50 transition">
 
-                    <!-- TARJETA RESUMIDA -->
-                    <button type="button"
-                            onclick="alternarAnterior('{{ anterior.id }}')"
-                            aria-expanded="false"
-                            aria-controls="detalle-{{ anterior.id }}"
-                            id="abrir-{{ anterior.id }}"
-                            class="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50">
+                    <!-- MINIATURA -->
+                    {% if anterior.imagen_url %}
+                    <img src="{{ anterior.imagen_url }}"
+                         alt=""
+                         loading="lazy"
+                         class="w-20 h-20 object-cover rounded-lg flex-shrink-0">
+                    {% else %}
+                    <div class="w-20 h-20 bg-blue-50 rounded-lg flex items-center justify-center text-2xl flex-shrink-0">
+                        📖
+                    </div>
+                    {% endif %}
 
-                        {% if anterior.imagen_url %}
-                        <img src="{{ anterior.imagen_url }}"
-                             alt=""
-                             loading="lazy"
-                             class="w-20 h-20 object-cover rounded-lg flex-shrink-0">
-                        {% else %}
-                        <div class="w-20 h-20 bg-blue-50 rounded-lg flex items-center justify-center text-2xl flex-shrink-0">
-                            📖
-                        </div>
+                    <!-- INFORMACIÓN -->
+                    <div class="flex-1 min-w-0">
+
+                        {% if anterior.publicado_at %}
+                        <p class="text-xs text-gray-500 mb-1">
+                            {{ anterior.publicado_at.strftime('%d/%m/%Y') }}
+                        </p>
                         {% endif %}
 
-                        <div class="flex-1 min-w-0">
+                        <h3 class="font-semibold text-blue-800 text-sm leading-snug">
+                            {{ anterior.titulo }}
+                        </h3>
 
-                            {% if anterior.publicado_at %}
-                            <p class="text-xs text-gray-500 mb-1">
-                                {{ anterior.publicado_at.strftime('%d/%m/%Y') }}
-                            </p>
-                            {% endif %}
-
-                            <h3 class="font-semibold text-blue-800 text-sm leading-snug">
-                                {{ anterior.titulo }}
-                            </h3>
-
-                            <p class="text-xs text-blue-600 mt-2">
-                                Ver reflexión
-                            </p>
-
-                        </div>
-
-                        <span class="text-blue-700 text-xl" aria-hidden="true">
-                            ›
-                        </span>
-
-                    </button>
-
-                    <!-- DETALLE OCULTO -->
-                    <div id="detalle-{{ anterior.id }}"
-                         class="panel-oculto border-t border-gray-200">
-
-                        {% if anterior.imagen_url %}
-                        <img src="{{ anterior.imagen_url }}"
-                             alt="Imagen de la reflexión"
-                             loading="lazy"
-                             class="w-full h-auto max-h-[500px] object-contain bg-gray-100">
+                        {% if anterior.audio_url %}
+                        <p class="text-xs text-gray-500 mt-1">
+                            🎧 Incluye audio
+                        </p>
                         {% endif %}
 
-                        <div class="p-4">
-
-                            <div class="texto-reflexion">{{ anterior.cuerpo_md }}</div>
-
-                            {% if anterior.audio_url %}
-                            <section class="mt-5 bg-blue-50 border border-blue-100 rounded-xl p-4">
-
-                                <h4 class="text-sm font-bold text-blue-800 mb-3">
-                                    🎧 Escuchar reflexión
-                                </h4>
-
-                                <audio controls
-                                       preload="none"
-                                       class="reproductor-audio"
-                                       aria-label="Audio de la reflexión anterior">
-                                    <source src="{{ anterior.audio_url }}">
-                                    Tu navegador no admite audio.
-                                </audio>
-
-                            </section>
-                            {% endif %}
-
-                        </div>
+                        <p class="text-xs text-blue-600 font-semibold mt-2">
+                            Ver reflexión →
+                        </p>
 
                     </div>
 
-                </div>
+                    <span class="text-blue-700 text-xl" aria-hidden="true">
+                        ›
+                    </span>
+
+                </a>
 
                 {% endfor %}
 
             </div>
+
         </section>
 
         {% endif %}
@@ -250,37 +213,16 @@ function alternarLectura(id) {
     const texto = document.getElementById("reflexion-" + id);
     const boton = document.getElementById("boton-" + id);
 
-    if (!texto || !boton) return;
+    if (!texto || !boton) {
+        return;
+    }
 
     const estabaResumido = texto.classList.contains("texto-resumido");
 
     texto.classList.toggle("texto-resumido");
+
     boton.textContent = estabaResumido ? "Leer menos" : "Leer más";
     boton.setAttribute("aria-expanded", String(estabaResumido));
-}
-
-function alternarAnterior(id) {
-    const detalle = document.getElementById("detalle-" + id);
-    const boton = document.getElementById("abrir-" + id);
-
-    if (!detalle || !boton) return;
-
-    const estabaOculto = detalle.classList.contains("panel-oculto");
-
-    detalle.classList.toggle("panel-oculto");
-    boton.setAttribute("aria-expanded", String(estabaOculto));
-
-    const etiqueta = boton.querySelector(".text-blue-600");
-
-    if (etiqueta) {
-        etiqueta.textContent = estabaOculto
-            ? "Ocultar reflexión"
-            : "Ver reflexión";
-    }
-
-    if (!estabaOculto) {
-        detalle.querySelectorAll("audio").forEach(audio => audio.pause());
-    }
 }
 </script>
 
