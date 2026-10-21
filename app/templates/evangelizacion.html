@@ -1,70 +1,113 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Evangelización</title>
-
+<title>Evangelización | Parroquia Cruz del Señor</title>
 <script src="https://cdn.tailwindcss.com"></script>
 
+<style>
+    .texto-reflexion {
+        font-size: 16px;
+        line-height: 1.75;
+        color: #374151;
+        white-space: pre-line;
+        overflow-wrap: anywhere;
+    }
+
+    .texto-resumido {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 7;
+        line-clamp: 7;
+        overflow: hidden;
+    }
+</style>
 </head>
 
-<body class="bg-gray-100">
+<body class="bg-gray-100 text-gray-800">
 
-<div class="max-w-md mx-auto min-h-screen bg-white shadow-lg">
+<div class="max-w-md mx-auto min-h-screen bg-white shadow-md">
 
     <!-- CABECERA -->
-    <div class="bg-blue-700 text-white p-4 flex items-center justify-between">
-
+    <header class="bg-blue-700 text-white p-4 flex items-center justify-between">
         <a href="/app"
-           class="bg-white text-blue-700 px-3 py-1 rounded-lg text-sm font-semibold">
+           class="bg-white text-blue-700 px-3 py-2 rounded-lg text-sm font-semibold">
             ← Volver
         </a>
 
-        <h1 class="text-lg font-bold">
-            Evangelización
-        </h1>
+        <h1 class="text-lg font-bold">Evangelización</h1>
+    </header>
 
-    </div>
-
-    <!-- CONTENIDO -->
-    <div class="p-4">
+    <main class="p-4">
 
         {% if contenido %}
 
-            <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+        <article class="bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100">
 
-                {% if contenido.imagen_url %}
-                <img src="{{ contenido.imagen_url }}"
-                     class="w-full h-64 object-cover">
+            <!-- IMAGEN -->
+            {% if contenido.imagen_url %}
+            <img src="{{ contenido.imagen_url }}"
+                 alt="Imagen de la reflexión"
+                 class="w-full max-h-72 object-cover">
+            {% endif %}
+
+            <div class="p-4">
+
+                <p class="text-sm font-semibold text-blue-700 mb-2">
+                    Padre Sigfredo
+                </p>
+
+                <h2 class="text-xl font-bold leading-snug mb-3">
+                    {{ contenido.titulo }}
+                </h2>
+
+                {% if contenido.publicado_at %}
+                <p class="text-xs text-gray-500 mb-4">
+                    Publicado el {{ contenido.publicado_at.strftime('%d/%m/%Y') }}
+                </p>
                 {% endif %}
 
-                <div class="p-4">
+                <!-- REFLEXIÓN -->
+                <div id="textoReflexion"
+                     class="texto-reflexion texto-resumido">{{ contenido.cuerpo_md }}</div>
 
-                    <h2 class="text-2xl font-bold mb-3">
-                        {{ contenido.titulo }}
-                    </h2>
-
-                    <p class="text-blue-700 italic mb-4">
-                        {{ contenido.cuerpo_md }}
-                    </p>
-
-                </div>
+                <!-- LEER MÁS -->
+                <button id="botonLeer"
+                        type="button"
+                        onclick="alternarLectura()"
+                        class="mt-3 text-green-700 font-semibold hover:underline">
+                    Leer más
+                </button>
 
             </div>
+        </article>
 
         {% else %}
 
-            <div class="bg-yellow-100 text-yellow-800 p-4 rounded-xl">
-                No hay contenido publicado todavía.
-            </div>
+        <div class="bg-yellow-50 text-yellow-800 p-4 rounded-xl">
+            Todavía no hay reflexiones publicadas.
+        </div>
 
         {% endif %}
 
-    </div>
-
+    </main>
 </div>
+
+<script>
+function alternarLectura() {
+    const texto = document.getElementById("textoReflexion");
+    const boton = document.getElementById("botonLeer");
+
+    const estabaResumido = texto.classList.contains("texto-resumido");
+
+    texto.classList.toggle("texto-resumido");
+
+    boton.textContent = estabaResumido ? "Leer menos" : "Leer más";
+    boton.setAttribute("aria-expanded", String(estabaResumido));
+}
+</script>
 
 </body>
 </html>
