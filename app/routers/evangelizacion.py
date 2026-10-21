@@ -58,6 +58,7 @@ FORMATOS_AUDIO = {
     ".opus": "audio/ogg",
     ".ogg": "audio/ogg",
     ".mp3": "audio/mpeg",
+    ".mpeg": "audio/mpeg",
     ".m4a": "audio/mp4",
     ".aac": "audio/aac"
 }
@@ -66,6 +67,7 @@ TIPOS_AUDIO = {
     ".opus": {"audio/ogg", "audio/opus", "application/ogg"},
     ".ogg": {"audio/ogg", "application/ogg"},
     ".mp3": {"audio/mpeg", "audio/mp3"},
+     ".mpeg": {"audio/mpeg", "audio/mp3", "audio/x-mpeg"},
     ".m4a": {"audio/mp4", "audio/x-m4a"},
     ".aac": {"audio/aac", "audio/x-aac"}
 }
@@ -241,7 +243,7 @@ async def guardar_audio(audio: UploadFile):
     # Comprobación básica de cabeceras
     if extension in {".opus", ".ogg"}:
         valido = datos.startswith(b"OggS")
-    elif extension == ".mp3":
+    elif extension in {".mp3", ".mpeg"}:
         valido = (
             datos.startswith(b"ID3")
             or (
