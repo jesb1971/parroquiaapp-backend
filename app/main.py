@@ -71,7 +71,6 @@ app.mount(
 IMAGENES_DIR = "/var/data/evangelizacion/imagenes"
 AUDIOS_DIR = "/var/data/evangelizacion/audios"
 
-# Crear carpetas si todavía no existen
 os.makedirs(IMAGENES_DIR, exist_ok=True)
 os.makedirs(AUDIOS_DIR, exist_ok=True)
 
@@ -79,9 +78,6 @@ os.makedirs(AUDIOS_DIR, exist_ok=True)
 # =====================================
 # AUDIOS DE EVANGELIZACIÓN
 # =====================================
-
-# Esta ruta debe registrarse antes que
-# /media/evangelizacion para evitar conflictos.
 
 app.mount(
     "/media/evangelizacion/audios",
@@ -98,6 +94,23 @@ app.mount(
     "/media/evangelizacion",
     StaticFiles(directory=IMAGENES_DIR),
     name="media_evangelizacion"
+)
+
+
+# =====================================
+# IMÁGENES DE NOTICIAS
+# =====================================
+
+NOTICIAS_IMAGENES_DIR = "/var/data/noticias/imagenes"
+
+# Crear carpeta persistente
+os.makedirs(NOTICIAS_IMAGENES_DIR, exist_ok=True)
+
+# Habilitar acceso público a las imágenes
+app.mount(
+    "/media/noticias",
+    StaticFiles(directory=NOTICIAS_IMAGENES_DIR),
+    name="media_noticias"
 )
 
 
