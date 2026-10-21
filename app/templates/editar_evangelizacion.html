@@ -1,0 +1,250 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Editar Evangelización | Parroquia Cruz del Señor</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 text-gray-800">
+
+<div class="max-w-2xl mx-auto p-4">
+
+    <!-- CABECERA -->
+    <header class="bg-blue-700 text-white p-4 rounded-2xl mb-6 flex items-center justify-between">
+
+        <a href="/admin/evangelizacion"
+           class="bg-white text-blue-700 px-4 py-2 rounded-lg font-semibold">
+            ← Volver
+        </a>
+
+        <h1 class="text-xl font-bold">
+            Editar reflexión
+        </h1>
+
+    </header>
+
+    <!-- FORMULARIO -->
+    <section class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+
+        <p class="text-sm text-gray-500 mb-5">
+            Modifica únicamente los campos que necesites.
+            La imagen y el audio actuales se conservarán si no seleccionas otros archivos.
+        </p>
+
+        <form method="POST"
+              action="/admin/evangelizacion/editar/{{ publicacion.id }}"
+              enctype="multipart/form-data">
+
+            <!-- TÍTULO -->
+            <div class="mb-4">
+                <label for="titulo" class="block font-semibold mb-1">
+                    Título
+                </label>
+
+                <input type="text"
+                       id="titulo"
+                       name="titulo"
+                       value="{{ publicacion.titulo }}"
+                       maxlength="200"
+                       required
+                       class="w-full border rounded-lg p-3">
+            </div>
+
+            <!-- CITA BÍBLICA -->
+            <div class="mb-4">
+                <label for="cita_biblica" class="block font-semibold mb-1">
+                    Cita bíblica
+                </label>
+
+                <input type="text"
+                       id="cita_biblica"
+                       name="cita_biblica"
+                       value="{{ cita_biblica }}"
+                       class="w-full border rounded-lg p-3">
+            </div>
+
+            <!-- REFLEXIÓN -->
+            <div class="mb-4">
+                <label for="reflexion" class="block font-semibold mb-1">
+                    Reflexión
+                </label>
+
+                <textarea id="reflexion"
+                          name="reflexion"
+                          rows="10"
+                          required
+                          class="w-full border rounded-lg p-3">{{ reflexion }}</textarea>
+            </div>
+
+            <!-- PREGUNTA -->
+            <div class="mb-4">
+                <label for="pregunta_reflexion" class="block font-semibold mb-1">
+                    Pregunta para meditar
+                </label>
+
+                <textarea id="pregunta_reflexion"
+                          name="pregunta_reflexion"
+                          rows="3"
+                          class="w-full border rounded-lg p-3">{{ pregunta_reflexion }}</textarea>
+            </div>
+
+            <!-- IMAGEN ACTUAL -->
+            <div class="mb-4">
+                <label for="imagen" class="block font-semibold mb-2">
+                    Imagen de la publicación
+                </label>
+
+                {% if publicacion.imagen_url %}
+                <p class="text-sm text-gray-600 mb-2">
+                    Imagen actual:
+                </p>
+
+                <img src="{{ publicacion.imagen_url }}"
+                     alt="Imagen actual"
+                     class="w-full max-h-72 object-contain rounded-lg border mb-3">
+                {% else %}
+                <p class="text-sm text-gray-500 mb-3">
+                    Esta publicación no tiene imagen.
+                </p>
+                {% endif %}
+
+                <input type="file"
+                       id="imagen"
+                       name="imagen"
+                       accept="image/jpeg,image/png,image/webp"
+                       class="w-full border rounded-lg p-3 bg-white">
+
+                <p class="text-xs text-gray-500 mt-1">
+                    Selecciona una nueva imagen solo si deseas sustituir la actual.
+                    Máximo 5 MB.
+                </p>
+
+                <img id="vistaPrevia"
+                     alt="Vista previa de la nueva imagen"
+                     class="hidden mt-3 w-full max-h-72 object-contain rounded-lg border">
+            </div>
+
+            <!-- AUDIO ACTUAL -->
+            <div class="mb-6">
+                <label for="audio" class="block font-semibold mb-2">
+                    Audio de la publicación
+                </label>
+
+                {% if publicacion.audio_url %}
+                <p class="text-sm text-gray-600 mb-2">
+                    Audio actual:
+                </p>
+
+                <audio controls
+                       preload="metadata"
+                       src="{{ publicacion.audio_url }}"
+                       class="w-full mb-3">
+                </audio>
+                {% else %}
+                <p class="text-sm text-gray-500 mb-3">
+                    Esta publicación no tiene audio.
+                </p>
+                {% endif %}
+
+                <input type="file"
+                       id="audio"
+                       name="audio"
+                       accept="audio/*,.opus,.ogg,.mp3,.mpeg,.m4a,.aac"
+                       class="w-full border rounded-lg p-3 bg-white">
+
+                <p class="text-xs text-gray-500 mt-1">
+                    Selecciona un nuevo audio solo si deseas sustituir el actual.
+                    Máximo 30 MB.
+                </p>
+
+                <audio id="audioPrevia"
+                       controls
+                       class="hidden w-full mt-3">
+                </audio>
+            </div>
+
+            <!-- GUARDAR -->
+            <button type="submit"
+                    class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold px-6 py-3 rounded-xl">
+                Guardar cambios
+            </button>
+
+            <a href="/admin/evangelizacion"
+               class="block text-center mt-4 text-gray-600 hover:text-gray-900">
+                Cancelar
+            </a>
+
+        </form>
+
+    </section>
+
+</div>
+
+<script>
+const imagenInput = document.getElementById("imagen");
+const imagenPrevia = document.getElementById("vistaPrevia");
+
+const audioInput = document.getElementById("audio");
+const audioPrevia = document.getElementById("audioPrevia");
+
+let imagenURL = null;
+let audioURL = null;
+
+imagenInput.addEventListener("change", function () {
+
+    if (imagenURL) {
+        URL.revokeObjectURL(imagenURL);
+        imagenURL = null;
+    }
+
+    const archivo = this.files[0];
+
+    if (!archivo) {
+        imagenPrevia.removeAttribute("src");
+        imagenPrevia.classList.add("hidden");
+        return;
+    }
+
+    const tipos = ["image/jpeg", "image/png", "image/webp"];
+
+    if (!tipos.includes(archivo.type) || archivo.size > 5 * 1024 * 1024) {
+        alert("Selecciona una imagen JPG, PNG o WebP de hasta 5 MB.");
+        this.value = "";
+        imagenPrevia.removeAttribute("src");
+        imagenPrevia.classList.add("hidden");
+        return;
+    }
+
+    imagenURL = URL.createObjectURL(archivo);
+    imagenPrevia.src = imagenURL;
+    imagenPrevia.classList.remove("hidden");
+});
+
+audioInput.addEventListener("change", function () {
+
+    if (audioURL) {
+        URL.revokeObjectURL(audioURL);
+        audioURL = null;
+    }
+
+    const archivo = this.files[0];
+
+    if (!archivo) {
+        audioPrevia.pause();
+        audioPrevia.removeAttribute("src");
+        audioPrevia.load();
+        audioPrevia.classList.add("hidden");
+        return;
+    }
+
+    audioURL = URL.createObjectURL(archivo);
+    audioPrevia.src = audioURL;
+    audioPrevia.classList.remove("hidden");
+});
+</script>
+
+</body>
+</html>

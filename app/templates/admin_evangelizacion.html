@@ -21,7 +21,7 @@
         <h1 class="text-xl font-bold">Evangelización</h1>
     </header>
 
-    <!-- FORMULARIO -->
+    <!-- NUEVA PUBLICACIÓN -->
     <section class="bg-white rounded-2xl shadow-lg p-6 mb-6">
 
         <h2 class="text-lg font-bold mb-4">
@@ -32,7 +32,6 @@
               action="/admin/evangelizacion/crear"
               enctype="multipart/form-data">
 
-            <!-- TÍTULO -->
             <div class="mb-4">
                 <label for="titulo" class="block font-semibold mb-1">
                     Título
@@ -44,7 +43,6 @@
                        required>
             </div>
 
-            <!-- CITA BÍBLICA -->
             <div class="mb-4">
                 <label for="cita_biblica" class="block font-semibold mb-1">
                     Cita bíblica
@@ -56,7 +54,6 @@
                        class="w-full border rounded-lg p-3">
             </div>
 
-            <!-- REFLEXIÓN -->
             <div class="mb-4">
                 <label for="reflexion" class="block font-semibold mb-1">
                     Reflexión
@@ -68,7 +65,6 @@
                           required></textarea>
             </div>
 
-            <!-- PREGUNTA -->
             <div class="mb-4">
                 <label for="pregunta_reflexion" class="block font-semibold mb-1">
                     Pregunta para meditar
@@ -92,7 +88,7 @@
                        class="w-full border rounded-lg p-3 bg-white">
 
                 <p class="text-xs text-gray-500 mt-1">
-                    Selecciona una imagen JPG, PNG o WebP (máximo 5 MB).
+                    Imagen JPG, PNG o WebP (máximo 5 MB).
                 </p>
 
                 <img id="vistaPrevia"
@@ -109,7 +105,7 @@
                 <input type="file"
                        id="audio"
                        name="audio"
-                       accept="audio/*,.opus,.ogg,.mp3,.m4a,.aac"
+                       accept="audio/*,.opus,.ogg,.mp3,.mpeg,.m4a,.aac"
                        class="w-full border rounded-lg p-3 bg-white">
 
                 <p class="text-xs text-gray-500 mt-1">
@@ -122,13 +118,94 @@
                 </audio>
             </div>
 
-            <!-- PUBLICAR -->
             <button type="submit"
                     class="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-xl font-bold w-full">
                 Publicar reflexión
             </button>
 
         </form>
+    </section>
+
+    <!-- PUBLICACIONES EXISTENTES -->
+    <section class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+
+        <h2 class="text-lg font-bold mb-4">
+            Publicaciones existentes
+        </h2>
+
+        {% if publicaciones %}
+
+            <div class="space-y-4">
+
+                {% for publicacion in publicaciones %}
+
+                <div class="border border-gray-200 rounded-xl p-4">
+
+                    <div class="flex gap-3 items-start">
+
+                        {% if publicacion.imagen_url %}
+                        <img src="{{ publicacion.imagen_url }}"
+                             alt="Imagen de la publicación"
+                             class="w-20 h-20 object-cover rounded-lg flex-shrink-0">
+                        {% endif %}
+
+                        <div class="flex-1 min-w-0">
+
+                            <p class="font-semibold text-gray-900 break-words">
+                                {{ publicacion.titulo }}
+                            </p>
+
+                            {% if publicacion.publicado_at %}
+                            <p class="text-xs text-gray-500 mt-1">
+                                {{ publicacion.publicado_at.strftime('%d/%m/%Y') }}
+                            </p>
+                            {% endif %}
+
+                            {% if publicacion.audio_url %}
+                            <p class="text-xs text-green-700 mt-1">
+                                🎧 Incluye audio
+                            </p>
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+
+                    <div class="flex gap-2 mt-4">
+
+                        <a href="/admin/evangelizacion/editar/{{ publicacion.id }}"
+                           class="flex-1 text-center bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-semibold">
+                            Editar
+                        </a>
+
+                        <form method="POST"
+                              action="/admin/evangelizacion/eliminar/{{ publicacion.id }}"
+                              class="flex-1"
+                              onsubmit="return confirm('¿Seguro que deseas eliminar esta publicación?');">
+
+                            <button type="submit"
+                                    class="w-full bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-semibold">
+                                Eliminar
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+        {% else %}
+
+            <p class="text-gray-500">
+                Todavía no hay publicaciones.
+            </p>
+
+        {% endif %}
+
     </section>
 
 </div>

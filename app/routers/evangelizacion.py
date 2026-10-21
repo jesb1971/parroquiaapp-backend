@@ -28,6 +28,7 @@ from app.security import exigir_administrador
 router = APIRouter(tags=["evangelizacion"])
 templates = Jinja2Templates(directory="app/templates")
 
+
 # =====================================
 # ALMACENAMIENTO PERSISTENTE
 # =====================================
@@ -53,7 +54,6 @@ FIRMAS_IMAGEN = {
     )
 }
 
-# Formatos habituales de audio de WhatsApp
 FORMATOS_AUDIO = {
     ".opus": "audio/ogg",
     ".ogg": "audio/ogg",
@@ -67,14 +67,19 @@ TIPOS_AUDIO = {
     ".opus": {"audio/ogg", "audio/opus", "application/ogg"},
     ".ogg": {"audio/ogg", "application/ogg"},
     ".mp3": {"audio/mpeg", "audio/mp3"},
-     ".mpeg": {"audio/mpeg", "audio/mp3", "audio/x-mpeg", "video/mpeg"},
+    ".mpeg": {
+        "audio/mpeg",
+        "audio/mp3",
+        "audio/x-mpeg",
+        "video/mpeg"
+    },
     ".m4a": {"audio/mp4", "audio/x-m4a"},
     ".aac": {"audio/aac", "audio/x-aac"}
 }
 
 
 # =====================================
-# CONSULTA DE REFLEXIONES
+# CONSULTAS
 # =====================================
 
 def consultar_reflexiones(db):
@@ -87,6 +92,63 @@ def consultar_reflexiones(db):
             models.Contenido.id.desc()
         )
     )
+
+
+def obtener_publicacion(db, publicacion_id):
+    publicacion = (
+        db.query(models.Contenido)
+        .filter(models.Contenido.id == publicacion_id)
+        .filter(models.Contenido.tipo == "reflexion")
+        .first()
+    )
+
+    if not publicacion:
+        raise HTTPException(
+            status_code=404,
+            detail="Publicación no encontrada."
+        )
+
+    return publicacion
+
+
+def separar_contenido(cuerpo):
+    """Recupera los campos del contenido existente."""
+    texto = cuerpo or ""
+    cita = ""
+    pregunta = ""
+    partes_reflexion = []
+
+    for bloque in texto.split("\n\n"):
+        bloque = bloque.strip()
+
+        if bloque.startswith("📖 "):
+            cita = bloque[2:].strip()
+        elif bloque.startswith("❓ "):
+            pregunta = bloque[2:].strip()
+        elif bloque.startswith("🎧 Audio:"):
+            continue
+        elif bloque:
+            partes_reflexion.append(bloque)
+
+    return {
+        "cita_biblica": cita,
+        "reflexion": "\n\n".join(partes_reflexion),
+        "pregunta_reflexion": pregunta
+    }
+
+
+def construir_contenido(cita, reflexion, pregunta):
+    partes = []
+
+    if cita.strip():
+        partes.append(f"📖 {cita.strip()}")
+
+    partes.append(reflexion.strip())
+
+    if pregunta.strip():
+        partes.append(f"❓ {pregunta.strip()}")
+
+    return "\n\n".join(partes)
 
 
 # =====================================
@@ -240,7 +302,6 @@ async def guardar_audio(audio: UploadFile):
             detail="El archivo de audio está vacío."
         )
 
-    # Comprobación básica de cabeceras
     if extension in {".opus", ".ogg"}:
         valido = datos.startswith(b"OggS")
     elif extension in {".mp3", ".mpeg"}:
@@ -312,22 +373,14 @@ async def crear_publicacion(
             ruta, audio_url = await guardar_audio(audio)
             archivos_guardados.append(ruta)
 
-        partes = []
-
-        if cita_biblica.strip():
-            partes.append(f"📖 {cita_biblica.strip()}")
-
-        partes.append(reflexion.strip())
-
-        if pregunta_reflexion.strip():
-            partes.append(f"❓ {pregunta_reflexion.strip()}")
-
-        contenido = "\n\n".join(partes)
-
         nuevo = models.Contenido(
             tipo="reflexion",
             titulo=titulo.strip(),
-            cuerpo_md=contenido,
+            cuerpo_md=construir_contenido(
+                cita_biblica,
+                reflexion,
+                pregunta_reflexion
+            ),
             imagen_url=imagen_url,
             audio_url=audio_url,
             publicado_at=datetime.utcnow()
@@ -346,6 +399,111 @@ async def crear_publicacion(
                 pass
 
         raise
+
+    return RedirectResponse(
+        url="/admin/evangelizacion",
+        status_code=303
+    )
+
+
+# =====================================
+# FORMULARIO DE EDICIÓN
+# =====================================
+
+@router.get("/admin/evangelizacion/editar/{publicacion_id}")
+def formulario_edicion(
+    publicacion_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    admin: bool = Depends(exigir_administrador)
+):
+
+    publicacion = obtener_publicacion(db, publicacion_id)
+
+    campos = separar_contenido(publicacion.cuerpo_md)
+
+    return templates.TemplateResponse(
+        "editar_evangelizacion.html",
+        {
+            "request": request,
+            "publicacion": publicacion,
+            **campos
+        }
+    )
+
+
+# =====================================
+# GUARDAR EDICIÓN
+# =====================================
+
+@router.post("/admin/evangelizacion/editar/{publicacion_id}")
+async def guardar_edicion(
+    publicacion_id: int,
+    titulo: str = Form(...),
+    cita_biblica: str = Form(""),
+    reflexion: str = Form(...),
+    pregunta_reflexion: str = Form(""),
+    imagen: UploadFile | None = File(None),
+    audio: UploadFile | None = File(None),
+    db: Session = Depends(get_db),
+    admin: bool = Depends(exigir_administrador)
+):
+
+    publicacion = obtener_publicacion(db, publicacion_id)
+    archivos_guardados = []
+
+    try:
+        if imagen is not None and imagen.filename:
+            ruta, imagen_url = await guardar_imagen(imagen)
+            archivos_guardados.append(ruta)
+            publicacion.imagen_url = imagen_url
+
+        if audio is not None and audio.filename:
+            ruta, audio_url = await guardar_audio(audio)
+            archivos_guardados.append(ruta)
+            publicacion.audio_url = audio_url
+
+        publicacion.titulo = titulo.strip()
+        publicacion.cuerpo_md = construir_contenido(
+            cita_biblica,
+            reflexion,
+            pregunta_reflexion
+        )
+
+        db.commit()
+
+    except Exception:
+        db.rollback()
+
+        for ruta in archivos_guardados:
+            try:
+                os.remove(ruta)
+            except OSError:
+                pass
+
+        raise
+
+    return RedirectResponse(
+        url="/admin/evangelizacion",
+        status_code=303
+    )
+
+
+# =====================================
+# ELIMINAR PUBLICACIÓN
+# =====================================
+
+@router.post("/admin/evangelizacion/eliminar/{publicacion_id}")
+def eliminar_publicacion(
+    publicacion_id: int,
+    db: Session = Depends(get_db),
+    admin: bool = Depends(exigir_administrador)
+):
+
+    publicacion = obtener_publicacion(db, publicacion_id)
+
+    db.delete(publicacion)
+    db.commit()
 
     return RedirectResponse(
         url="/admin/evangelizacion",
