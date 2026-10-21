@@ -170,3 +170,42 @@ class Evangelizacion(Base):
     publicado = Column(Boolean, default=True)
 
     fecha_publicacion = Column(DateTime, default=datetime.utcnow)
+    
+
+# ─────────────────────────────────────────────
+# Módulo de Donativos - Configuración
+# ─────────────────────────────────────────────
+
+class ConfiguracionDonativos(Base):
+    __tablename__ = "configuracion_donativos"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    bizum_codigo = Column(String(20), nullable=False, default="03155")
+
+    donativo_url = Column(
+        String(500),
+        nullable=False,
+        default=(
+            "https://www.donoamiiglesia.es/es/donar.html/"
+            "4cb6bfb6-ed3e-e611-80e8-005056b101e1"
+        )
+    )
+
+    mensaje_informativo = Column(
+        Text,
+        default=(
+            "Tu colaboración ayuda a sostener la vida, "
+            "las actividades y la misión de nuestra parroquia."
+        )
+    )
+
+    mensaje_agradecimiento = Column(
+        Text,
+        default=(
+            "Gracias por tu generosidad. Cada aportación "
+            "contribuye al mantenimiento de nuestra parroquia."
+        )
+    )
+
+    activo = Column(Boolean, default=True, nullable=False)

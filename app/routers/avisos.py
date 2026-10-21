@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 from ..db import get_db
 from .. import models, schemas
+from app.security import exigir_administrador
 
 router = APIRouter(prefix="/avisos", tags=["avisos"])
 
@@ -17,7 +18,10 @@ def listar_avisos(db: Session = Depends(get_db)):
     )
 
 @router.post("/crear", response_model=schemas.AvisoOut)
-def crear_aviso_demo(db: Session = Depends(get_db)):
+def crear_aviso_demo(
+    db: Session = Depends(get_db),
+    admin: bool = Depends(exigir_administrador)
+):
     """Crea un aviso de prueba para validar el módulo."""
     aviso = models.Aviso(
         titulo="Aviso de ejemplo",
@@ -31,7 +35,11 @@ def crear_aviso_demo(db: Session = Depends(get_db)):
     return aviso
     
 @router.post("/", response_model=schemas.AvisoOut)
-def crear_aviso(aviso: schemas.AvisoCreate, db: Session = Depends(get_db)):
+def crear_aviso(
+    aviso: schemas.AvisoCreate,
+    db: Session = Depends(get_db),
+    admin: bool = Depends(exigir_administrador)
+):
     """Crea un aviso real desde datos enviados (formulario o API)."""
     
     nuevo_aviso = models.Aviso(
@@ -48,7 +56,11 @@ def crear_aviso(aviso: schemas.AvisoCreate, db: Session = Depends(get_db)):
     return nuevo_aviso
     
 @router.delete("/{aviso_id}")
-def eliminar_aviso(aviso_id: int, db: Session = Depends(get_db)):
+def eliminar_aviso(
+    aviso_id: int,
+    db: Session = Depends(get_db),
+    admin: bool = Depends(exigir_administrador)
+):
     aviso = db.query(models.Aviso).filter(models.Aviso.id == aviso_id).first()
 
     if not aviso:

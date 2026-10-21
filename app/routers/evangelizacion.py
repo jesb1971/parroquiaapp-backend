@@ -7,6 +7,7 @@ from datetime import datetime
 from app.schemas import ContenidoOut
 from app import models
 from app.db import get_db
+from app.security import exigir_administrador
 
 
 router = APIRouter(prefix="/evangelizacion", tags=["evangelizacion"])
@@ -65,7 +66,8 @@ def crear_publicacion(
     pregunta_reflexion: str = Form(""),
     imagen_url: str = Form(""),
     audio_url: str = Form(""),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    admin: bool = Depends(exigir_administrador)
 ):
 
     contenido = f"""

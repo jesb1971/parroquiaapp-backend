@@ -13,6 +13,8 @@ from app.models import *
 
 # Routers
 from app.routers import evangelizacion, misas, avisos, auth, frontend, donativos
+from app.security import exigir_administrador
+from fastapi import Depends
 
 app = FastAPI(title="ParroquiaApp")
 
@@ -66,8 +68,13 @@ def shutdown_event():
     backup_db()
 
 @app.get("/admin", response_class=HTMLResponse)
-def admin_panel(request: Request):
-    return templates.TemplateResponse("admin_panel.html", {"request": request})
+def admin_panel(
+    request: Request,
+     admin: bool = Depends(exigir_administrador)
+):
+    return templates.TemplateResponse(
+        "admin_panel.html",
+        {"request": request})
     
 @app.get("/admin/avisos", response_class=HTMLResponse)
 def admin_avisos(request: Request):
@@ -89,5 +96,11 @@ def noticias_publicas(request: Request):
     return templates.TemplateResponse("noticias_publicas.html", {"request": request})
     
 @app.get("/admin-noticias", response_class=HTMLResponse)
-def admin_noticias(request: Request):
-    return templates.TemplateResponse("admin_noticias.html", {"request": request})
+def admin_noticias(
+    request: Request,
+    admin: bool = Depends(exigir_administrador)
+):
+    return templates.TemplateResponse(
+        "admin_noticias.html",
+        {"request": request}
+    )

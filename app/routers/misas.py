@@ -8,6 +8,7 @@ from io import StringIO
 
 from ..db import get_db
 from .. import models, schemas
+from app.security import exigir_administrador
 from ..services.misas_scheduler import generar_misas
 
 router = APIRouter(prefix="/misas", tags=["misas"])
@@ -53,7 +54,11 @@ def calcular_pascua(year):
 # 📂 CARGAR CSV
 # =========================
 @router.post("/cargar-calendario")
-def cargar_calendario(file: UploadFile = File(...), db: Session = Depends(get_db)):
+def cargar_calendario(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    admin: bool = Depends(exigir_administrador)
+):
 
     contenido = file.file.read().decode("utf-8")
     reader = csv.reader(StringIO(contenido), delimiter=';')
@@ -216,7 +221,11 @@ def listar_misas(db: Session = Depends(get_db)):
 # 🔄 REGENERAR
 # =========================
 @router.post("/regenerar")
-def regenerar(meses: int = Query(3), db: Session = Depends(get_db)):
+def regenerar(
+    meses: int = Query(3),
+    db: Session = Depends(get_db),
+    admin: bool = Depends(exigir_administrador)
+):
 
     db.query(models.Misa).delete()
     db.commit()
@@ -230,7 +239,12 @@ def regenerar(meses: int = Query(3), db: Session = Depends(get_db)):
 # ✏️ EDITAR
 # =========================
 @router.put("/{misa_id}")
-def editar_misa(misa_id: int, datos: schemas.MisaUpdate, db: Session = Depends(get_db)):
+def editar_misa(
+    misa_id: int,
+    datos: schemas.MisaUpdate,
+    db: Session = Depends(get_db),
+    admin: bool = Depends(exigir_administrador)
+):
 
     misa = db.query(models.Misa).filter(models.Misa.id == misa_id).first()
 
@@ -255,7 +269,11 @@ def editar_misa(misa_id: int, datos: schemas.MisaUpdate, db: Session = Depends(g
 # ❌ ELIMINAR
 # =========================
 @router.delete("/{misa_id}")
-def eliminar_misa(misa_id: int, db: Session = Depends(get_db)):
+def eliminar_misa(
+    misa_id: int,
+    db: Session = Depends(get_db),
+    admin: bool = Depends(exigir_administrador)
+):
 
     misa = db.query(models.Misa).filter(models.Misa.id == misa_id).first()
 

@@ -1,0 +1,29 @@
+
+# Claves y archivos privados
+.env
+.env.*
+!.env.example
+docs/clave.txt
+generar_hash.py
+*.pem
+*.key
+
+# Archivos temporales de Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Entornos virtuales
+venv/
+.venv/
+env/
+
+# Archivos del editor
+*.bak
+*.tmp
+
+# Bases de datos locales de prueba
+parroquia_prueba.db
+
+# Pruebas locales
+probar_donativos.py

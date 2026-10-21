@@ -1,36 +1,91 @@
+
+import os
+
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
+from passlib.context import CryptContext
+
+from app.security import (
+    crear_token_admin,
+    COOKIE_NAME,
+    SESSION_MINUTES,
+)
 
 router = APIRouter(tags=["auth"])
 templates = Jinja2Templates(directory="app/templates")
 
-# 🔐 credenciales (por ahora simples)
-ADMIN_USER = "admin"
-ADMIN_PASS = "1234"
+contexto = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto"
+)
+
+ADMIN_USER = os.getenv("ADMIN_USER", "admin")
+ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH")
 
 
-# 🔹 FORMULARIO LOGIN
 @router.get("/login")
 def login_form(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse(
+        "login.html",
+        {"request": request}
+    )
 
 
-# 🔹 PROCESAR LOGIN
 @router.post("/login")
-def login(usuario: str = Form(...), password: str = Form(...)):
+def login(
+    usuario: str = Form(...),
+    password: str = Form(...)
+):
+    autenticado = False
 
-    if usuario == ADMIN_USER and password == ADMIN_PASS:
-        response = RedirectResponse(url="/admin", status_code=302)
-        response.set_cookie(key="admin", value="1")
-        return response
+    if ADMIN_PASSWORD_HASH and usuario == ADMIN_USER:
+        autenticado = contexto.verify(
+            password,
+            ADMIN_PASSWORD_HASH
+        )
 
-    return RedirectResponse(url="/login", status_code=302)
+    if not autenticado:
+        return RedirectResponse(
+            url="/login",
+            status_code=303
+        )
+
+    token = crear_token_admin()
+
+    response = RedirectResponse(
+        url="/admin",
+        status_code=303
+    )
+
+    response.set_cookie(
+        key=COOKIE_NAME,
+        value=token,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        max_age=SESSION_MINUTES * 60,
+        path="/"
+    )
+
+    return response
 
 
-# 🔹 LOGOUT
 @router.get("/logout")
 def logout():
-    response = RedirectResponse(url="/", status_code=302)
-    response.delete_cookie("admin")
+    response = RedirectResponse(
+        url="/",
+        status_code=303
+    )
+
+    response.delete_cookie(
+        COOKIE_NAME,
+        path="/"
+    )
+
+    response.delete_cookie(
+        "admin",
+        path="/"
+    )
+
     return response

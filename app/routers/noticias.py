@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 from ..db import get_db
 from .. import models
+from app.security import exigir_administrador
 
 router = APIRouter(prefix="/noticias", tags=["noticias"])
 
@@ -15,7 +16,10 @@ def listar_noticias(db: Session = Depends(get_db)):
 
 # 🔹 CREAR NOTICIA DEMO (NO TOCAMOS)
 @router.post("/crear")
-def crear_noticia(db: Session = Depends(get_db)):
+def crear_noticia(
+    db: Session = Depends(get_db),
+    admin: bool = Depends(exigir_administrador)
+):
     noticia = models.Noticia(
         titulo="Día de la parroquia",
         contenido="Celebración con actividades, música y convivencia.",
@@ -36,7 +40,8 @@ def crear_noticia_admin(
     titulo: str = Body(...),
     contenido: str = Body(...),
     imagen: str = Body(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    admin: bool = Depends(exigir_administrador)
 ):
     noticia = models.Noticia(
         titulo=titulo,
@@ -53,8 +58,11 @@ def crear_noticia_admin(
 
 
 # 🔹 CREAR NOTICIA DEMO (GET)
-@router.get("/crear-demo")
-def crear_noticia_demo(db: Session = Depends(get_db)):
+@router.post("/crear-demo")
+def crear_noticia_demo(
+    db: Session = Depends(get_db),
+    admin: bool = Depends(exigir_administrador)
+):
     noticia = models.Noticia(
         titulo="Día de la parroquia",
         contenido="Celebración con actividades, música y convivencia.",
@@ -69,7 +77,11 @@ def crear_noticia_demo(db: Session = Depends(get_db)):
     return noticia
     
 @router.delete("/{noticia_id}")
-def eliminar_noticia(noticia_id: int, db: Session = Depends(get_db)):
+def eliminar_noticia(
+    noticia_id: int,
+    db: Session = Depends(get_db),
+    admin: bool = Depends(exigir_administrador)
+):
     noticia = db.query(models.Noticia).filter(models.Noticia.id == noticia_id).first()
 
     if not noticia:
