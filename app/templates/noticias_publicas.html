@@ -1,62 +1,202 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Noticias</title>
+
+<title>Noticias | Parroquia Cruz del Señor</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+    .texto-noticia {
+        font-size: 16px;
+        line-height: 1.75;
+        color: #374151;
+        white-space: pre-line;
+        overflow-wrap: anywhere;
+    }
+
+    .texto-resumido {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 6;
+        line-clamp: 6;
+        overflow: hidden;
+    }
+
+    .imagen-noticia {
+        display: block;
+        width: 100%;
+        height: auto;
+        max-height: 550px;
+        object-fit: contain;
+    }
+</style>
 </head>
 
 <body class="bg-gray-50 text-gray-800">
 
-<div class="max-w-2xl mx-auto py-6 px-4">
+<div class="max-w-2xl mx-auto min-h-screen bg-white shadow-sm">
 
     <!-- CABECERA -->
-    <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xl font-bold text-blue-700">📰 Noticias</h2>
-        <a href="/app" class="text-sm text-gray-500 hover:underline">← Volver</a>
-    </div>
+    <header class="bg-blue-700 text-white px-4 py-4 flex items-center justify-between sticky top-0 z-10">
 
-    <!-- LISTA -->
-    <div id="listaNoticias" class="space-y-4"></div>
+        <a href="/app"
+           class="bg-white text-blue-700 px-3 py-2 rounded-lg text-sm font-semibold">
+            ← Volver
+        </a>
+
+        <h1 class="text-lg font-bold">
+            Noticias
+        </h1>
+
+    </header>
+
+    <!-- LISTADO -->
+    <main id="listaNoticias" class="py-4"></main>
+
+    <!-- PIE -->
+    <footer class="text-center text-xs text-gray-500 py-6 px-4 border-t">
+        Parroquia Cruz del Señor
+    </footer>
 
 </div>
 
 <script>
 async function cargarNoticias() {
+
+    const contenedor = document.getElementById("listaNoticias");
+
     try {
         const res = await fetch("/noticias/");
-        const data = await res.json();
 
-        const contenedor = document.getElementById("listaNoticias");
-        contenedor.innerHTML = "";
+        if (!res.ok) {
+            throw new Error("No se pudieron cargar las noticias");
+        }
 
-        if (data.length === 0) {
-            contenedor.innerHTML = "<p class='text-gray-400'>No hay noticias disponibles</p>";
+        const noticias = await res.json();
+
+        contenedor.replaceChildren();
+
+        if (noticias.length === 0) {
+            const mensaje = document.createElement("p");
+            mensaje.className = "mx-4 text-gray-500";
+            mensaje.textContent = "No hay noticias disponibles.";
+            contenedor.appendChild(mensaje);
             return;
         }
 
-        data.forEach(noticia => {
-            const div = document.createElement("div");
-            div.className = "bg-white p-4 rounded-lg shadow-sm";
+        noticias.forEach(noticia => {
 
-            div.innerHTML = `
-				${noticia.imagen ? `<img src="${noticia.imagen}" class="w-full h-48 object-cover rounded mb-2">` : ""}
+            // TARJETA
+            const tarjeta = document.createElement("article");
+            tarjeta.className =
+                "bg-white border-b border-gray-200 pb-6 mb-5";
 
-				<h3 class="font-semibold text-lg text-blue-700">${noticia.titulo}</h3>
-				<p class="text-gray-600 mt-1">${noticia.contenido}</p>
+            // IMAGEN
+            if (noticia.imagen) {
+                const bloqueImagen = document.createElement("div");
+                bloqueImagen.className = "w-full bg-gray-100";
 
-				<p class="text-xs text-gray-400 mt-2">
-					${new Date(noticia.fecha).toLocaleString()}
-				</p>
-`			;
+                const imagen = document.createElement("img");
+                imagen.src = noticia.imagen;
+                imagen.alt = "Imagen de la noticia";
+                imagen.loading = "lazy";
+                imagen.className = "imagen-noticia";
 
-            contenedor.appendChild(div);
+                bloqueImagen.appendChild(imagen);
+                tarjeta.appendChild(bloqueImagen);
+            }
+
+            // CONTENIDO
+            const bloqueTexto = document.createElement("div");
+            bloqueTexto.className = "px-5 pt-4";
+
+            // FECHA
+            if (noticia.fecha) {
+                const fecha = document.createElement("p");
+                fecha.className = "text-sm text-gray-500 mb-2";
+
+                const fechaNoticia = new Date(noticia.fecha);
+
+                if (!Number.isNaN(fechaNoticia.getTime())) {
+                    fecha.textContent =
+                        "📅 " + fechaNoticia.toLocaleDateString("es-ES");
+                }
+
+                bloqueTexto.appendChild(fecha);
+            }
+
+            // TÍTULO
+            const titulo = document.createElement("h2");
+            titulo.className =
+                "text-xl font-bold text-blue-800 leading-snug mb-4";
+            titulo.textContent = noticia.titulo || "Noticia parroquial";
+
+            bloqueTexto.appendChild(titulo);
+
+            // TEXTO
+            const texto = document.createElement("div");
+            texto.className = "texto-noticia texto-resumido";
+            texto.textContent = noticia.contenido || "";
+
+            texto.id = "noticia-" + noticia.id;
+
+            bloqueTexto.appendChild(texto);
+
+            // BOTÓN LEER MÁS
+            const boton = document.createElement("button");
+            boton.type = "button";
+            boton.className =
+                "mt-3 text-blue-700 font-semibold hover:underline";
+
+            boton.textContent = "Leer más";
+            boton.setAttribute("aria-expanded", "false");
+            boton.setAttribute("aria-controls", texto.id);
+
+            boton.addEventListener("click", function () {
+                const estabaResumido =
+                    texto.classList.contains("texto-resumido");
+
+                texto.classList.toggle("texto-resumido");
+
+                boton.textContent = estabaResumido
+                    ? "Leer menos"
+                    : "Leer más";
+
+                boton.setAttribute(
+                    "aria-expanded",
+                    String(estabaResumido)
+                );
+            });
+
+            bloqueTexto.appendChild(boton);
+
+            tarjeta.appendChild(bloqueTexto);
+            contenedor.appendChild(tarjeta);
+
+            // OCULTAR BOTÓN SI EL TEXTO ES CORTO
+            requestAnimationFrame(() => {
+                if (texto.scrollHeight <= texto.clientHeight + 2) {
+                    boton.classList.add("hidden");
+                    texto.classList.remove("texto-resumido");
+                }
+            });
+
         });
 
     } catch (error) {
-        console.error("Error cargando noticias");
+        console.error("Error cargando noticias:", error);
+
+        const mensaje = document.createElement("p");
+        mensaje.className =
+            "mx-4 bg-red-50 text-red-700 p-4 rounded-lg";
+        mensaje.textContent =
+            "No se pudieron cargar las noticias. Inténtalo de nuevo.";
+
+        contenedor.replaceChildren(mensaje);
     }
 }
 
