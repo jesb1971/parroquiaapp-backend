@@ -65,12 +65,34 @@ app.mount(
 
 
 # =====================================
-# IMÁGENES DE EVANGELIZACIÓN
+# ARCHIVOS DE EVANGELIZACIÓN
 # =====================================
 
 IMAGENES_DIR = "/var/data/evangelizacion/imagenes"
+AUDIOS_DIR = "/var/data/evangelizacion/audios"
 
+# Crear carpetas si todavía no existen
 os.makedirs(IMAGENES_DIR, exist_ok=True)
+os.makedirs(AUDIOS_DIR, exist_ok=True)
+
+
+# =====================================
+# AUDIOS DE EVANGELIZACIÓN
+# =====================================
+
+# Esta ruta debe registrarse antes que
+# /media/evangelizacion para evitar conflictos.
+
+app.mount(
+    "/media/evangelizacion/audios",
+    StaticFiles(directory=AUDIOS_DIR),
+    name="media_evangelizacion_audios"
+)
+
+
+# =====================================
+# IMÁGENES DE EVANGELIZACIÓN
+# =====================================
 
 app.mount(
     "/media/evangelizacion",

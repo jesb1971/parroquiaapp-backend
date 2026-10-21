@@ -1,92 +1,197 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Administrar Evangelización</title>
-
 <script src="https://cdn.tailwindcss.com"></script>
-
 </head>
 
-<body class="bg-gray-100">
+<body class="bg-gray-100 text-gray-800">
 
 <div class="max-w-2xl mx-auto p-4">
 
     <!-- CABECERA -->
-    <div class="bg-blue-700 text-white p-4 rounded-2xl mb-6 flex justify-between items-center">
-
+    <header class="bg-blue-700 text-white p-4 rounded-2xl mb-6 flex justify-between items-center">
         <a href="/admin"
            class="bg-white text-blue-700 px-4 py-2 rounded-lg font-semibold">
             ← Volver
         </a>
-
-        <h1 class="text-xl font-bold">
-            Evangelización
-        </h1>
-
-    </div>
+        <h1 class="text-xl font-bold">Evangelización</h1>
+    </header>
 
     <!-- FORMULARIO -->
-    <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+    <section class="bg-white rounded-2xl shadow-lg p-6 mb-6">
 
-        <form method="POST" action="/admin/evangelizacion/crear">
+        <h2 class="text-lg font-bold mb-4">
+            Nueva publicación diaria
+        </h2>
 
+        <form method="POST"
+              action="/admin/evangelizacion/crear"
+              enctype="multipart/form-data">
+
+            <!-- TÍTULO -->
             <div class="mb-4">
-                <label class="font-semibold">Título</label>
+                <label for="titulo" class="block font-semibold mb-1">
+                    Título
+                </label>
                 <input type="text"
+                       id="titulo"
                        name="titulo"
                        class="w-full border rounded-lg p-3"
                        required>
             </div>
 
+            <!-- CITA BÍBLICA -->
             <div class="mb-4">
-                <label class="font-semibold">Cita bíblica</label>
+                <label for="cita_biblica" class="block font-semibold mb-1">
+                    Cita bíblica
+                </label>
                 <input type="text"
+                       id="cita_biblica"
                        name="cita_biblica"
+                       placeholder="Ejemplo: Lc 12, 39-48"
                        class="w-full border rounded-lg p-3">
             </div>
 
+            <!-- REFLEXIÓN -->
             <div class="mb-4">
-                <label class="font-semibold">Reflexión</label>
-                <textarea name="reflexion"
-                          rows="6"
+                <label for="reflexion" class="block font-semibold mb-1">
+                    Reflexión
+                </label>
+                <textarea id="reflexion"
+                          name="reflexion"
+                          rows="8"
                           class="w-full border rounded-lg p-3"
                           required></textarea>
             </div>
 
+            <!-- PREGUNTA -->
             <div class="mb-4">
-                <label class="font-semibold">Pregunta final</label>
-                <textarea name="pregunta_reflexion"
+                <label for="pregunta_reflexion" class="block font-semibold mb-1">
+                    Pregunta para meditar
+                </label>
+                <textarea id="pregunta_reflexion"
+                          name="pregunta_reflexion"
                           rows="3"
                           class="w-full border rounded-lg p-3"></textarea>
             </div>
 
+            <!-- IMAGEN -->
             <div class="mb-4">
-                <label class="font-semibold">Imagen URL</label>
-                <input type="text"
-                       name="imagen_url"
-                       class="w-full border rounded-lg p-3">
+                <label for="imagen" class="block font-semibold mb-1">
+                    Imagen de la publicación
+                </label>
+
+                <input type="file"
+                       id="imagen"
+                       name="imagen"
+                       accept="image/jpeg,image/png,image/webp"
+                       class="w-full border rounded-lg p-3 bg-white">
+
+                <p class="text-xs text-gray-500 mt-1">
+                    Selecciona una imagen JPG, PNG o WebP (máximo 5 MB).
+                </p>
+
+                <img id="vistaPrevia"
+                     alt="Vista previa de la imagen"
+                     class="hidden mt-3 w-full max-h-72 object-contain rounded-lg border">
             </div>
 
-            <div class="mb-4">
-                <label class="font-semibold">Audio URL</label>
-                <input type="text"
-                       name="audio_url"
-                       class="w-full border rounded-lg p-3">
+            <!-- AUDIO -->
+            <div class="mb-5">
+                <label for="audio" class="block font-semibold mb-1">
+                    Audio de la publicación
+                </label>
+
+                <input type="file"
+                       id="audio"
+                       name="audio"
+                       accept="audio/*,.opus,.ogg,.mp3,.m4a,.aac"
+                       class="w-full border rounded-lg p-3 bg-white">
+
+                <p class="text-xs text-gray-500 mt-1">
+                    Selecciona el audio recibido por WhatsApp.
+                </p>
+
+                <audio id="audioPrevia"
+                       controls
+                       class="hidden w-full mt-3">
+                </audio>
             </div>
 
+            <!-- PUBLICAR -->
             <button type="submit"
-                    class="bg-blue-700 text-white px-6 py-3 rounded-xl font-bold w-full">
+                    class="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-xl font-bold w-full">
                 Publicar reflexión
             </button>
 
         </form>
-
-    </div>
+    </section>
 
 </div>
+
+<script>
+const imagenInput = document.getElementById("imagen");
+const imagenPrevia = document.getElementById("vistaPrevia");
+const audioInput = document.getElementById("audio");
+const audioPrevia = document.getElementById("audioPrevia");
+
+let imagenURL = null;
+let audioURL = null;
+
+imagenInput.addEventListener("change", function () {
+    if (imagenURL) {
+        URL.revokeObjectURL(imagenURL);
+        imagenURL = null;
+    }
+
+    const archivo = this.files[0];
+
+    if (!archivo) {
+        imagenPrevia.removeAttribute("src");
+        imagenPrevia.classList.add("hidden");
+        return;
+    }
+
+    const tipos = ["image/jpeg", "image/png", "image/webp"];
+
+    if (!tipos.includes(archivo.type) || archivo.size > 5 * 1024 * 1024) {
+        alert("Selecciona una imagen JPG, PNG o WebP de hasta 5 MB.");
+        this.value = "";
+        imagenPrevia.removeAttribute("src");
+        imagenPrevia.classList.add("hidden");
+        return;
+    }
+
+    imagenURL = URL.createObjectURL(archivo);
+    imagenPrevia.src = imagenURL;
+    imagenPrevia.classList.remove("hidden");
+});
+
+audioInput.addEventListener("change", function () {
+    if (audioURL) {
+        URL.revokeObjectURL(audioURL);
+        audioURL = null;
+    }
+
+    const archivo = this.files[0];
+
+    if (!archivo) {
+        audioPrevia.pause();
+        audioPrevia.removeAttribute("src");
+        audioPrevia.load();
+        audioPrevia.classList.add("hidden");
+        return;
+    }
+
+    audioURL = URL.createObjectURL(archivo);
+    audioPrevia.src = audioURL;
+    audioPrevia.classList.remove("hidden");
+});
+</script>
 
 </body>
 </html>

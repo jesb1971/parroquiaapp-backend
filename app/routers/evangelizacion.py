@@ -28,21 +28,46 @@ from app.security import exigir_administrador
 router = APIRouter(tags=["evangelizacion"])
 templates = Jinja2Templates(directory="app/templates")
 
-IMAGENES_DIR = Path("/var/data/evangelizacion/imagenes")
-MAX_IMAGEN_BYTES = 5 * 1024 * 1024
+# =====================================
+# ALMACENAMIENTO PERSISTENTE
+# =====================================
 
-FORMATOS_PERMITIDOS = {
+BASE_DIR = Path("/var/data/evangelizacion")
+IMAGENES_DIR = BASE_DIR / "imagenes"
+AUDIOS_DIR = BASE_DIR / "audios"
+
+MAX_IMAGEN_BYTES = 5 * 1024 * 1024
+MAX_AUDIO_BYTES = 30 * 1024 * 1024
+
+FORMATOS_IMAGEN = {
     "image/jpeg": ".jpg",
     "image/png": ".png",
     "image/webp": ".webp"
 }
 
-FIRMAS = {
+FIRMAS_IMAGEN = {
     ".jpg": lambda b: b.startswith(b"\xff\xd8\xff"),
     ".png": lambda b: b.startswith(b"\x89PNG\r\n\x1a\n"),
     ".webp": lambda b: (
         b.startswith(b"RIFF") and b[8:12] == b"WEBP"
     )
+}
+
+# Formatos habituales de audio de WhatsApp
+FORMATOS_AUDIO = {
+    ".opus": "audio/ogg",
+    ".ogg": "audio/ogg",
+    ".mp3": "audio/mpeg",
+    ".m4a": "audio/mp4",
+    ".aac": "audio/aac"
+}
+
+TIPOS_AUDIO = {
+    ".opus": {"audio/ogg", "audio/opus", "application/ogg"},
+    ".ogg": {"audio/ogg", "application/ogg"},
+    ".mp3": {"audio/mpeg", "audio/mp3"},
+    ".m4a": {"audio/mp4", "audio/x-m4a"},
+    ".aac": {"audio/aac", "audio/x-aac"}
 }
 
 
@@ -135,7 +160,129 @@ def admin_evangelizacion(
 
 
 # =====================================
-# GUARDAR PUBLICACIÓN
+# GUARDAR IMAGEN
+# =====================================
+
+async def guardar_imagen(imagen: UploadFile):
+
+    extension = FORMATOS_IMAGEN.get(imagen.content_type)
+
+    if not extension:
+        raise HTTPException(
+            status_code=400,
+            detail="Solo se permiten imágenes JPG, PNG o WebP."
+        )
+
+    datos = await imagen.read(MAX_IMAGEN_BYTES + 1)
+
+    if len(datos) > MAX_IMAGEN_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail="La imagen supera el límite de 5 MB."
+        )
+
+    if not datos or not FIRMAS_IMAGEN[extension](datos):
+        raise HTTPException(
+            status_code=400,
+            detail="El archivo no es una imagen válida."
+        )
+
+    IMAGENES_DIR.mkdir(parents=True, exist_ok=True)
+
+    nombre = f"{uuid4().hex}{extension}"
+    ruta = IMAGENES_DIR / nombre
+
+    try:
+        with open(ruta, "xb") as archivo:
+            archivo.write(datos)
+    except OSError:
+        raise HTTPException(
+            status_code=500,
+            detail="No se pudo guardar la imagen."
+        )
+
+    return ruta, f"/media/evangelizacion/{nombre}"
+
+
+# =====================================
+# GUARDAR AUDIO
+# =====================================
+
+async def guardar_audio(audio: UploadFile):
+
+    extension = Path(audio.filename).suffix.lower()
+
+    if extension not in FORMATOS_AUDIO:
+        raise HTTPException(
+            status_code=400,
+            detail="Formato de audio no permitido."
+        )
+
+    if audio.content_type not in TIPOS_AUDIO[extension]:
+        raise HTTPException(
+            status_code=400,
+            detail="El tipo de audio no coincide con su extensión."
+        )
+
+    datos = await audio.read(MAX_AUDIO_BYTES + 1)
+
+    if len(datos) > MAX_AUDIO_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail="El audio supera el límite de 30 MB."
+        )
+
+    if not datos:
+        raise HTTPException(
+            status_code=400,
+            detail="El archivo de audio está vacío."
+        )
+
+    # Comprobación básica de cabeceras
+    if extension in {".opus", ".ogg"}:
+        valido = datos.startswith(b"OggS")
+    elif extension == ".mp3":
+        valido = (
+            datos.startswith(b"ID3")
+            or (
+                len(datos) >= 2
+                and datos[0] == 0xFF
+                and (datos[1] & 0xE0) == 0xE0
+            )
+        )
+    elif extension == ".m4a":
+        valido = len(datos) >= 12 and datos[4:8] == b"ftyp"
+    else:
+        valido = (
+            datos.startswith(b"\xff\xf1")
+            or datos.startswith(b"\xff\xf9")
+        )
+
+    if not valido:
+        raise HTTPException(
+            status_code=400,
+            detail="El archivo no tiene una cabecera de audio válida."
+        )
+
+    AUDIOS_DIR.mkdir(parents=True, exist_ok=True)
+
+    nombre = f"{uuid4().hex}{extension}"
+    ruta = AUDIOS_DIR / nombre
+
+    try:
+        with open(ruta, "xb") as archivo:
+            archivo.write(datos)
+    except OSError:
+        raise HTTPException(
+            status_code=500,
+            detail="No se pudo guardar el audio."
+        )
+
+    return ruta, f"/media/evangelizacion/audios/{nombre}"
+
+
+# =====================================
+# CREAR PUBLICACIÓN
 # =====================================
 
 @router.post("/admin/evangelizacion/crear")
@@ -144,88 +291,43 @@ async def crear_publicacion(
     cita_biblica: str = Form(""),
     reflexion: str = Form(...),
     pregunta_reflexion: str = Form(""),
-    audio_url: str = Form(""),
     imagen: UploadFile | None = File(None),
+    audio: UploadFile | None = File(None),
     db: Session = Depends(get_db),
     admin: bool = Depends(exigir_administrador)
 ):
 
     imagen_url = None
-    ruta_imagen = None
+    audio_url = None
+    archivos_guardados = []
 
-    # Procesar imagen, si se ha seleccionado
-    if imagen is not None and imagen.filename:
-
-        extension = FORMATOS_PERMITIDOS.get(
-            imagen.content_type
-        )
-
-        if not extension:
-            raise HTTPException(
-                status_code=400,
-                detail="Solo se permiten imágenes JPG, PNG o WebP."
-            )
-
-        datos = await imagen.read(MAX_IMAGEN_BYTES + 1)
-
-        if len(datos) > MAX_IMAGEN_BYTES:
-            raise HTTPException(
-                status_code=413,
-                detail="La imagen no puede superar los 5 MB."
-            )
-
-        if not datos or not FIRMAS[extension](datos):
-            raise HTTPException(
-                status_code=400,
-                detail="El archivo no es una imagen válida."
-            )
-
-        IMAGENES_DIR.mkdir(
-            parents=True,
-            exist_ok=True
-        )
-
-        nombre_imagen = f"{uuid4().hex}{extension}"
-        ruta_imagen = IMAGENES_DIR / nombre_imagen
-
-        try:
-            with open(ruta_imagen, "xb") as archivo:
-                archivo.write(datos)
-        except OSError:
-            raise HTTPException(
-                status_code=500,
-                detail="No se pudo guardar la imagen."
-            )
-
-        imagen_url = (
-            f"/media/evangelizacion/{nombre_imagen}"
-        )
-
-    # Preparar texto
-    partes = []
-
-    if cita_biblica.strip():
-        partes.append(f"📖 {cita_biblica.strip()}")
-
-    partes.append(reflexion.strip())
-
-    if pregunta_reflexion.strip():
-        partes.append(
-            f"❓ {pregunta_reflexion.strip()}"
-        )
-
-    if audio_url.strip():
-        partes.append(f"🎧 Audio:\n{audio_url.strip()}")
-
-    contenido = "\n\n".join(partes)
-
-    # Guardar en base de datos
     try:
+        if imagen is not None and imagen.filename:
+            ruta, imagen_url = await guardar_imagen(imagen)
+            archivos_guardados.append(ruta)
+
+        if audio is not None and audio.filename:
+            ruta, audio_url = await guardar_audio(audio)
+            archivos_guardados.append(ruta)
+
+        partes = []
+
+        if cita_biblica.strip():
+            partes.append(f"📖 {cita_biblica.strip()}")
+
+        partes.append(reflexion.strip())
+
+        if pregunta_reflexion.strip():
+            partes.append(f"❓ {pregunta_reflexion.strip()}")
+
+        contenido = "\n\n".join(partes)
+
         nuevo = models.Contenido(
             tipo="reflexion",
             titulo=titulo.strip(),
             cuerpo_md=contenido,
             imagen_url=imagen_url,
+            audio_url=audio_url,
             publicado_at=datetime.utcnow()
         )
 
@@ -235,10 +337,9 @@ async def crear_publicacion(
     except Exception:
         db.rollback()
 
-        # Evitar archivos huérfanos si falla la BD
-        if ruta_imagen is not None:
+        for ruta in archivos_guardados:
             try:
-                os.remove(ruta_imagen)
+                os.remove(ruta)
             except OSError:
                 pass
 
