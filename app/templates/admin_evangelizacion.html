@@ -39,6 +39,7 @@
                 <input type="text"
                        id="titulo"
                        name="titulo"
+                       maxlength="200"
                        class="w-full border rounded-lg p-3"
                        required>
             </div>
@@ -72,6 +73,36 @@
                 <textarea id="pregunta_reflexion"
                           name="pregunta_reflexion"
                           rows="3"
+                          class="w-full border rounded-lg p-3"></textarea>
+            </div>
+
+            <!-- SANTORAL -->
+            <div class="mb-4">
+                <label for="santoral" class="block font-semibold mb-1">
+                    Santoral o conmemoración del día
+                </label>
+
+                <input type="text"
+                       id="santoral"
+                       name="santoral"
+                       placeholder="Ejemplo: 21 OCT. SANTA ÚRSULA Y COMPAÑERAS MÁRTIRES"
+                       class="w-full border rounded-lg p-3">
+
+                <p class="text-xs text-gray-500 mt-1">
+                    Opcional. Introduce el nombre de la celebración o del santo.
+                </p>
+            </div>
+
+            <!-- DESCRIPCIÓN DEL SANTORAL -->
+            <div class="mb-4">
+                <label for="descripcion_santoral" class="block font-semibold mb-1">
+                    Descripción del santoral
+                </label>
+
+                <textarea id="descripcion_santoral"
+                          name="descripcion_santoral"
+                          rows="4"
+                          placeholder="Breve explicación de la conmemoración"
                           class="w-full border rounded-lg p-3"></textarea>
             </div>
 

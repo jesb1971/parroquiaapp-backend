@@ -22,6 +22,27 @@
         width: 100%;
         height: 48px;
     }
+
+    .santoral {
+        background-color: #fefce8;
+        border: 1px solid #fde68a;
+        border-radius: 12px;
+        padding: 16px;
+        margin-top: 24px;
+    }
+
+    .santoral-titulo {
+        font-weight: 700;
+        color: #854d0e;
+        margin-bottom: 8px;
+    }
+
+    .santoral-descripcion {
+        color: #713f12;
+        font-size: 15px;
+        line-height: 1.7;
+        white-space: pre-line;
+    }
 </style>
 </head>
 
@@ -45,6 +66,18 @@
 
     <main class="pb-8">
 
+        {% set partes = publicacion.cuerpo_md.split('📅 SANTORAL:') %}
+        {% set texto_principal = partes[0] %}
+
+        {% if partes|length > 1 %}
+            {% set santoral_completo = partes[1].split('🕊️ DESCRIPCIÓN SANTORAL:') %}
+            {% set santoral_titulo = santoral_completo[0].strip() %}
+            {% set santoral_descripcion = santoral_completo[1].strip() if santoral_completo|length > 1 else '' %}
+        {% else %}
+            {% set santoral_titulo = '' %}
+            {% set santoral_descripcion = '' %}
+        {% endif %}
+
         <!-- IMAGEN -->
         {% if publicacion.imagen_url %}
         <div class="w-full bg-gray-100">
@@ -67,7 +100,25 @@
                 {{ publicacion.titulo }}
             </h2>
 
-            <div class="texto-reflexion">{{ publicacion.cuerpo_md }}</div>
+            <!-- REFLEXIÓN -->
+            <div class="texto-reflexion">{{ texto_principal.strip() }}</div>
+
+            <!-- SANTORAL -->
+            {% if santoral_titulo or santoral_descripcion %}
+            <section class="santoral">
+
+                {% if santoral_titulo %}
+                <h3 class="santoral-titulo">
+                    🕊️ {{ santoral_titulo }}
+                </h3>
+                {% endif %}
+
+                {% if santoral_descripcion %}
+                <p class="santoral-descripcion">{{ santoral_descripcion }}</p>
+                {% endif %}
+
+            </section>
+            {% endif %}
 
             <!-- AUDIO -->
             {% if publicacion.audio_url %}

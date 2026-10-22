@@ -116,6 +116,8 @@ def separar_contenido(cuerpo):
     texto = cuerpo or ""
     cita = ""
     pregunta = ""
+    santoral = ""
+    descripcion_santoral = ""
     partes_reflexion = []
 
     for bloque in texto.split("\n\n"):
@@ -125,6 +127,10 @@ def separar_contenido(cuerpo):
             cita = bloque[2:].strip()
         elif bloque.startswith("❓ "):
             pregunta = bloque[2:].strip()
+        elif bloque.startswith("📅 SANTORAL: "):
+            santoral = bloque[len("📅 SANTORAL: "):].strip()
+        elif bloque.startswith("🕊️ DESCRIPCIÓN SANTORAL: "):
+            descripcion_santoral = bloque[len("🕊️ DESCRIPCIÓN SANTORAL: "):].strip()
         elif bloque.startswith("🎧 Audio:"):
             continue
         elif bloque:
@@ -133,11 +139,13 @@ def separar_contenido(cuerpo):
     return {
         "cita_biblica": cita,
         "reflexion": "\n\n".join(partes_reflexion),
-        "pregunta_reflexion": pregunta
+        "pregunta_reflexion": pregunta,
+        "santoral": santoral,
+        "descripcion_santoral": descripcion_santoral
     }
 
 
-def construir_contenido(cita, reflexion, pregunta):
+def construir_contenido(cita, reflexion, pregunta, santoral="", descripcion_santoral=""):
     partes = []
 
     if cita.strip():
@@ -147,6 +155,12 @@ def construir_contenido(cita, reflexion, pregunta):
 
     if pregunta.strip():
         partes.append(f"❓ {pregunta.strip()}")
+
+    if santoral.strip():
+        partes.append(f"📅 SANTORAL: {santoral.strip()}")
+
+    if descripcion_santoral.strip():
+        partes.append(f"🕊️ DESCRIPCIÓN SANTORAL: {descripcion_santoral.strip()}")
 
     return "\n\n".join(partes)
 
@@ -387,6 +401,8 @@ async def crear_publicacion(
     cita_biblica: str = Form(""),
     reflexion: str = Form(...),
     pregunta_reflexion: str = Form(""),
+    santoral: str = Form(""),
+    descripcion_santoral: str = Form(""),
     imagen: UploadFile | None = File(None),
     audio: UploadFile | None = File(None),
     db: Session = Depends(get_db),
@@ -412,7 +428,9 @@ async def crear_publicacion(
             cuerpo_md=construir_contenido(
                 cita_biblica,
                 reflexion,
-                pregunta_reflexion
+                pregunta_reflexion,
+                santoral,
+                descripcion_santoral
             ),
             imagen_url=imagen_url,
             audio_url=audio_url,
@@ -476,6 +494,8 @@ async def guardar_edicion(
     cita_biblica: str = Form(""),
     reflexion: str = Form(...),
     pregunta_reflexion: str = Form(""),
+    santoral: str | None = Form(None),
+    descripcion_santoral: str | None = Form(None),
     imagen: UploadFile | None = File(None),
     audio: UploadFile | None = File(None),
     db: Session = Depends(get_db),
@@ -483,6 +503,11 @@ async def guardar_edicion(
 ):
 
     publicacion = obtener_publicacion(db, publicacion_id)
+    campos_actuales = separar_contenido(publicacion.cuerpo_md)
+    if santoral is None:
+        santoral = campos_actuales["santoral"]
+    if descripcion_santoral is None:
+        descripcion_santoral = campos_actuales["descripcion_santoral"]
     archivos_guardados = []
 
     try:
@@ -500,7 +525,9 @@ async def guardar_edicion(
         publicacion.cuerpo_md = construir_contenido(
             cita_biblica,
             reflexion,
-            pregunta_reflexion
+            pregunta_reflexion,
+            santoral,
+            descripcion_santoral
         )
 
         db.commit()

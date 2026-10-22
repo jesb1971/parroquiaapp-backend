@@ -91,6 +91,33 @@
                           class="w-full border rounded-lg p-3">{{ pregunta_reflexion }}</textarea>
             </div>
 
+            <!-- SANTORAL -->
+            <div class="mb-4">
+                <label for="santoral" class="block font-semibold mb-1">
+                    Santoral o conmemoración del día
+                </label>
+
+                <input type="text"
+                       id="santoral"
+                       name="santoral"
+                       value="{{ santoral | default('', true) }}"
+                       placeholder="Ejemplo: 21 OCT. SANTA ÚRSULA Y COMPAÑERAS MÁRTIRES"
+                       class="w-full border rounded-lg p-3">
+            </div>
+
+            <!-- DESCRIPCIÓN DEL SANTORAL -->
+            <div class="mb-4">
+                <label for="descripcion_santoral" class="block font-semibold mb-1">
+                    Descripción del santoral
+                </label>
+
+                <textarea id="descripcion_santoral"
+                          name="descripcion_santoral"
+                          rows="4"
+                          placeholder="Breve explicación de la conmemoración"
+                          class="w-full border rounded-lg p-3">{{ descripcion_santoral | default('', true) }}</textarea>
+            </div>
+
             <!-- IMAGEN ACTUAL -->
             <div class="mb-4">
                 <label for="imagen" class="block font-semibold mb-2">
