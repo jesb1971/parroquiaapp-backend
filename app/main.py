@@ -1,4 +1,3 @@
-
 # app/main.py
 
 import os
@@ -11,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 # Base de datos
-from .db import Base, engine
+from .db import Base, engine, SessionLocal
 
 # Importar modelos para registrar todas las tablas
 from app.models import *
@@ -134,10 +133,62 @@ def root():
 
 @app.get("/app", response_class=HTMLResponse)
 def app_home(request: Request):
-    return templates.TemplateResponse(
-        "home_demo.html",
-        {"request": request}
-    )
+    db = SessionLocal()
+
+    try:
+        noticias = (
+            db.query(Noticia)
+            .order_by(Noticia.fecha.desc(), Noticia.id.desc())
+            .limit(5)
+            .all()
+        )
+
+        avisos = (
+            db.query(Aviso)
+            .order_by(Aviso.publicado_at.desc(), Aviso.id.desc())
+            .limit(5)
+            .all()
+        )
+
+        destacados = []
+
+        for noticia in noticias:
+            destacados.append({
+                "tipo": "noticia",
+                "titulo": noticia.titulo,
+                "contenido": noticia.contenido,
+                "fecha": noticia.fecha,
+                "imagen": noticia.imagen,
+                "url": "/noticias-publicas"
+            })
+
+        for aviso in avisos:
+            destacados.append({
+                "tipo": "aviso",
+                "titulo": aviso.titulo,
+                "contenido": aviso.cuerpo,
+                "fecha": aviso.publicado_at,
+                "imagen": None,
+                "url": f"/aviso/{aviso.id}"
+            })
+
+        destacados.sort(
+            key=lambda item: item["fecha"] or datetime.min,
+            reverse=True
+        )
+
+        destacados = destacados[:5]
+
+        return templates.TemplateResponse(
+            "home_demo.html",
+            {
+                "request": request,
+                "destacados": destacados
+            }
+        )
+
+    finally:
+        db.close()
 
 
 # =====================================
