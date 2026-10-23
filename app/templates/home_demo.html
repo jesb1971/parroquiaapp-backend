@@ -144,8 +144,11 @@
             📢 Actualidad parroquial
         </h2>
 
-        <div id="carrusel" class="carrusel"
-             aria-roledescription="carrusel">
+        <div
+            id="carrusel"
+            class="carrusel"
+            aria-roledescription="carrusel"
+        >
 
             {% for item in destacados %}
 
@@ -201,7 +204,7 @@
 
         {% if destacados | length > 1 %}
 
-        <!-- CONTROLES -->
+        <!-- CONTROLES DEL CARRUSEL -->
         <div class="flex items-center justify-between gap-2 mt-3">
 
             <button
@@ -247,106 +250,16 @@
 
     {% endif %}
 
-    <!-- MÓDULOS DE LA APLICACIÓN -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-        <!-- HORARIOS -->
-        <div class="bg-white shadow rounded-lg p-4">
-            <h2 class="font-semibold text-lg text-blue-700">
-                📅 Horarios de misas
-            </h2>
-
-            <p class="text-sm text-gray-500">
-                Consulta las próximas celebraciones.
-            </p>
-
-            <a href="/demo"
-               class="mt-2 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                Ver horarios
-            </a>
-        </div>
-
-        <!-- AVISOS -->
-        <div class="bg-white shadow rounded-lg p-4">
-            <h2 class="font-semibold text-lg text-blue-700">
-                📢 Avisos
-            </h2>
-
-            <p class="text-sm text-gray-500">
-                Comunicados importantes de la parroquia.
-            </p>
-
-            <a href="/avisos-publicos"
-               class="mt-3 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                Ver avisos
-            </a>
-        </div>
-
-        <!-- NOTICIAS -->
-        <div class="bg-white shadow rounded-lg p-4">
-            <h2 class="font-semibold text-lg text-blue-700">
-                📰 Noticias
-            </h2>
-
-            <p class="text-sm text-gray-500">
-                Eventos, actividades e información de la parroquia.
-            </p>
-
-            <a href="/noticias-publicas"
-               class="mt-3 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                Ver noticias
-            </a>
-        </div>
-
-        <!-- EVANGELIZACIÓN -->
-        <div class="bg-white shadow rounded-lg p-4">
-            <h2 class="font-semibold text-lg text-blue-700">
-                📖 Evangelización
-            </h2>
-
-            <p class="text-sm text-gray-500">
-                Reflexiones, homilías y contenidos.
-            </p>
-
-            <a href="/evangelizacion"
-               class="mt-2 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
-                Ver reflexiones
-            </a>
-        </div>
-
-        <!-- CONTACTO -->
-        <div class="bg-white shadow rounded-lg p-4">
-            <h2 class="font-semibold text-lg text-blue-700">
-                📞 Contacto
-            </h2>
-
-            <p class="text-sm text-gray-500">
-                Teléfono, dirección y horarios de despacho.
-            </p>
-
-            <a href="/contacto"
-               class="inline-block mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
-                Ir a contacto
-            </a>
-        </div>
-
-        <!-- DONATIVOS -->
-        <div class="bg-white shadow rounded-lg p-4">
-            <h2 class="font-semibold text-lg text-blue-700">
-                💙 Donativos
-            </h2>
-
-            <p class="text-sm text-gray-500">
-                Colabora con el sostenimiento y la misión
-                de nuestra parroquia.
-            </p>
-
-            <a href="/donativos"
-               class="mt-3 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
-                Realizar donativo
-            </a>
-        </div>
-
+    <!-- ACCESO AL MENÚ PRINCIPAL -->
+    <div class="text-center mt-6 mb-4">
+        <a
+            href="/menu"
+            class="inline-block w-full sm:w-auto bg-blue-700 text-white
+                   text-lg font-semibold px-8 py-4 rounded-xl
+                   shadow-md hover:bg-blue-800 transition"
+        >
+            Entrar a la parroquia →
+        </a>
     </div>
 
 </div>

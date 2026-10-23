@@ -189,6 +189,18 @@ def app_home(request: Request):
 
     finally:
         db.close()
+        
+
+# =====================================
+# MENÚ PRINCIPAL DE LOS FELIGRESES
+# =====================================
+
+@app.get("/menu", response_class=HTMLResponse)
+def menu_principal(request: Request):
+    return templates.TemplateResponse(
+        "menu_principal.html",
+        {"request": request}
+    )
 
 
 # =====================================
