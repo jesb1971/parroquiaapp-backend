@@ -27,6 +27,7 @@ from app.routers import (
 )
 
 from app.security import exigir_administrador
+from app.routers.misas import obtener_liturgia
 
 
 # =====================================
@@ -131,25 +132,80 @@ def root():
     return RedirectResponse(url="/app")
 
 
+
 @app.get("/app", response_class=HTMLResponse)
 def app_home(request: Request):
     db = SessionLocal()
 
     try:
+        # =====================================
+        # COLOR LITÚRGICO DEL DÍA
+        # =====================================
+        from zoneinfo import ZoneInfo
+
+        ahora_canarias = datetime.now(
+            ZoneInfo("Atlantic/Canary")
+        )
+
+        # La función litúrgica utiliza datetime sin zona horaria.
+        fecha_liturgica = datetime(
+            ahora_canarias.year,
+            ahora_canarias.month,
+            ahora_canarias.day
+        )
+
+        liturgia_hoy = obtener_liturgia(
+            fecha_liturgica,
+            db
+        )
+
+        colores_permitidos = {
+            "verde": "#16803C",
+            "morado": "#7E22CE",
+            "violeta": "#7E22CE",
+            "rojo": "#DC2626",
+            "blanco": "#D4AF37",
+            "rosa": "#DB2777"
+        }
+
+        nombre_color = (
+            liturgia_hoy.get("color") or "verde"
+        ).strip().lower()
+
+        color_borde = colores_permitidos.get(
+            nombre_color,
+            "#D4AF37"
+        )
+
+        # =====================================
+        # CONSULTAR NOTICIAS
+        # =====================================
         noticias = (
             db.query(Noticia)
-            .order_by(Noticia.fecha.desc(), Noticia.id.desc())
+            .order_by(
+                Noticia.fecha.desc(),
+                Noticia.id.desc()
+            )
             .limit(5)
             .all()
         )
 
+        # =====================================
+        # CONSULTAR AVISOS
+        # =====================================
         avisos = (
             db.query(Aviso)
-            .order_by(Aviso.publicado_at.desc(), Aviso.id.desc())
+            .order_by(
+                Aviso.publicado_at.desc(),
+                Aviso.id.desc()
+            )
             .limit(5)
             .all()
         )
 
+        # =====================================
+        # PREPARAR CARRUSEL
+        # =====================================
         destacados = []
 
         for noticia in noticias:
@@ -179,16 +235,25 @@ def app_home(request: Request):
 
         destacados = destacados[:5]
 
+        # =====================================
+        # MOSTRAR PANTALLA PRINCIPAL
+        # =====================================
         return templates.TemplateResponse(
             "home_demo.html",
             {
                 "request": request,
-                "destacados": destacados
+                "destacados": destacados,
+                "color_borde": color_borde,
+                "color_liturgico": nombre_color,
+                "celebracion_hoy": liturgia_hoy.get(
+                    "celebracion", ""
+                )
             }
         )
 
     finally:
         db.close()
+
         
 
 # =====================================
