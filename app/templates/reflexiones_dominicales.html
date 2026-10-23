@@ -1,0 +1,294 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reflexión dominical — Parroquia Cruz del Señor</title>
+
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        .texto-reflexion {
+            white-space: pre-line;
+            overflow-wrap: anywhere;
+            line-height: 1.8;
+        }
+
+        .imagen-reflexion {
+            width: 100%;
+            max-height: 360px;
+            object-fit: contain;
+            background: #f8fafc;
+        }
+
+        .tarjeta-historial {
+            transition: box-shadow 0.2s ease;
+        }
+
+        .tarjeta-historial:hover {
+            box-shadow: 0 5px 18px rgba(0,0,0,0.10);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-gray-800">
+
+<div class="max-w-3xl mx-auto px-4 py-6">
+
+    <!-- CABECERA -->
+    <header class="mb-6">
+
+        <a href="/menu"
+           class="inline-block bg-blue-100 text-blue-700 px-4 py-2 rounded-lg font-semibold">
+            ← Volver al menú
+        </a>
+
+        <h1 class="text-2xl font-bold text-blue-700 mt-6">
+            📖 Reflexión dominical
+        </h1>
+
+        <p class="text-gray-600 mt-2">
+            Un espacio para meditar la Palabra de Dios
+            y compartir nuestra fe cada domingo.
+        </p>
+
+    </header>
+
+    <!-- MENSAJES -->
+    <div id="mensajeEstado"
+         class="hidden bg-white rounded-xl p-5 shadow text-gray-600"
+         role="status">
+    </div>
+
+    <!-- REFLEXIÓN MÁS RECIENTE -->
+    <section id="seccionActual" class="hidden mb-8">
+
+        <h2 class="text-lg font-bold text-blue-700 mb-3">
+            Reflexión más reciente
+        </h2>
+
+        <article class="bg-white rounded-2xl shadow overflow-hidden">
+
+            <img id="imagenActual"
+                 class="imagen-reflexion hidden"
+                 alt="Imagen de la reflexión dominical">
+
+            <div class="p-5">
+
+                <p id="fechaActual"
+                   class="text-sm text-gray-500 mb-2"></p>
+
+                <h3 id="tituloActual"
+                    class="text-xl font-bold text-gray-800 mb-2"></h3>
+
+                <p id="subtituloActual"
+                   class="text-blue-700 font-medium mb-4 hidden"></p>
+
+                <div id="contenidoActual"
+                     class="texto-reflexion text-gray-700"></div>
+
+            </div>
+
+        </article>
+
+    </section>
+
+    <!-- HISTORIAL -->
+    <section id="seccionHistorial" class="hidden">
+
+        <h2 class="text-lg font-bold text-blue-700 mb-3">
+            Reflexiones anteriores
+        </h2>
+
+        <div id="listaHistorial" class="space-y-4"></div>
+
+    </section>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", async function () {
+
+    const mensajeEstado = document.getElementById("mensajeEstado");
+    const seccionActual = document.getElementById("seccionActual");
+    const seccionHistorial = document.getElementById("seccionHistorial");
+    const listaHistorial = document.getElementById("listaHistorial");
+
+    function mostrarMensaje(texto) {
+        mensajeEstado.textContent = texto;
+        mensajeEstado.classList.remove("hidden");
+    }
+
+    function formatearFecha(fecha) {
+        if (!fecha) return "";
+
+        const partes = fecha.split("-");
+
+        if (partes.length !== 3) return fecha;
+
+        const fechaLocal = new Date(
+            Number(partes[0]),
+            Number(partes[1]) - 1,
+            Number(partes[2])
+        );
+
+        return fechaLocal.toLocaleDateString("es-ES", {
+            day: "numeric",
+            month: "long",
+            year: "numeric"
+        });
+    }
+
+    function crearElemento(etiqueta, clase, contenido) {
+        const elemento = document.createElement(etiqueta);
+
+        if (clase) {
+            elemento.className = clase;
+        }
+
+        if (contenido !== undefined && contenido !== null) {
+            elemento.textContent = contenido;
+        }
+
+        return elemento;
+    }
+
+    function mostrarReflexionActual(reflexion) {
+
+        document.getElementById("fechaActual").textContent =
+            formatearFecha(reflexion.fecha_domingo);
+
+        document.getElementById("tituloActual").textContent =
+            reflexion.titulo || "";
+
+        const subtitulo = document.getElementById("subtituloActual");
+
+        if (reflexion.subtitulo) {
+            subtitulo.textContent = reflexion.subtitulo;
+            subtitulo.classList.remove("hidden");
+        } else {
+            subtitulo.classList.add("hidden");
+        }
+
+        document.getElementById("contenidoActual").textContent =
+            reflexion.contenido || "";
+
+        const imagen = document.getElementById("imagenActual");
+
+        if (reflexion.imagen) {
+            imagen.src = reflexion.imagen;
+            imagen.classList.remove("hidden");
+        } else {
+            imagen.removeAttribute("src");
+            imagen.classList.add("hidden");
+        }
+
+        seccionActual.classList.remove("hidden");
+    }
+
+    function mostrarHistorial(reflexiones) {
+
+        listaHistorial.replaceChildren();
+
+        reflexiones.forEach(function (reflexion) {
+
+            const tarjeta = crearElemento(
+                "article",
+                "tarjeta-historial bg-white rounded-xl shadow p-4"
+            );
+
+            const fecha = crearElemento(
+                "p",
+                "text-sm text-gray-500 mb-2",
+                formatearFecha(reflexion.fecha_domingo)
+            );
+
+            const titulo = crearElemento(
+                "h3",
+                "font-bold text-blue-700 text-lg mb-2",
+                reflexion.titulo
+            );
+
+            const subtitulo = crearElemento(
+                "p",
+                "text-sm text-gray-600 mb-3",
+                reflexion.subtitulo || ""
+            );
+
+            const boton = crearElemento(
+                "button",
+                "bg-blue-600 text-white px-4 py-2 rounded-lg",
+                "Leer reflexión →"
+            );
+
+            boton.type = "button";
+
+            const contenido = crearElemento(
+                "div",
+                "texto-reflexion text-gray-700 mt-4 hidden",
+                reflexion.contenido || ""
+            );
+
+            boton.addEventListener("click", function () {
+
+                const estaOculto = contenido.classList.contains("hidden");
+
+                contenido.classList.toggle("hidden");
+
+                boton.textContent = estaOculto
+                    ? "Ocultar reflexión"
+                    : "Leer reflexión →";
+            });
+
+            tarjeta.appendChild(fecha);
+            tarjeta.appendChild(titulo);
+
+            if (reflexion.subtitulo) {
+                tarjeta.appendChild(subtitulo);
+            }
+
+            tarjeta.appendChild(boton);
+            tarjeta.appendChild(contenido);
+
+            listaHistorial.appendChild(tarjeta);
+        });
+
+        seccionHistorial.classList.remove("hidden");
+    }
+
+    try {
+        const respuesta = await fetch("/reflexiones-dominicales/");
+
+        if (!respuesta.ok) {
+            throw new Error("No se pudieron cargar las reflexiones.");
+        }
+
+        const reflexiones = await respuesta.json();
+
+        if (!Array.isArray(reflexiones) || reflexiones.length === 0) {
+            mostrarMensaje(
+                "Todavía no hay reflexiones dominicales publicadas."
+            );
+            return;
+        }
+
+        mostrarReflexionActual(reflexiones[0]);
+
+        if (reflexiones.length > 1) {
+            mostrarHistorial(reflexiones.slice(1));
+        }
+
+    } catch (error) {
+        console.error(error);
+        mostrarMensaje(
+            "No se pudieron cargar las reflexiones. Inténtalo de nuevo."
+        );
+    }
+
+});
+</script>
+
+</body>
+</html>

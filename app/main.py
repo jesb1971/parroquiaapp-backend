@@ -23,7 +23,8 @@ from app.routers import (
     auth,
     frontend,
     donativos,
-    noticias
+    noticias,
+    reflexion_dominical
 )
 
 from app.security import exigir_administrador
@@ -51,6 +52,7 @@ app.include_router(auth.router)
 app.include_router(frontend.router)
 app.include_router(noticias.router)
 app.include_router(donativos.router)
+app.include_router(reflexion_dominical.router)
 
 
 # =====================================
@@ -264,6 +266,31 @@ def app_home(request: Request):
 def menu_principal(request: Request):
     return templates.TemplateResponse(
         "menu_principal.html",
+        {"request": request}
+    )
+    
+# =====================================
+# REFLEXIONES DOMINICALES PÚBLICAS
+# =====================================
+
+@app.get("/reflexiones-publicas", response_class=HTMLResponse)
+def reflexiones_publicas(request: Request):
+    return templates.TemplateResponse(
+        "reflexiones_dominicales.html",
+        {"request": request}
+    )
+    
+# =====================================
+# ADMINISTRACIÓN DE REFLEXIONES DOMINICALES
+# =====================================
+
+@app.get("/admin/reflexiones", response_class=HTMLResponse)
+def admin_reflexiones(
+    request: Request,
+    admin: bool = Depends(exigir_administrador)
+):
+    return templates.TemplateResponse(
+        "admin_reflexiones.html",
         {"request": request}
     )
 

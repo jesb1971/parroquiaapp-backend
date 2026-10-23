@@ -209,3 +209,18 @@ class ConfiguracionDonativos(Base):
     )
 
     activo = Column(Boolean, default=True, nullable=False)
+    
+# =====================================
+# Módulo de Reflexión dominical
+# =====================================
+
+class ReflexionDominical(Base):
+    __tablename__ = "reflexiones_dominicales"
+
+    id = Column(Integer, primary_key=True, index=True)
+    fecha_domingo = Column(Date, nullable=False, index=True)
+    titulo = Column(String(200), nullable=False)
+    subtitulo = Column(String(300), nullable=True)
+    contenido = Column(Text, nullable=False)
+    imagen = Column(String(500), nullable=True)
+    publicado_at = Column(DateTime, default=datetime.utcnow)
