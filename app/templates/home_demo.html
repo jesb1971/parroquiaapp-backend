@@ -6,19 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Parroquia Cruz del Señor — App</title>
 
-    <!-- Favicon -->
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
-
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
+        /* CARRUSEL */
         .carrusel {
             position: relative;
             overflow: hidden;
             border-radius: 16px;
             background: #ffffff;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.10);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
         }
 
         .carrusel-slide {
@@ -27,7 +25,7 @@
 
         .carrusel-slide.activo {
             display: block;
-            animation: aparecer 0.5s ease-in-out;
+            animation: aparecer 0.4s ease-in-out;
         }
 
         @keyframes aparecer {
@@ -35,10 +33,41 @@
             to { opacity: 1; }
         }
 
+        /* IMAGEN COMPACTA */
         .carrusel-imagen {
+            display: block;
             width: 100%;
-            height: 190px;
+            height: 120px;
             object-fit: cover;
+            object-position: center;
+        }
+
+        /* CONTENIDO */
+        .carrusel-contenido {
+            padding: 14px 16px;
+        }
+
+        .carrusel-slide h3 {
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            overflow: hidden;
+            line-height: 1.4;
+            min-height: 2.8em;
+            font-size: 16px;
+        }
+
+        .carrusel-resumen {
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 3;
+            line-clamp: 3;
+            overflow: hidden;
+            line-height: 1.5;
+            font-size: 13px;
+            min-height: 4.5em;
+            overflow-wrap: anywhere;
         }
 
         .carrusel-indicador {
@@ -54,6 +83,27 @@
             background: #2563eb;
         }
 
+        /* ADAPTACIÓN A MÓVILES */
+        @media (max-width: 640px) {
+            .carrusel-imagen {
+                height: 105px;
+            }
+
+            .carrusel-contenido {
+                padding: 12px 14px;
+            }
+
+            .carrusel-slide h3 {
+                font-size: 15px;
+            }
+
+            .carrusel-resumen {
+                -webkit-line-clamp: 2;
+                line-clamp: 2;
+                min-height: 3em;
+            }
+        }
+
         @media (prefers-reduced-motion: reduce) {
             .carrusel-slide.activo {
                 animation: none;
@@ -66,7 +116,7 @@
 
 <div class="max-w-4xl mx-auto py-8 px-4">
 
-    <!-- LOGO / IMAGEN -->
+    <!-- IDENTIDAD DE LA PARROQUIA -->
     <div class="text-center mb-6">
 
         <img
@@ -88,13 +138,14 @@
     <!-- CARRUSEL DE NOTICIAS Y AVISOS -->
     {% if destacados %}
 
-    <section class="mb-7" aria-label="Actualidad parroquial">
+    <section class="mb-6" aria-label="Actualidad parroquial">
 
-        <h2 class="text-xl font-bold text-blue-700 mb-3">
+        <h2 class="text-lg font-bold text-blue-700 mb-3">
             📢 Actualidad parroquial
         </h2>
 
-        <div id="carrusel" class="carrusel">
+        <div id="carrusel" class="carrusel"
+             aria-roledescription="carrusel">
 
             {% for item in destacados %}
 
@@ -113,33 +164,29 @@
                 >
                 {% endif %}
 
-                <div class="p-5">
+                <div class="carrusel-contenido">
 
                     {% if item.tipo == "aviso" %}
-
                     <span class="text-orange-700 text-xs font-bold uppercase">
                         📢 Aviso parroquial
                     </span>
-
                     {% else %}
-
                     <span class="text-blue-700 text-xs font-bold uppercase">
                         📰 Noticia
                     </span>
-
                     {% endif %}
 
-                    <h3 class="text-lg font-bold mt-2 mb-2">
+                    <h3 class="font-bold text-gray-800 mt-2 mb-2">
                         {{ item.titulo }}
                     </h3>
 
-                    <p class="text-sm text-gray-600 mb-4 break-words">
+                    <p class="carrusel-resumen text-gray-600 mb-3">
                         {{ item.contenido | truncate(180, True, '...') }}
                     </p>
 
                     <a
                         href="{{ item.url }}"
-                        class="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                        class="inline-block bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700"
                     >
                         Leer más →
                     </a>
@@ -154,7 +201,7 @@
 
         {% if destacados | length > 1 %}
 
-        <!-- CONTROLES DEL CARRUSEL -->
+        <!-- CONTROLES -->
         <div class="flex items-center justify-between gap-2 mt-3">
 
             <button
@@ -170,7 +217,6 @@
                 id="carruselIndicadores"
                 class="flex items-center justify-center gap-2"
             >
-
                 {% for item in destacados %}
 
                 <button
@@ -182,7 +228,6 @@
                 ></button>
 
                 {% endfor %}
-
             </div>
 
             <button
@@ -202,7 +247,7 @@
 
     {% endif %}
 
-    <!-- TARJETAS -->
+    <!-- MÓDULOS DE LA APLICACIÓN -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
         <!-- HORARIOS -->
