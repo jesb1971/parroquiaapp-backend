@@ -5,16 +5,75 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Menú principal — Parroquia Cruz del Señor</title>
+
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        /* FONDO DE SANTA MARÍA */
+        body {
+            min-height: 100vh;
+            margin: 0;
+            background-color: #edf6fb;
+            color: #1f2937;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: -2;
+            background-image: url("/static/virgen_maria.jpeg");
+            background-position: center top;
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+
+        /* CAPA SUAVE PARA MEJORAR LA LEGIBILIDAD */
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background: rgba(255, 255, 255, 0.38);
+        }
+
+        /* TARJETAS SEMITRANSPARENTES */
+        .tarjeta-modulo {
+            background: rgba(255, 255, 255, 0.90);
+            border: 1px solid rgba(255, 255, 255, 0.80);
+            border-radius: 14px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.10);
+        }
+
+        /* CABECERA LEGIBLE SOBRE LA IMAGEN */
+        .cabecera-parroquia {
+            background: rgba(255, 255, 255, 0.86);
+            border-radius: 16px;
+            padding: 18px 12px;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        @media (max-width: 640px) {
+            body::before {
+                background-position: center top;
+            }
+
+            .tarjeta-modulo {
+                background: rgba(255, 255, 255, 0.88);
+            }
+        }
+    </style>
 </head>
 
-<body class="bg-gray-50 text-gray-800">
+<body>
 
 <div class="max-w-4xl mx-auto py-6 px-4">
 
     <!-- CABECERA -->
-    <div class="text-center mb-6">
+    <div class="cabecera-parroquia text-center mb-6">
+
         <img
             src="/static/crusDelSeñor.jpg"
             alt="Parroquia Cruz del Señor"
@@ -25,15 +84,19 @@
             Parroquia Cruz del Señor
         </h1>
 
-        <p class="text-gray-500">
+        <p class="text-gray-600">
             Tu parroquia, siempre contigo
         </p>
+
     </div>
 
     <!-- REGRESAR A NOVEDADES -->
     <div class="mb-5">
-        <a href="/app"
-           class="inline-block bg-blue-100 text-blue-700 px-4 py-2 rounded-lg font-semibold hover:bg-blue-200">
+        <a
+            href="/app"
+            class="inline-block bg-blue-100 text-blue-700 px-4 py-2
+                   rounded-lg font-semibold hover:bg-blue-200 shadow-sm"
+        >
             ← Volver a novedades
         </a>
     </div>
@@ -42,11 +105,11 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
         <!-- HORARIOS -->
-        <div class="bg-white shadow rounded-lg p-4">
+        <div class="tarjeta-modulo">
             <h2 class="font-semibold text-lg text-blue-700">
                 📅 Horarios de misas
             </h2>
-            <p class="text-sm text-gray-500">
+            <p class="text-sm text-gray-600">
                 Consulta las próximas celebraciones.
             </p>
             <a href="/demo"
@@ -56,11 +119,11 @@
         </div>
 
         <!-- AVISOS -->
-        <div class="bg-white shadow rounded-lg p-4">
+        <div class="tarjeta-modulo">
             <h2 class="font-semibold text-lg text-blue-700">
                 📢 Avisos
             </h2>
-            <p class="text-sm text-gray-500">
+            <p class="text-sm text-gray-600">
                 Comunicados importantes de la parroquia.
             </p>
             <a href="/avisos-publicos"
@@ -70,11 +133,11 @@
         </div>
 
         <!-- NOTICIAS -->
-        <div class="bg-white shadow rounded-lg p-4">
+        <div class="tarjeta-modulo">
             <h2 class="font-semibold text-lg text-blue-700">
                 📰 Noticias
             </h2>
-            <p class="text-sm text-gray-500">
+            <p class="text-sm text-gray-600">
                 Eventos, actividades e información de la parroquia.
             </p>
             <a href="/noticias-publicas"
@@ -84,11 +147,11 @@
         </div>
 
         <!-- EVANGELIZACIÓN -->
-        <div class="bg-white shadow rounded-lg p-4">
+        <div class="tarjeta-modulo">
             <h2 class="font-semibold text-lg text-blue-700">
                 📖 Evangelización
             </h2>
-            <p class="text-sm text-gray-500">
+            <p class="text-sm text-gray-600">
                 Reflexiones, homilías y contenidos.
             </p>
             <a href="/evangelizacion"
@@ -98,11 +161,11 @@
         </div>
 
         <!-- CONTACTO -->
-        <div class="bg-white shadow rounded-lg p-4">
+        <div class="tarjeta-modulo">
             <h2 class="font-semibold text-lg text-blue-700">
                 📞 Contacto
             </h2>
-            <p class="text-sm text-gray-500">
+            <p class="text-sm text-gray-600">
                 Teléfono, dirección y horarios de despacho.
             </p>
             <a href="/contacto"
@@ -112,11 +175,11 @@
         </div>
 
         <!-- DONATIVOS -->
-        <div class="bg-white shadow rounded-lg p-4">
+        <div class="tarjeta-modulo">
             <h2 class="font-semibold text-lg text-blue-700">
                 💙 Donativos
             </h2>
-            <p class="text-sm text-gray-500">
+            <p class="text-sm text-gray-600">
                 Colabora con el sostenimiento y la misión
                 de nuestra parroquia.
             </p>
