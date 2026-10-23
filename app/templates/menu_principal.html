@@ -10,58 +10,62 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
-        /* FONDO DE SANTA MARÍA */
+        /* CONFIGURACIÓN GENERAL */
         body {
             min-height: 100vh;
             margin: 0;
-            background-color: #edf6fb;
+            background-color: #eaf5fb;
             color: #1f2937;
         }
 
+        /* IMAGEN DE SANTA MARÍA */
         body::before {
             content: "";
             position: fixed;
             inset: 0;
             z-index: -2;
+
             background-image: url("/static/virgen_maria.jpeg");
             background-position: center top;
             background-repeat: no-repeat;
-            background-size: cover;
+            background-size: contain;
         }
 
-        /* CAPA SUAVE PARA MEJORAR LA LEGIBILIDAD */
+        /* CAPA TRANSPARENTE */
         body::after {
             content: "";
             position: fixed;
             inset: 0;
             z-index: -1;
-            background: rgba(255, 255, 255, 0.38);
+            background: rgba(255,255,255,0.25);
         }
 
-        /* TARJETAS SEMITRANSPARENTES */
+        /* CABECERA COMPACTA */
+        .cabecera-parroquia {
+            background: rgba(255,255,255,0.88);
+            border-radius: 14px;
+            padding: 14px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+
+        /* TARJETAS */
         .tarjeta-modulo {
-            background: rgba(255, 255, 255, 0.90);
-            border: 1px solid rgba(255, 255, 255, 0.80);
+            background: rgba(255,255,255,0.88);
+            border: 1px solid rgba(255,255,255,0.80);
             border-radius: 14px;
             padding: 16px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.10);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.10);
         }
 
-        /* CABECERA LEGIBLE SOBRE LA IMAGEN */
-        .cabecera-parroquia {
-            background: rgba(255, 255, 255, 0.86);
-            border-radius: 16px;
-            padding: 18px 12px;
-            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
-        }
-
+        /* ADAPTACIÓN A MÓVILES */
         @media (max-width: 640px) {
             body::before {
                 background-position: center top;
+                background-size: 100% auto;
             }
 
             .tarjeta-modulo {
-                background: rgba(255, 255, 255, 0.88);
+                background: rgba(255,255,255,0.86);
             }
         }
     </style>
@@ -69,22 +73,16 @@
 
 <body>
 
-<div class="max-w-4xl mx-auto py-6 px-4">
+<div class="max-w-4xl mx-auto py-5 px-4">
 
     <!-- CABECERA -->
-    <div class="cabecera-parroquia text-center mb-6">
+    <div class="cabecera-parroquia text-center mb-5">
 
-        <img
-            src="/static/crusDelSeñor.jpg"
-            alt="Parroquia Cruz del Señor"
-            class="mx-auto h-28 rounded-lg shadow-md"
-        >
-
-        <h1 class="text-2xl font-bold text-blue-700 mt-3">
+        <h1 class="text-2xl font-bold text-blue-700">
             Parroquia Cruz del Señor
         </h1>
 
-        <p class="text-gray-600">
+        <p class="text-gray-600 text-sm mt-1">
             Tu parroquia, siempre contigo
         </p>
 
