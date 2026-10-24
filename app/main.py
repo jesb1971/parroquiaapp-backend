@@ -115,6 +115,23 @@ app.mount(
     name="media_noticias"
 )
 
+# =====================================
+# IMÁGENES DE REFLEXIONES DOMINICALES
+# =====================================
+
+REFLEXIONES_IMAGENES_DIR = "/var/data/reflexiones/imagenes"
+
+os.makedirs(
+    REFLEXIONES_IMAGENES_DIR,
+    exist_ok=True
+)
+
+app.mount(
+    "/media/reflexiones",
+    StaticFiles(directory=REFLEXIONES_IMAGENES_DIR),
+    name="media_reflexiones"
+)
+
 
 # =====================================
 # PLANTILLAS

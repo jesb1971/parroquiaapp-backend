@@ -2,8 +2,17 @@
 """Rutas del módulo Reflexión dominical."""
 
 from datetime import date, datetime
+from pathlib import Path
+from uuid import uuid4
+import os
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    File,
+    UploadFile
+)
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -19,15 +28,51 @@ router = APIRouter(
 
 
 # =====================================
+# CONFIGURACIÓN DE IMÁGENES
+# =====================================
+
+IMAGENES_DIR = Path(
+    "/var/data/reflexiones/imagenes"
+)
+
+MAX_IMAGEN_BYTES = 5 * 1024 * 1024
+
+FORMATOS_IMAGEN = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp"
+}
+
+FIRMAS_IMAGEN = {
+    ".jpg": lambda datos: datos.startswith(
+        b"\xff\xd8\xff"
+    ),
+    ".png": lambda datos: datos.startswith(
+        b"\x89PNG\r\n\x1a\n"
+    ),
+    ".webp": lambda datos: (
+        datos.startswith(b"RIFF")
+        and datos[8:12] == b"WEBP"
+    )
+}
+
+
+# =====================================
 # DATOS DE ENTRADA
 # =====================================
 
 class ReflexionDatos(BaseModel):
     fecha_domingo: date
     titulo: str = Field(min_length=1, max_length=200)
-    subtitulo: str | None = Field(default=None, max_length=300)
+    subtitulo: str | None = Field(
+        default=None,
+        max_length=300
+    )
     contenido: str = Field(min_length=1)
-    imagen: str | None = Field(default=None, max_length=500)
+    imagen: str | None = Field(
+        default=None,
+        max_length=500
+    )
 
 
 # =====================================
@@ -35,7 +80,9 @@ class ReflexionDatos(BaseModel):
 # =====================================
 
 @router.get("/")
-def listar_reflexiones(db: Session = Depends(get_db)):
+def listar_reflexiones(
+    db: Session = Depends(get_db)
+):
     return (
         db.query(models.ReflexionDominical)
         .order_by(
@@ -44,6 +91,64 @@ def listar_reflexiones(db: Session = Depends(get_db)):
         )
         .all()
     )
+
+
+# =====================================
+# SUBIR IMAGEN
+# =====================================
+
+@router.post("/subir-imagen")
+async def subir_imagen_reflexion(
+    imagen: UploadFile = File(...),
+    admin: bool = Depends(exigir_administrador)
+):
+    extension = FORMATOS_IMAGEN.get(
+        imagen.content_type
+    )
+
+    if extension is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Solo se permiten imágenes JPG, PNG o WebP."
+        )
+
+    datos = await imagen.read(
+        MAX_IMAGEN_BYTES + 1
+    )
+
+    if len(datos) > MAX_IMAGEN_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail="La imagen supera el límite de 5 MB."
+        )
+
+    if not datos or not FIRMAS_IMAGEN[extension](datos):
+        raise HTTPException(
+            status_code=400,
+            detail="El archivo no es una imagen válida."
+        )
+
+    IMAGENES_DIR.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    nombre = f"{uuid4().hex}{extension}"
+    ruta = IMAGENES_DIR / nombre
+
+    try:
+        with open(ruta, "xb") as archivo:
+            archivo.write(datos)
+
+    except OSError:
+        raise HTTPException(
+            status_code=500,
+            detail="No se pudo guardar la imagen."
+        )
+
+    return {
+        "imagen": f"/media/reflexiones/{nombre}"
+    }
 
 
 # =====================================
