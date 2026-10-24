@@ -30,6 +30,14 @@
         .tarjeta-historial:hover {
             box-shadow: 0 5px 18px rgba(0,0,0,0.10);
         }
+
+        .resumen-reflexion {
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 4;
+            line-clamp: 4;
+            overflow: hidden;
+        }
     </style>
 </head>
 
@@ -86,8 +94,20 @@
                 <p id="subtituloActual"
                    class="text-blue-700 font-medium mb-4 hidden"></p>
 
+                <!-- TEXTO DE LA REFLEXIÓN -->
                 <div id="contenidoActual"
-                     class="texto-reflexion text-gray-700"></div>
+                     class="texto-reflexion resumen-reflexion text-gray-700"></div>
+
+                <!-- LEER MÁS -->
+                <button
+                    id="botonLeerMas"
+                    type="button"
+                    class="mt-4 bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700"
+                    aria-expanded="false"
+                    aria-controls="contenidoActual"
+                >
+                    Leer más →
+                </button>
 
             </div>
 
@@ -115,6 +135,9 @@ document.addEventListener("DOMContentLoaded", async function () {
     const seccionActual = document.getElementById("seccionActual");
     const seccionHistorial = document.getElementById("seccionHistorial");
     const listaHistorial = document.getElementById("listaHistorial");
+
+    const contenidoActual = document.getElementById("contenidoActual");
+    const botonLeerMas = document.getElementById("botonLeerMas");
 
     function mostrarMensaje(texto) {
         mensajeEstado.textContent = texto;
@@ -155,6 +178,10 @@ document.addEventListener("DOMContentLoaded", async function () {
         return elemento;
     }
 
+    // =====================================
+    // REFLEXIÓN MÁS RECIENTE
+    // =====================================
+
     function mostrarReflexionActual(reflexion) {
 
         document.getElementById("fechaActual").textContent =
@@ -169,11 +196,15 @@ document.addEventListener("DOMContentLoaded", async function () {
             subtitulo.textContent = reflexion.subtitulo;
             subtitulo.classList.remove("hidden");
         } else {
+            subtitulo.textContent = "";
             subtitulo.classList.add("hidden");
         }
 
-        document.getElementById("contenidoActual").textContent =
-            reflexion.contenido || "";
+        contenidoActual.textContent = reflexion.contenido || "";
+
+        contenidoActual.classList.add("resumen-reflexion");
+        botonLeerMas.textContent = "Leer más →";
+        botonLeerMas.setAttribute("aria-expanded", "false");
 
         const imagen = document.getElementById("imagenActual");
 
@@ -187,6 +218,32 @@ document.addEventListener("DOMContentLoaded", async function () {
 
         seccionActual.classList.remove("hidden");
     }
+
+    // =====================================
+    // BOTÓN LEER MÁS / MOSTRAR MENOS
+    // =====================================
+
+    botonLeerMas.addEventListener("click", function () {
+
+        const resumido = contenidoActual.classList.contains(
+            "resumen-reflexion"
+        );
+
+        contenidoActual.classList.toggle("resumen-reflexion");
+
+        botonLeerMas.textContent = resumido
+            ? "Mostrar menos ↑"
+            : "Leer más →";
+
+        botonLeerMas.setAttribute(
+            "aria-expanded",
+            String(resumido)
+        );
+    });
+
+    // =====================================
+    // HISTORIAL
+    // =====================================
 
     function mostrarHistorial(reflexiones) {
 
@@ -257,6 +314,10 @@ document.addEventListener("DOMContentLoaded", async function () {
 
         seccionHistorial.classList.remove("hidden");
     }
+
+    // =====================================
+    // CARGAR REFLEXIONES
+    // =====================================
 
     try {
         const respuesta = await fetch("/reflexiones-dominicales/");
