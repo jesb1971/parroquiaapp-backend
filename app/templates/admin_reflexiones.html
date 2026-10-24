@@ -35,6 +35,28 @@
             max-height: 240px;
             object-fit: contain;
         }
+
+        .bloque-audio {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .reproductor-audio {
+            display: block;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .tarjeta-reflexion {
+            overflow-wrap: anywhere;
+        }
+
+        .contenido-historial {
+            max-height: 180px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 
@@ -54,7 +76,9 @@
                 Publicar reflexión dominical
             </h5>
 
-            <div id="mensaje" class="alert d-none" role="alert"></div>
+            <div id="mensaje"
+                 class="alert d-none"
+                 role="alert"></div>
 
             <form id="formularioReflexion">
 
@@ -63,6 +87,7 @@
                     <label for="fechaDomingo" class="form-label">
                         Fecha del domingo
                     </label>
+
                     <input
                         type="date"
                         id="fechaDomingo"
@@ -76,6 +101,7 @@
                     <label for="titulo" class="form-label">
                         Título
                     </label>
+
                     <input
                         type="text"
                         id="titulo"
@@ -90,6 +116,7 @@
                     <label for="subtitulo" class="form-label">
                         Subtítulo (opcional)
                     </label>
+
                     <input
                         type="text"
                         id="subtitulo"
@@ -103,6 +130,7 @@
                     <label for="contenido" class="form-label">
                         Reflexión completa
                     </label>
+
                     <textarea
                         id="contenido"
                         class="form-control"
@@ -112,8 +140,13 @@
                 </div>
 
                 <!-- IMAGEN ACTUAL -->
-                <div id="bloqueImagenActual" class="mb-3 d-none">
-                    <label class="form-label">Imagen actual</label>
+                <div id="bloqueImagenActual"
+                     class="mb-3 d-none">
+
+                    <label class="form-label">
+                        Imagen actual
+                    </label>
+
                     <div>
                         <img
                             id="imagenActual"
@@ -123,9 +156,11 @@
                     </div>
                 </div>
 
-                <!-- SUBIR IMAGEN -->
+                <!-- SELECCIONAR IMAGEN -->
                 <div class="mb-3">
-                    <label for="imagenArchivo" class="form-label">
+
+                    <label for="imagenArchivo"
+                           class="form-label">
                         Seleccionar imagen desde el ordenador
                     </label>
 
@@ -149,7 +184,9 @@
 
                 <!-- URL ALTERNATIVA -->
                 <div class="mb-4">
-                    <label for="imagenURL" class="form-label">
+
+                    <label for="imagenURL"
+                           class="form-label">
                         URL de imagen (opcional)
                     </label>
 
@@ -162,7 +199,67 @@
                     >
 
                     <div class="form-text">
-                        Puedes utilizar una imagen externa si no seleccionas un archivo.
+                        Utiliza una imagen externa si no seleccionas un archivo.
+                    </div>
+                </div>
+
+                <!-- AUDIO ACTUAL -->
+                <div id="bloqueAudioActual"
+                     class="mb-3 d-none">
+
+                    <label class="form-label fw-semibold">
+                        Audio actual del sacerdote
+                    </label>
+
+                    <div class="bloque-audio">
+
+                        <audio
+                            id="audioActual"
+                            class="reproductor-audio"
+                            controls
+                            preload="none"
+                        ></audio>
+
+                        <div class="form-text mt-2">
+                            Si no seleccionas otro audio, se conservará el actual.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUBIR AUDIO -->
+                <div class="mb-4">
+
+                    <label for="audioArchivo"
+                           class="form-label fw-semibold">
+                        🎧 Seleccionar audio de la reflexión
+                    </label>
+
+                    <input
+                        type="file"
+                        id="audioArchivo"
+                        class="form-control"
+                        accept=".mp3,.mpeg,.m4a,.aac,.ogg,.opus,audio/*"
+                    >
+
+                    <div class="form-text">
+                        MP3, MPEG, M4A, AAC, OGG u OPUS.
+                        Tamaño máximo: 30 MB.
+                    </div>
+
+                    <div id="bloqueAudioPrevia"
+                         class="bloque-audio mt-3 d-none">
+
+                        <p class="fw-semibold text-primary mb-2">
+                            Vista previa del nuevo audio
+                        </p>
+
+                        <audio
+                            id="audioPrevia"
+                            class="reproductor-audio"
+                            controls
+                            preload="metadata"
+                        ></audio>
+
                     </div>
                 </div>
 
@@ -184,15 +281,20 @@
                 </button>
 
             </form>
-
         </div>
     </div>
 
     <!-- HISTORIAL -->
     <div class="card shadow-sm">
         <div class="card-body">
-            <h5 class="mb-3">Historial de reflexiones</h5>
-            <div id="listaReflexiones" class="list-group"></div>
+
+            <h5 class="mb-3">
+                Historial de reflexiones
+            </h5>
+
+            <div id="listaReflexiones"
+                 class="list-group"></div>
+
         </div>
     </div>
 
@@ -205,6 +307,8 @@
 </div>
 
 <script>
+"use strict";
+
 const API_URL = "/reflexiones-dominicales/";
 
 const formulario = document.getElementById("formularioReflexion");
@@ -219,6 +323,12 @@ const imagenPrevia = document.getElementById("imagenPrevia");
 const imagenActual = document.getElementById("imagenActual");
 const bloqueImagenActual = document.getElementById("bloqueImagenActual");
 
+const audioArchivo = document.getElementById("audioArchivo");
+const audioActual = document.getElementById("audioActual");
+const audioPrevia = document.getElementById("audioPrevia");
+const bloqueAudioActual = document.getElementById("bloqueAudioActual");
+const bloqueAudioPrevia = document.getElementById("bloqueAudioPrevia");
+
 const botonGuardar = document.getElementById("botonGuardar");
 const botonCancelar = document.getElementById("botonCancelar");
 const tituloFormulario = document.getElementById("tituloFormulario");
@@ -228,9 +338,17 @@ const listaReflexiones = document.getElementById("listaReflexiones");
 let reflexionesActuales = [];
 let reflexionEnEdicion = null;
 let guardando = false;
-let urlPrevia = null;
-let imagenGuardada = null;
 
+let urlPreviaImagen = null;
+let urlPreviaAudio = null;
+
+let imagenGuardada = null;
+let audioGuardado = null;
+
+
+// =====================================
+// MOSTRAR MENSAJES
+// =====================================
 
 function mostrarMensaje(texto, tipo = "success") {
     mensaje.className = "alert alert-" + tipo;
@@ -238,27 +356,63 @@ function mostrarMensaje(texto, tipo = "success") {
 }
 
 
-function limpiarPrevia() {
-    if (urlPrevia) {
-        URL.revokeObjectURL(urlPrevia);
-        urlPrevia = null;
-    }
+// =====================================
+// LIMPIAR VISTA PREVIA DE IMAGEN
+// =====================================
+
+function limpiarPreviaImagen() {
 
     imagenPrevia.removeAttribute("src");
     imagenPrevia.classList.add("d-none");
+
+    if (urlPreviaImagen) {
+        URL.revokeObjectURL(urlPreviaImagen);
+        urlPreviaImagen = null;
+    }
 }
 
 
+// =====================================
+// LIMPIAR VISTA PREVIA DE AUDIO
+// =====================================
+
+function limpiarPreviaAudio() {
+
+    audioPrevia.pause();
+    audioPrevia.removeAttribute("src");
+    audioPrevia.load();
+
+    if (urlPreviaAudio) {
+        URL.revokeObjectURL(urlPreviaAudio);
+        urlPreviaAudio = null;
+    }
+
+    bloqueAudioPrevia.classList.add("d-none");
+}
+
+
+// =====================================
+// LIMPIAR FORMULARIO
+// =====================================
+
 function limpiarFormulario() {
+
     formulario.reset();
 
     reflexionEnEdicion = null;
     imagenGuardada = null;
+    audioGuardado = null;
 
-    limpiarPrevia();
+    limpiarPreviaImagen();
+    limpiarPreviaAudio();
 
     imagenActual.removeAttribute("src");
     bloqueImagenActual.classList.add("d-none");
+
+    audioActual.pause();
+    audioActual.removeAttribute("src");
+    audioActual.load();
+    bloqueAudioActual.classList.add("d-none");
 
     tituloFormulario.textContent = "Publicar reflexión dominical";
     botonGuardar.textContent = "Publicar reflexión";
@@ -266,16 +420,29 @@ function limpiarFormulario() {
 }
 
 
+// =====================================
+// FORMATEAR FECHA
+// =====================================
+
 function formatearFecha(fecha) {
+
     if (!fecha) return "";
 
     const partes = fecha.split("-");
+
+    if (partes.length !== 3) {
+        return fecha;
+    }
 
     const fechaLocal = new Date(
         Number(partes[0]),
         Number(partes[1]) - 1,
         Number(partes[2])
     );
+
+    if (Number.isNaN(fechaLocal.getTime())) {
+        return fecha;
+    }
 
     return fechaLocal.toLocaleDateString("es-ES", {
         day: "numeric",
@@ -286,11 +453,12 @@ function formatearFecha(fecha) {
 
 
 // =====================================
-// VISTA PREVIA DE LA IMAGEN
+// VISTA PREVIA DE IMAGEN
 // =====================================
 
 imagenArchivo.addEventListener("change", function () {
-    limpiarPrevia();
+
+    limpiarPreviaImagen();
 
     const archivo = this.files[0];
 
@@ -304,6 +472,7 @@ imagenArchivo.addEventListener("change", function () {
 
     if (
         !formatos.includes(archivo.type) ||
+        archivo.size === 0 ||
         archivo.size > 5 * 1024 * 1024
     ) {
         mostrarMensaje(
@@ -315,10 +484,58 @@ imagenArchivo.addEventListener("change", function () {
         return;
     }
 
-    urlPrevia = URL.createObjectURL(archivo);
+    urlPreviaImagen = URL.createObjectURL(archivo);
 
-    imagenPrevia.src = urlPrevia;
+    imagenPrevia.src = urlPreviaImagen;
     imagenPrevia.classList.remove("d-none");
+});
+
+
+// =====================================
+// VISTA PREVIA DE AUDIO
+// =====================================
+
+audioArchivo.addEventListener("change", function () {
+
+    limpiarPreviaAudio();
+
+    const archivo = this.files[0];
+
+    if (!archivo) return;
+
+    const extensiones = [
+        ".mp3",
+        ".mpeg",
+        ".m4a",
+        ".aac",
+        ".ogg",
+        ".opus"
+    ];
+
+    const nombre = archivo.name.toLowerCase();
+
+    const formatoValido = extensiones.some(
+        extension => nombre.endsWith(extension)
+    );
+
+    if (
+        !formatoValido ||
+        archivo.size === 0 ||
+        archivo.size > 30 * 1024 * 1024
+    ) {
+        mostrarMensaje(
+            "Selecciona un audio válido de hasta 30 MB.",
+            "warning"
+        );
+
+        this.value = "";
+        return;
+    }
+
+    urlPreviaAudio = URL.createObjectURL(archivo);
+
+    audioPrevia.src = urlPreviaAudio;
+    bloqueAudioPrevia.classList.remove("d-none");
 });
 
 
@@ -327,20 +544,31 @@ imagenArchivo.addEventListener("change", function () {
 // =====================================
 
 async function cargarReflexiones() {
+
     try {
+
         const respuesta = await fetch(API_URL);
 
         if (!respuesta.ok) {
             throw new Error("No se pudieron cargar las reflexiones.");
         }
 
-        reflexionesActuales = await respuesta.json();
+        const resultado = await respuesta.json();
+
+        if (!Array.isArray(resultado)) {
+            throw new Error("Respuesta de historial no válida.");
+        }
+
+        reflexionesActuales = resultado;
+
         listaReflexiones.replaceChildren();
 
         if (reflexionesActuales.length === 0) {
+
             const vacio = document.createElement("p");
-            vacio.className = "text-muted";
+            vacio.className = "text-muted mb-0";
             vacio.textContent = "Todavía no hay reflexiones publicadas.";
+
             listaReflexiones.appendChild(vacio);
             return;
         }
@@ -348,16 +576,18 @@ async function cargarReflexiones() {
         reflexionesActuales.forEach(function (reflexion) {
 
             const elemento = document.createElement("div");
-            elemento.className = "list-group-item p-3";
+            elemento.className = "list-group-item p-3 tarjeta-reflexion";
 
             const fila = document.createElement("div");
             fila.className = "d-flex gap-3 align-items-start";
 
             if (reflexion.imagen) {
+
                 const imagen = document.createElement("img");
                 imagen.src = reflexion.imagen;
                 imagen.alt = "";
                 imagen.className = "miniatura flex-shrink-0";
+
                 fila.appendChild(imagen);
             }
 
@@ -366,7 +596,7 @@ async function cargarReflexiones() {
 
             const titulo = document.createElement("h6");
             titulo.className = "fw-bold text-primary";
-            titulo.textContent = reflexion.titulo;
+            titulo.textContent = reflexion.titulo || "";
 
             const fecha = document.createElement("small");
             fecha.className = "text-muted d-block mb-2";
@@ -375,8 +605,8 @@ async function cargarReflexiones() {
             );
 
             const contenido = document.createElement("p");
-            contenido.className = "texto-reflexion text-secondary";
-            contenido.textContent = reflexion.contenido;
+            contenido.className = "texto-reflexion text-secondary contenido-historial";
+            contenido.textContent = reflexion.contenido || "";
 
             informacion.appendChild(titulo);
             informacion.appendChild(fecha);
@@ -385,6 +615,28 @@ async function cargarReflexiones() {
             fila.appendChild(informacion);
             elemento.appendChild(fila);
 
+            // AUDIO EN EL HISTORIAL
+            if (reflexion.audio_url) {
+
+                const bloque = document.createElement("div");
+                bloque.className = "bloque-audio mt-3";
+
+                const etiqueta = document.createElement("p");
+                etiqueta.className = "fw-semibold text-primary mb-2";
+                etiqueta.textContent = "🎧 Audio del sacerdote";
+
+                const reproductor = document.createElement("audio");
+                reproductor.controls = true;
+                reproductor.preload = "none";
+                reproductor.className = "reproductor-audio";
+                reproductor.src = reflexion.audio_url;
+
+                bloque.appendChild(etiqueta);
+                bloque.appendChild(reproductor);
+
+                elemento.appendChild(bloque);
+            }
+
             const controles = document.createElement("div");
             controles.className = "d-flex gap-2 mt-3";
 
@@ -392,6 +644,7 @@ async function cargarReflexiones() {
             editar.type = "button";
             editar.className = "btn btn-sm btn-primary flex-fill";
             editar.textContent = "✏️ Editar";
+
             editar.addEventListener("click", function () {
                 iniciarEdicion(reflexion.id);
             });
@@ -400,6 +653,7 @@ async function cargarReflexiones() {
             eliminar.type = "button";
             eliminar.className = "btn btn-sm btn-danger flex-fill";
             eliminar.textContent = "🗑 Eliminar";
+
             eliminar.addEventListener("click", function () {
                 eliminarReflexion(reflexion.id);
             });
@@ -412,7 +666,9 @@ async function cargarReflexiones() {
         });
 
     } catch (error) {
+
         console.error(error);
+
         mostrarMensaje(
             "No se pudo cargar el historial.",
             "danger"
@@ -426,24 +682,36 @@ async function cargarReflexiones() {
 // =====================================
 
 function iniciarEdicion(id) {
+
     const reflexion = reflexionesActuales.find(
         elemento => elemento.id === id
     );
 
-    if (!reflexion) return;
+    if (!reflexion) {
+        mostrarMensaje(
+            "No se encontró la reflexión.",
+            "danger"
+        );
+        return;
+    }
 
     reflexionEnEdicion = id;
+
     imagenGuardada = reflexion.imagen || null;
+    audioGuardado = reflexion.audio_url || null;
 
     fechaInput.value = reflexion.fecha_domingo;
+    
     tituloInput.value = reflexion.titulo || "";
     subtituloInput.value = reflexion.subtitulo || "";
     contenidoInput.value = reflexion.contenido || "";
 
     imagenArchivo.value = "";
     imagenURL.value = "";
+    audioArchivo.value = "";
 
-    limpiarPrevia();
+    limpiarPreviaImagen();
+    limpiarPreviaAudio();
 
     if (imagenGuardada) {
         imagenActual.src = imagenGuardada;
@@ -453,14 +721,29 @@ function iniciarEdicion(id) {
         bloqueImagenActual.classList.add("d-none");
     }
 
+    audioActual.pause();
+    audioActual.removeAttribute("src");
+    audioActual.load();
+
+    if (audioGuardado) {
+        audioActual.src = audioGuardado;
+        bloqueAudioActual.classList.remove("d-none");
+    } else {
+        bloqueAudioActual.classList.add("d-none");
+    }
+
     tituloFormulario.textContent = "Editar reflexión dominical";
     botonGuardar.textContent = "Guardar cambios";
     botonCancelar.classList.remove("d-none");
+
+    mensaje.className = "alert d-none";
 
     window.scrollTo({
         top: 0,
         behavior: "smooth"
     });
+
+    tituloInput.focus();
 }
 
 
@@ -468,14 +751,53 @@ function iniciarEdicion(id) {
 // CANCELAR EDICIÓN
 // =====================================
 
-botonCancelar.addEventListener("click", limpiarFormulario);
+botonCancelar.addEventListener("click", function () {
+    limpiarFormulario();
+});
 
 
 // =====================================
-// PUBLICAR O GUARDAR CAMBIOS
+// SUBIR ARCHIVO
+// =====================================
+
+async function subirArchivo(ruta, campo, archivo) {
+
+    const datos = new FormData();
+    datos.append(campo, archivo);
+
+    const respuesta = await fetch(API_URL + ruta, {
+        method: "POST",
+        body: datos
+    });
+
+    if (!respuesta.ok) {
+
+        let detalle = "No se pudo subir el archivo.";
+
+        try {
+            const error = await respuesta.json();
+
+            if (typeof error.detail === "string") {
+                detalle = error.detail;
+            }
+
+        } catch (error) {
+            console.error(error);
+        }
+
+        throw new Error(detalle);
+    }
+
+    return await respuesta.json();
+}
+
+
+// =====================================
+// PUBLICAR O EDITAR REFLEXIÓN
 // =====================================
 
 formulario.addEventListener("submit", async function (evento) {
+
     evento.preventDefault();
 
     if (guardando) return;
@@ -485,10 +807,15 @@ formulario.addEventListener("submit", async function (evento) {
         titulo: tituloInput.value.trim(),
         subtitulo: subtituloInput.value.trim() || null,
         contenido: contenidoInput.value.trim(),
-        imagen: imagenGuardada
+        imagen: imagenGuardada,
+        audio_url: audioGuardado
     };
 
-    if (!datos.fecha_domingo || !datos.titulo || !datos.contenido) {
+    if (
+        !datos.fecha_domingo ||
+        !datos.titulo ||
+        !datos.contenido
+    ) {
         mostrarMensaje(
             "Completa los campos obligatorios.",
             "warning"
@@ -497,6 +824,7 @@ formulario.addEventListener("submit", async function (evento) {
     }
 
     const editando = reflexionEnEdicion !== null;
+
     const url = editando
         ? API_URL + reflexionEnEdicion
         : API_URL;
@@ -509,39 +837,29 @@ formulario.addEventListener("submit", async function (evento) {
         // SUBIR IMAGEN NUEVA
         if (imagenArchivo.files.length > 0) {
 
-            const formData = new FormData();
-
-            formData.append(
+            const resultado = await subirArchivo(
+                "subir-imagen",
                 "imagen",
                 imagenArchivo.files[0]
             );
-
-            const subida = await fetch(
-                API_URL + "subir-imagen",
-                {
-                    method: "POST",
-                    body: formData
-                }
-            );
-
-            if (!subida.ok) {
-                let detalle = "No se pudo subir la imagen.";
-
-                try {
-                    const error = await subida.json();
-                    detalle = error.detail || detalle;
-                } catch (e) {}
-
-                throw new Error(detalle);
-            }
-
-            const resultado = await subida.json();
 
             datos.imagen = resultado.imagen;
 
         } else if (imagenURL.value.trim()) {
 
             datos.imagen = imagenURL.value.trim();
+        }
+
+        // SUBIR AUDIO NUEVO
+        if (audioArchivo.files.length > 0) {
+
+            const resultado = await subirArchivo(
+                "subir-audio",
+                "audio",
+                audioArchivo.files[0]
+            );
+
+            datos.audio_url = resultado.audio_url;
         }
 
         // GUARDAR REFLEXIÓN
@@ -554,26 +872,36 @@ formulario.addEventListener("submit", async function (evento) {
         });
 
         if (!respuesta.ok) {
+
             let detalle = "No se pudo guardar la reflexión.";
 
             try {
                 const error = await respuesta.json();
-                detalle = error.detail || detalle;
-            } catch (e) {}
+
+                if (typeof error.detail === "string") {
+                    detalle = error.detail;
+                }
+
+            } catch (error) {
+                console.error(error);
+            }
 
             throw new Error(detalle);
         }
 
         limpiarFormulario();
+
         await cargarReflexiones();
 
         mostrarMensaje(
             editando
                 ? "Reflexión actualizada correctamente."
-                : "Reflexión publicada correctamente."
+                : "Reflexión publicada correctamente.",
+            "success"
         );
 
     } catch (error) {
+
         console.error(error);
 
         mostrarMensaje(
@@ -582,6 +910,7 @@ formulario.addEventListener("submit", async function (evento) {
         );
 
     } finally {
+
         guardando = false;
         botonGuardar.disabled = false;
     }
@@ -593,6 +922,7 @@ formulario.addEventListener("submit", async function (evento) {
 // =====================================
 
 async function eliminarReflexion(id) {
+
     const reflexion = reflexionesActuales.find(
         elemento => elemento.id === id
     );
@@ -607,12 +937,18 @@ async function eliminarReflexion(id) {
     if (!confirmado) return;
 
     try {
-        const respuesta = await fetch(API_URL + id, {
-            method: "DELETE"
-        });
+
+        const respuesta = await fetch(
+            API_URL + id,
+            {
+                method: "DELETE"
+            }
+        );
 
         if (!respuesta.ok) {
-            throw new Error("No se pudo eliminar.");
+            throw new Error(
+                "No se pudo eliminar la reflexión."
+            );
         }
 
         if (reflexionEnEdicion === id) {
@@ -622,10 +958,12 @@ async function eliminarReflexion(id) {
         await cargarReflexiones();
 
         mostrarMensaje(
-            "Reflexión eliminada correctamente."
+            "Reflexión eliminada correctamente.",
+            "success"
         );
 
     } catch (error) {
+
         console.error(error);
 
         mostrarMensaje(
@@ -641,6 +979,7 @@ async function eliminarReflexion(id) {
 // =====================================
 
 cargarReflexiones();
+
 </script>
 
 </body>

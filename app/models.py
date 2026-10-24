@@ -223,4 +223,5 @@ class ReflexionDominical(Base):
     subtitulo = Column(String(300), nullable=True)
     contenido = Column(Text, nullable=False)
     imagen = Column(String(500), nullable=True)
+    audio_url = Column(String(500), nullable=True)
     publicado_at = Column(DateTime, default=datetime.utcnow)

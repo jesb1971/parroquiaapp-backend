@@ -38,6 +38,19 @@
             line-clamp: 4;
             overflow: hidden;
         }
+
+        .bloque-audio {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 12px;
+            padding: 14px;
+        }
+
+        .reproductor-audio {
+            width: 100%;
+            max-width: 100%;
+            display: block;
+        }
     </style>
 </head>
 
@@ -94,6 +107,26 @@
                 <p id="subtituloActual"
                    class="text-blue-700 font-medium mb-4 hidden"></p>
 
+                <!-- AUDIO DEL SACERDOTE -->
+                <div id="bloqueAudioActual"
+                     class="bloque-audio mb-5 hidden">
+
+                    <p class="font-semibold text-blue-700 mb-3">
+                        🎧 Escuchar reflexión
+                    </p>
+
+                    <audio
+                        id="audioActual"
+                        class="reproductor-audio"
+                        controls
+                        preload="none"
+                        aria-label="Audio de la reflexión dominical"
+                    >
+                        Tu navegador no admite la reproducción de audio.
+                    </audio>
+
+                </div>
+
                 <!-- TEXTO DE LA REFLEXIÓN -->
                 <div id="contenidoActual"
                      class="texto-reflexion resumen-reflexion text-gray-700"></div>
@@ -138,6 +171,9 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     const contenidoActual = document.getElementById("contenidoActual");
     const botonLeerMas = document.getElementById("botonLeerMas");
+
+    const bloqueAudioActual = document.getElementById("bloqueAudioActual");
+    const audioActual = document.getElementById("audioActual");
 
     function mostrarMensaje(texto) {
         mensajeEstado.textContent = texto;
@@ -216,6 +252,16 @@ document.addEventListener("DOMContentLoaded", async function () {
             imagen.classList.add("hidden");
         }
 
+        // AUDIO
+        if (reflexion.audio_url) {
+            audioActual.src = reflexion.audio_url;
+            bloqueAudioActual.classList.remove("hidden");
+        } else {
+            audioActual.removeAttribute("src");
+            audioActual.load();
+            bloqueAudioActual.classList.add("hidden");
+        }
+
         seccionActual.classList.remove("hidden");
     }
 
@@ -265,7 +311,7 @@ document.addEventListener("DOMContentLoaded", async function () {
             const titulo = crearElemento(
                 "h3",
                 "font-bold text-blue-700 text-lg mb-2",
-                reflexion.titulo
+                reflexion.titulo || ""
             );
 
             const subtitulo = crearElemento(
@@ -288,9 +334,43 @@ document.addEventListener("DOMContentLoaded", async function () {
                 reflexion.contenido || ""
             );
 
+            // REPRODUCTOR DEL HISTORIAL
+            if (reflexion.audio_url) {
+
+                const bloqueAudio = crearElemento(
+                    "div",
+                    "bloque-audio mt-4"
+                );
+
+                const etiquetaAudio = crearElemento(
+                    "p",
+                    "font-semibold text-blue-700 mb-3",
+                    "🎧 Escuchar reflexión"
+                );
+
+                const reproductor = document.createElement("audio");
+                reproductor.controls = true;
+                reproductor.preload = "none";
+                reproductor.className = "reproductor-audio";
+                reproductor.src = reflexion.audio_url;
+
+                bloqueAudio.appendChild(etiquetaAudio);
+                bloqueAudio.appendChild(reproductor);
+
+                contenido.appendChild(bloqueAudio);
+            }
+
             boton.addEventListener("click", function () {
 
                 const estaOculto = contenido.classList.contains("hidden");
+
+                if (!estaOculto) {
+                    const reproductor = contenido.querySelector("audio");
+
+                    if (reproductor) {
+                        reproductor.pause();
+                    }
+                }
 
                 contenido.classList.toggle("hidden");
 

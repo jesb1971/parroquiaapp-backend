@@ -116,6 +116,23 @@ app.mount(
 )
 
 # =====================================
+# AUDIOS DE REFLEXIONES DOMINICALES
+# =====================================
+
+REFLEXIONES_AUDIOS_DIR = "/var/data/reflexiones/audios"
+
+os.makedirs(
+    REFLEXIONES_AUDIOS_DIR,
+    exist_ok=True
+)
+
+app.mount(
+    "/media/reflexiones/audios",
+    StaticFiles(directory=REFLEXIONES_AUDIOS_DIR),
+    name="media_reflexiones_audios"
+)
+
+# =====================================
 # IMÁGENES DE REFLEXIONES DOMINICALES
 # =====================================
 
@@ -131,6 +148,8 @@ app.mount(
     StaticFiles(directory=REFLEXIONES_IMAGENES_DIR),
     name="media_reflexiones"
 )
+
+
 
 
 # =====================================
