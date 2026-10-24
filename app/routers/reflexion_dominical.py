@@ -77,7 +77,9 @@ TIPOS_AUDIO = {
     ".mpeg": {
         "audio/mpeg",
         "audio/mp3",
-        "audio/x-mpeg"
+        "audio/x-mpeg",
+        "video/mpeg",
+        "application/octet-stream"
     },
     ".m4a": {
         "audio/mp4",
