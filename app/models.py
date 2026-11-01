@@ -225,3 +225,42 @@ class ReflexionDominical(Base):
     imagen = Column(String(500), nullable=True)
     audio_url = Column(String(500), nullable=True)
     publicado_at = Column(DateTime, default=datetime.utcnow)
+    
+# =====================================
+# DISPOSITIVOS PARA NOTIFICACIONES PUSH
+# =====================================
+
+class DispositivoPush(Base):
+    __tablename__ = "dispositivos_push"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    token = Column(
+        String(512),
+        unique=True,
+        index=True,
+        nullable=False
+    )
+
+    plataforma = Column(
+        String(20),
+        nullable=False,
+        default="android"
+    )
+
+    activo = Column(
+        Boolean,
+        nullable=False,
+        default=True
+    )
+
+    registrado_at = Column(
+        DateTime,
+        default=datetime.utcnow
+    )
+
+    actualizado_at = Column(
+        DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow
+    )

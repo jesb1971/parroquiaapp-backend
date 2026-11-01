@@ -24,7 +24,8 @@ from app.routers import (
     frontend,
     donativos,
     noticias,
-    reflexion_dominical
+    reflexion_dominical,
+    notificaciones
 )
 
 from app.security import exigir_administrador
@@ -53,6 +54,7 @@ app.include_router(frontend.router)
 app.include_router(noticias.router)
 app.include_router(donativos.router)
 app.include_router(reflexion_dominical.router)
+app.include_router(notificaciones.router)
 
 
 # =====================================
@@ -355,6 +357,20 @@ def backup_db():
 @app.on_event("shutdown")
 def shutdown_event():
     backup_db()
+
+# =====================================
+# ADMINISTRACIÓN DE NOTIFICACIONES
+# =====================================
+
+@app.get("/admin/notificaciones", response_class=HTMLResponse)
+def admin_notificaciones(
+    request: Request,
+    admin: bool = Depends(exigir_administrador)
+):
+    return templates.TemplateResponse(
+        "admin_notificaciones.html",
+        {"request": request}
+    )
 
 
 # =====================================

@@ -1,0 +1,115 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Notificaciones | Parroquia Cruz del Señor</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: #f4f7fb;
+        }
+
+        .contenedor {
+            max-width: 750px;
+        }
+
+        .cabecera {
+            color: #1d4ed8;
+        }
+
+        .card {
+            border: none;
+            border-radius: 14px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container contenedor py-4">
+
+    <h2 class="text-center cabecera mb-4">
+        🔔 Gestión de Notificaciones
+    </h2>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body p-4">
+
+            <h5 class="mb-3">
+                Enviar notificación a los feligreses
+            </h5>
+
+            <div class="alert alert-info">
+                Las notificaciones permitirán comunicar
+                avisos importantes, noticias y actividades
+                de la parroquia a los dispositivos registrados.
+            </div>
+
+            <form id="formularioNotificacion">
+
+                <div class="mb-3">
+                    <label for="titulo" class="form-label">
+                        Título de la notificación
+                    </label>
+
+                    <input
+                        type="text"
+                        id="titulo"
+                        class="form-control"
+                        maxlength="100"
+                        placeholder="Ej. Parroquia Cruz del Señor"
+                        required
+                    >
+                </div>
+
+                <div class="mb-3">
+                    <label for="mensaje" class="form-label">
+                        Mensaje
+                    </label>
+
+                    <textarea
+                        id="mensaje"
+                        class="form-control"
+                        rows="5"
+                        maxlength="500"
+                        placeholder="Escribe aquí el mensaje para los feligreses..."
+                        required
+                    ></textarea>
+
+                    <div class="form-text">
+                        Máximo 500 caracteres.
+                    </div>
+                </div>
+
+                <div class="alert alert-warning">
+                    El envío de notificaciones todavía no está habilitado.
+                    Estamos preparando la integración con Firebase.
+                </div>
+
+                <button
+                    type="submit"
+                    id="botonEnviar"
+                    class="btn btn-primary w-100"
+                    disabled
+                >
+                    🔔 Enviar notificación
+                </button>
+
+            </form>
+        </div>
+    </div>
+
+    <div class="text-center">
+        <a href="/admin" class="btn btn-outline-secondary">
+            ← Volver al panel de administración
+        </a>
+    </div>
+
+</div>
+
+</body>
+</html>
