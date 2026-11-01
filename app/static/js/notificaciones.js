@@ -64,10 +64,40 @@ document.addEventListener("DOMContentLoaded", function () {
         );
     }
 }
-	PushNotifications.addListener("registration", function (token) {
-		console.log("Notificaciones: token FCM recibido.");
-		// Posteriormente enviaremos el token al backend de forma segura.
-	});
+	PushNotifications.addListener("registration", async function (token) {
+    try {
+        if (!token.value) {
+            throw new Error("Token FCM vacío.");
+        }
+
+        const respuesta = await fetch("/notificaciones/registrar", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                token: token.value,
+                plataforma: "android"
+            })
+        });
+
+        if (!respuesta.ok) {
+            throw new Error(
+                "Error HTTP " + respuesta.status
+            );
+        }
+
+        console.log(
+            "Notificaciones: dispositivo registrado correctamente."
+        );
+
+    } catch (error) {
+        console.error(
+            "Notificaciones: error al registrar el dispositivo.",
+            error
+        );
+    }
+});
 	
 	PushNotifications.addListener("registrationError", function (error) {
     console.error(

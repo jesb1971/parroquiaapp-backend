@@ -66,3 +66,56 @@ def enviar_notificacion_dispositivo(
     )
 
     return messaging.send(mensaje)
+
+
+# =====================================
+# ENVIAR NOTIFICACIONES A VARIOS DISPOSITIVOS
+# =====================================
+
+def enviar_notificaciones_multiples(
+    tokens: list[str],
+    titulo: str,
+    contenido: str
+):
+    """
+    Envía notificaciones a los dispositivos registrados.
+    Devuelve los resultados y los tokens que deben darse de baja.
+    """
+
+    inicializar_firebase()
+
+    if not tokens:
+        return {
+            "enviados": 0,
+            "fallidos": 0,
+            "tokens_invalidos": []
+        }
+
+    enviados = 0
+    fallidos = 0
+    tokens_invalidos = []
+
+    for token in tokens:
+        try:
+            enviar_notificacion_dispositivo(
+                token,
+                titulo,
+                contenido
+            )
+            enviados += 1
+
+        except (
+            messaging.UnregisteredError,
+            messaging.SenderIdMismatchError
+        ):
+            fallidos += 1
+            tokens_invalidos.append(token)
+
+        except Exception:
+            fallidos += 1
+
+    return {
+        "enviados": enviados,
+        "fallidos": fallidos,
+        "tokens_invalidos": tokens_invalidos
+    }

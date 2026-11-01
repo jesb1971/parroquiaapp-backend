@@ -44,13 +44,29 @@
             </h5>
 
             <div class="alert alert-info">
-                Las notificaciones permitirán comunicar
+                Las notificaciones permiten comunicar
                 avisos importantes, noticias y actividades
                 de la parroquia a los dispositivos registrados.
             </div>
 
             <form id="formularioNotificacion">
 
+                <!-- PROTECCIÓN CSRF -->
+                <input
+                    type="hidden"
+                    id="csrf_token"
+                    name="csrf_token"
+                    value="{{ csrf_token }}"
+                >
+
+                <input
+                    type="hidden"
+                    id="csrf_firma"
+                    name="csrf_firma"
+                    value="{{ csrf_firma }}"
+                >
+
+                <!-- TÍTULO -->
                 <div class="mb-3">
                     <label for="titulo" class="form-label">
                         Título de la notificación
@@ -66,6 +82,7 @@
                     >
                 </div>
 
+                <!-- MENSAJE -->
                 <div class="mb-3">
                     <label for="mensaje" class="form-label">
                         Mensaje
@@ -86,20 +103,22 @@
                 </div>
 
                 <div class="alert alert-warning">
-                    El envío de notificaciones todavía no está habilitado.
-                    Estamos preparando la integración con Firebase.
+                    Las notificaciones se enviarán a todos
+                    los dispositivos registrados y activos.
+                    Comprueba el contenido antes de confirmar.
                 </div>
 
+                <!-- BOTÓN DE ENVÍO -->
                 <button
                     type="submit"
                     id="botonEnviar"
                     class="btn btn-primary w-100"
-                    disabled
                 >
                     🔔 Enviar notificación
                 </button>
 
             </form>
+
         </div>
     </div>
 
@@ -110,6 +129,95 @@
     </div>
 
 </div>
+
+<!-- =====================================
+     ENVÍO DE NOTIFICACIONES
+===================================== -->
+
+<script>
+"use strict";
+
+document.getElementById("formularioNotificacion")
+    .addEventListener("submit", async function (evento) {
+
+        evento.preventDefault();
+
+        const formulario = document.getElementById(
+            "formularioNotificacion"
+        );
+
+        const boton = document.getElementById("botonEnviar");
+
+        const titulo = document.getElementById("titulo").value.trim();
+        const mensaje = document.getElementById("mensaje").value.trim();
+
+        const csrf_token = document.getElementById("csrf_token").value;
+        const csrf_firma = document.getElementById("csrf_firma").value;
+
+        if (!titulo || !mensaje) {
+            alert("Debes introducir el título y el mensaje.");
+            return;
+        }
+
+        if (!confirm(
+            "¿Confirmas que deseas enviar esta notificación a los feligreses?"
+        )) {
+            return;
+        }
+
+        boton.disabled = true;
+        boton.textContent = "Enviando notificación...";
+
+        try {
+
+            const respuesta = await fetch("/notificaciones/enviar", {
+                method: "POST",
+                credentials: "same-origin",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    titulo,
+                    mensaje,
+                    csrf_token,
+                    csrf_firma
+                })
+            });
+
+            const resultado = await respuesta.json();
+
+            if (!respuesta.ok) {
+                throw new Error(
+                    typeof resultado.detail === "string"
+                        ? resultado.detail
+                        : "No se pudo enviar la notificación."
+                );
+            }
+
+            alert(
+                resultado.mensaje +
+                "\nEnviados: " + resultado.enviados +
+                "\nFallidos: " + resultado.fallidos
+            );
+
+            if (resultado.enviados > 0) {
+                document.getElementById("titulo").value = "";
+                document.getElementById("mensaje").value = "";
+            }
+
+        } catch (error) {
+
+            alert("Error: " + error.message);
+
+        } finally {
+
+            boton.disabled = false;
+            boton.textContent = "🔔 Enviar notificación";
+
+        }
+
+    });
+</script>
 
 </body>
 </html>

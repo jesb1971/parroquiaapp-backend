@@ -8,9 +8,16 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from ..db import get_db
 from .. import models
+
+from ..firebase_service import enviar_notificaciones_multiples
+from ..security import (
+    exigir_administrador,
+    validar_csrf_formulario
+)
 
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -38,6 +45,45 @@ router = APIRouter(
 class DispositivoDatos(BaseModel):
     token: str = Field(min_length=20, max_length=512)
     plataforma: str = "android"
+
+
+# =====================================
+# DATOS PARA ENVIAR NOTIFICACIONES
+# =====================================
+
+class NotificacionDatos(BaseModel):
+    titulo: str = Field(
+        min_length=1,
+        max_length=100
+    )
+
+    mensaje: str = Field(
+        min_length=1,
+        max_length=500
+    )
+
+    csrf_token: str = Field(min_length=1)
+    csrf_firma: str = Field(min_length=1)
+
+
+# =====================================
+# VALIDAR SEGURIDAD DEL ENVÍO
+# =====================================
+
+def comprobar_seguridad_envio(
+    request: Request,
+    csrf_token: str,
+    csrf_firma: str
+):
+    exigir_administrador(request)
+
+    validar_csrf_formulario(
+        request,
+        csrf_token,
+        csrf_firma
+    )
+
+    return True
 
 
 # =====================================
@@ -83,9 +129,91 @@ def registrar_dispositivo(
         activo=True
     )
 
-    db.add(nuevo_dispositivo)
-    db.commit()
+    try:
+        db.add(nuevo_dispositivo)
+        db.commit()
+
+    except IntegrityError:
+        db.rollback()
+
+        return {
+            "mensaje": "El dispositivo ya estaba registrado."
+        }
 
     return {
         "mensaje": "Dispositivo registrado correctamente."
+    }
+
+
+# =====================================
+# ENVIAR NOTIFICACIONES DESDE ADMIN
+# =====================================
+
+@router.post("/enviar")
+def enviar_notificacion_admin(
+    request: Request,
+    datos: NotificacionDatos,
+    db: Session = Depends(get_db),
+    admin: bool = Depends(exigir_administrador)
+):
+
+    comprobar_seguridad_envio(
+        request,
+        datos.csrf_token,
+        datos.csrf_firma
+    )
+
+    titulo = datos.titulo.strip()
+    mensaje = datos.mensaje.strip()
+
+    if not titulo or not mensaje:
+        raise HTTPException(
+            status_code=400,
+            detail="El título y el mensaje son obligatorios."
+        )
+
+    dispositivos = (
+        db.query(models.DispositivoPush)
+        .filter(models.DispositivoPush.activo.is_(True))
+        .all()
+    )
+
+    if not dispositivos:
+        return {
+            "mensaje": "No hay dispositivos registrados.",
+            "enviados": 0,
+            "fallidos": 0
+        }
+
+    tokens = [
+        dispositivo.token
+        for dispositivo in dispositivos
+    ]
+
+    resultado = enviar_notificaciones_multiples(
+        tokens,
+        titulo,
+        mensaje
+    )
+
+    if resultado["tokens_invalidos"]:
+        (
+            db.query(models.DispositivoPush)
+            .filter(
+                models.DispositivoPush.token.in_(
+                    resultado["tokens_invalidos"]
+                )
+            )
+            .update(
+                {models.DispositivoPush.activo: False},
+                synchronize_session=False
+            )
+        )
+
+        db.commit()
+
+    return {
+        "mensaje": "Proceso de envío finalizado.",
+        "enviados": resultado["enviados"],
+        "fallidos": resultado["fallidos"]
     }

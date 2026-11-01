@@ -30,7 +30,10 @@ from app.routers import (
     notificaciones
 )
 
-from app.security import exigir_administrador
+from app.security import (
+    exigir_administrador,
+    generar_csrf_formulario
+)
 from app.routers.misas import obtener_liturgia
 
 
@@ -379,9 +382,15 @@ def admin_notificaciones(
     request: Request,
     admin: bool = Depends(exigir_administrador)
 ):
+    csrf = generar_csrf_formulario(request)
+
     return templates.TemplateResponse(
         "admin_notificaciones.html",
-        {"request": request}
+        {
+            "request": request,
+            "csrf_token": csrf["csrf_token"],
+            "csrf_firma": csrf["csrf_firma"]
+        }
     )
 
 
