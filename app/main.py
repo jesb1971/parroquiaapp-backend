@@ -7,6 +7,8 @@ from datetime import datetime
 from fastapi import FastAPI, Request, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from slowapi.errors import RateLimitExceeded
+from slowapi import _rate_limit_exceeded_handler
 from fastapi.templating import Jinja2Templates
 
 # Base de datos
@@ -37,6 +39,16 @@ from app.routers.misas import obtener_liturgia
 # =====================================
 
 app = FastAPI(title="ParroquiaApp")
+
+# =====================================
+# PROTECCIÓN CONTRA SOLICITUDES ABUSIVAS
+# =====================================
+
+app.state.limiter = notificaciones.limiter
+app.add_exception_handler(
+    RateLimitExceeded,
+    _rate_limit_exceeded_handler
+)
 
 # Crear tablas automáticamente
 Base.metadata.create_all(bind=engine)

@@ -5,12 +5,24 @@
 
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from ..db import get_db
 from .. import models
+
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+
+# =====================================
+# LIMITADOR DE SOLICITUDES
+# =====================================
+
+limiter = Limiter(
+    key_func=get_remote_address
+)
 
 
 router = APIRouter(
@@ -33,7 +45,9 @@ class DispositivoDatos(BaseModel):
 # =====================================
 
 # @router.post("/registrar")
+@limiter.limit("5/minute")
 def registrar_dispositivo(
+    request: Request,
     datos: DispositivoDatos,
     db: Session = Depends(get_db)
 ):
