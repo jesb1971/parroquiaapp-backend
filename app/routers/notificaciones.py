@@ -14,6 +14,8 @@ from ..db import get_db
 from .. import models
 
 from ..firebase_service import enviar_notificaciones_multiples
+from firebase_admin import app_check
+from ..firebase_service import inicializar_firebase
 from ..security import (
     exigir_administrador,
     validar_csrf_formulario
@@ -85,17 +87,45 @@ def comprobar_seguridad_envio(
 
     return True
 
+# =====================================
+# VERIFICAR TOKEN FIREBASE APP CHECK
+# =====================================
+
+def verificar_app_check(request: Request):
+
+    token = request.headers.get("X-Firebase-AppCheck")
+
+    if not token:
+        raise HTTPException(
+            status_code=401,
+            detail="Falta el token de App Check."
+        )
+
+    try:
+        inicializar_firebase()
+        app_check.verify_token(token)
+
+    except Exception:
+        raise HTTPException(
+            status_code=401,
+            detail="Token de App Check no válido."
+        )
+
+    return True
+
+
 
 # =====================================
 # REGISTRAR DISPOSITIVO
 # =====================================
 
-# @router.post("/registrar")
+@router.post("/registrar")
 @limiter.limit("5/minute")
 def registrar_dispositivo(
     request: Request,
     datos: DispositivoDatos,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    app_check_valido: bool = Depends(verificar_app_check)
 ):
 
     if datos.plataforma != "android":
