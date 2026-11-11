@@ -12,6 +12,7 @@
         /* CARRUSEL */
         .carrusel {
             position: relative;
+			height: 380px;
             overflow: hidden;
             border-radius: 16px;
             background: #ffffff;
@@ -23,7 +24,9 @@
         }
 
         .carrusel-slide.activo {
-            display: block;
+            display: flex;
+			flex-direction: column;
+			height: 100%;
             animation: aparecer 0.4s ease-in-out;
         }
 
@@ -44,6 +47,10 @@
         /* CONTENIDO */
         .carrusel-contenido {
             padding: 14px 16px;
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			min-height: 0;
         }
 
         .carrusel-slide h3 {
@@ -109,7 +116,9 @@
             }
         }
     </style>
+
 </head>
+
 
 <body class="bg-gray-50 text-gray-800">
 
@@ -210,7 +219,7 @@ window.addEventListener("load",function(){
 
                     <a
                         href="{{ item.url }}"
-                        class="inline-block bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700"
+                        class="inline-block bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 mt-auto self-start"
                     >
                         Leer más →
                     </a>
