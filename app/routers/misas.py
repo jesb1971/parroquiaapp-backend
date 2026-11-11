@@ -207,11 +207,11 @@ def listar_misas(db: Session = Depends(get_db)):
         if celebracion:
             if misa.descripcion and misa.descripcion.strip():
                 if celebracion not in misa.descripcion:
-                    misa.descripcion_final = f"{misa.descripcion} | 🎉 {celebracion}"
+                    misa.descripcion_final = f"{misa.descripcion} | {celebracion}"
                 else:
                     misa.descripcion_final = misa.descripcion
             else:
-                misa.descripcion_final = f"🎉 {celebracion}"
+                misa.descripcion_final = f"{celebracion}"
         else:
             misa.descripcion_final = misa.descripcion or ""
 
