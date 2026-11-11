@@ -123,11 +123,13 @@ window.addEventListener("load",function(){
     const bienvenida=document.getElementById("pantalla-bienvenida");
     if(!bienvenida)return;
     setTimeout(function(){
-        bienvenida.style.transition="opacity 1s ease";
+        bienvenida.style.transition="opacity 1.8s ease-in-out";
         bienvenida.style.opacity="0";
+		bienvenida.querySelector("img").style.transition="transform 1.8s ease-in-out";
+		bienvenida.querySelector("img").style.transform="scale(1.04)";
         setTimeout(function(){
             bienvenida.remove();
-        },1000);
+        },1800);
     },3000);
 });
 </script>
