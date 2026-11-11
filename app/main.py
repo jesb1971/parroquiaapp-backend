@@ -469,3 +469,14 @@ def admin_noticias(
         "admin_noticias.html",
         {"request": request}
     )
+    
+# =====================================
+# GRUPOS PARROQUIALES PÚBLICOS
+# =====================================
+
+@app.get("/grupos", response_class=HTMLResponse)
+def grupos_parroquiales(request: Request):
+    return templates.TemplateResponse(
+        "grupos.html",
+        {"request": request}
+    )
