@@ -123,38 +123,59 @@
 <body class="bg-gray-50 text-gray-800">
 
 
+
 <!-- PANTALLA DE BIENVENIDA -->
-<div id="pantalla-bienvenida" style="position:fixed;inset:0;z-index:9999;background:#ffffff;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 1.8s ease-in-out;">
-    <img src="/static/virgen_maria.jpeg" alt="Ave María, Gratia Plena" style="max-width:100%;max-height:100%;object-fit:contain;">
+<div id="pantalla-bienvenida"
+     style="position:fixed;inset:0;z-index:9999;background:#ffffff;display:flex;align-items:center;justify-content:center;opacity:1;">
+
+    <img src="/static/virgen_maria.jpeg"
+         alt="Ave María, Gratia Plena"
+         style="max-width:100%;max-height:100%;object-fit:contain;opacity:0;transition:opacity 0.7s ease-in-out,transform 1s ease-in-out;">
 </div>
 
 <script>
-window.addEventListener("load",function(){
-    const bienvenida=document.getElementById("pantalla-bienvenida");
-    if(!bienvenida)return;
+(function(){
+    const bienvenida = document.getElementById("pantalla-bienvenida");
+    if (!bienvenida) return;
 
-    // Entrada suave
+    const imagen = bienvenida.querySelector("img");
+
+    // La portada permanece oculta desde el inicio.
+    // Solo la imagen aparece progresivamente.
     requestAnimationFrame(function(){
         requestAnimationFrame(function(){
-            bienvenida.style.opacity="1";
+            imagen.style.opacity = "1";
         });
     });
 
-    // Permanencia y salida suave
-    setTimeout(function(){
-        bienvenida.style.opacity="0";
+    // Esperar a que la imagen esté cargada.
+    const imagenPreparada = imagen.complete
+        ? Promise.resolve()
+        : new Promise(function(resolve){
+            imagen.addEventListener("load", resolve, {once:true});
+            imagen.addEventListener("error", resolve, {once:true});
+        });
 
-        const imagen=bienvenida.querySelector("img");
-        imagen.style.transition="transform 1.8s ease-in-out";
-        imagen.style.transform="scale(1.04)";
+    imagenPreparada.then(function(){
 
+        // Mantener la imagen visible brevemente.
         setTimeout(function(){
-            bienvenida.remove();
-        },1800);
 
-    },4800);
-});
+            bienvenida.style.transition = "opacity 1s ease-in-out";
+            bienvenida.style.opacity = "0";
+
+            imagen.style.transform = "scale(1.04)";
+
+            setTimeout(function(){
+                bienvenida.remove();
+            },1000);
+
+        },2000);
+
+    });
+})();
 </script>
+
 
 
 <div class="max-w-4xl mx-auto py-8 px-4">
