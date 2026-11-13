@@ -264,3 +264,25 @@ class DispositivoPush(Base):
         default=datetime.utcnow,
         onupdate=datetime.utcnow
     )
+
+
+# =====================================
+# MÓDULO DE ORACIÓN DEL DÍA
+# =====================================
+
+class OracionDiaria(Base):
+    __tablename__ = "oraciones_diarias"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    fecha = Column(Date, nullable=False, unique=True, index=True)
+
+    titulo = Column(String(200), nullable=False)
+
+    contenido = Column(Text, nullable=False)
+
+    autor = Column(String(200), nullable=True)
+
+    imagen = Column(String(500), nullable=True)
+
+    creado_at = Column(DateTime, default=datetime.utcnow)

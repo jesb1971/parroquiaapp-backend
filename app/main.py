@@ -27,7 +27,8 @@ from app.routers import (
     donativos,
     noticias,
     reflexion_dominical,
-    notificaciones
+    notificaciones,
+    oraciones
 )
 
 from app.security import (
@@ -70,6 +71,7 @@ app.include_router(noticias.router)
 app.include_router(donativos.router)
 app.include_router(reflexion_dominical.router)
 app.include_router(notificaciones.router)
+app.include_router(oraciones.router)
 
 
 # =====================================
@@ -470,6 +472,65 @@ def admin_noticias(
         {"request": request}
     )
     
+
+# =====================================
+# IMÁGENES DE ORACIÓN DEL DÍA
+# =====================================
+
+ORACIONES_IMAGENES_DIR = "/var/data/oraciones/imagenes"
+
+os.makedirs(
+    ORACIONES_IMAGENES_DIR,
+    exist_ok=True
+)
+
+app.mount(
+    "/media/oraciones",
+    StaticFiles(directory=ORACIONES_IMAGENES_DIR),
+    name="media_oraciones"
+)
+
+
+# =====================================
+# PÁGINA PÚBLICA DE ORACIÓN DEL DÍA
+# =====================================
+
+@app.get("/oracion-del-dia", response_class=HTMLResponse)
+def pagina_oracion_del_dia(request: Request):
+    return templates.TemplateResponse(
+        "oracion_del_dia.html",
+        {"request": request}
+    )
+
+
+# =====================================
+# PÁGINA PÚBLICA DEL HISTÓRICO DE ORACIONES
+# =====================================
+
+@app.get("/oraciones/historico-vista", response_class=HTMLResponse)
+def pagina_historico_oraciones(request: Request):
+    return templates.TemplateResponse(
+        "oraciones_historico.html",
+        {"request": request}
+    )
+
+
+# =====================================
+# ADMINISTRACIÓN DE ORACIONES
+# =====================================
+
+@app.get("/admin/oraciones", response_class=HTMLResponse)
+def administrar_oraciones(
+    request: Request,
+    admin: bool = Depends(exigir_administrador)
+):
+    return templates.TemplateResponse(
+        "admin_oraciones.html",
+        {"request": request}
+    )
+
+
+
 # =====================================
 # GRUPOS PARROQUIALES PÚBLICOS
 # =====================================
