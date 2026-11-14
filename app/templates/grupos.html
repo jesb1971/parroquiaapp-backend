@@ -20,42 +20,26 @@
     </header>
 
     <!-- PRESENTACIÓN -->
-    <main class="px-5 py-10 text-center">
+    <main class="px-5 py-8">
 
-        <div class="flex justify-center mb-5">
-            <svg xmlns="http://www.w3.org/2000/svg"
-                 width="64" height="64" viewBox="0 0 24 24"
-                 fill="none" stroke="#1d4ed8"
-                 stroke-width="1.5" stroke-linecap="round"
-                 stroke-linejoin="round" aria-hidden="true">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-        </div>
-
-        <h1 class="text-2xl font-bold text-blue-800 mb-4">
-            Grupos parroquiales
-        </h1>
-
-        <p class="text-gray-600 leading-relaxed mb-8">
-            Nuestra parroquia es una comunidad viva, enriquecida
-            por los grupos apostólicos que comparten su fe,
-            su tiempo y su servicio a los demás.
-        </p>
-
-        <section class="bg-blue-50 border border-blue-100 rounded-2xl p-6">
-            <h2 class="text-xl font-bold text-blue-800 mb-3">
-                Próximamente
-            </h2>
+        <div class="text-center mb-8">
+            <h1 class="text-2xl font-bold text-blue-800 mb-4">
+                Grupos parroquiales
+            </h1>
 
             <p class="text-gray-600 leading-relaxed">
-                Estamos preparando este espacio para dar a conocer
-                nuestros grupos parroquiales, sus actividades,
-                encuentros e iniciativas.
+                Nuestra parroquia es una comunidad viva,
+                enriquecida por los grupos apostólicos que
+                comparten su fe, su tiempo y su servicio
+                a los demás.
             </p>
-        </section>
+        </div>
+
+        <div id="categorias" class="space-y-6">
+            <p class="text-center text-gray-500">
+                Cargando grupos parroquiales...
+            </p>
+        </div>
 
     </main>
 
@@ -64,6 +48,72 @@
     </footer>
 
 </div>
+
+<script>
+async function cargarGrupos() {
+    const contenedor = document.getElementById("categorias");
+
+    try {
+        const respuesta = await fetch("/api/grupos/");
+
+        if (!respuesta.ok) {
+            throw new Error("Error al consultar los grupos");
+        }
+
+        const datos = await respuesta.json();
+
+        contenedor.replaceChildren();
+
+        datos.categorias.forEach(categoria => {
+            const seccion = document.createElement("section");
+            seccion.className =
+                "bg-blue-50 border border-blue-100 rounded-2xl p-5";
+
+            const titulo = document.createElement("h2");
+            titulo.className =
+                "text-lg font-bold text-blue-800 mb-4";
+            titulo.textContent = categoria;
+
+            seccion.appendChild(titulo);
+
+            const grupos = datos.grupos.filter(
+                grupo => grupo.categoria === categoria
+            );
+
+            if (grupos.length === 0) {
+                const aviso = document.createElement("p");
+                aviso.className = "text-sm text-gray-500";
+                aviso.textContent =
+                    "Próximamente incorporaremos información.";
+                seccion.appendChild(aviso);
+            }
+
+            grupos.forEach(grupo => {
+                const enlace = document.createElement("a");
+                enlace.href = "/grupo/" + grupo.id;
+                enlace.className =
+                    "block bg-white border border-blue-100 " +
+                    "rounded-xl px-4 py-3 mb-2 " +
+                    "text-blue-800 font-medium " +
+                    "hover:bg-blue-100 transition";
+
+                enlace.textContent = grupo.nombre + " →";
+                seccion.appendChild(enlace);
+            });
+
+            contenedor.appendChild(seccion);
+        });
+
+    } catch (error) {
+        contenedor.textContent =
+            "No se pudieron cargar los grupos parroquiales.";
+        contenedor.className =
+            "text-center text-red-600 py-6";
+    }
+}
+
+document.addEventListener("DOMContentLoaded", cargarGrupos);
+</script>
 
 </body>
 </html>

@@ -286,3 +286,27 @@ class OracionDiaria(Base):
     imagen = Column(String(500), nullable=True)
 
     creado_at = Column(DateTime, default=datetime.utcnow)
+
+
+# =====================================
+# MÓDULO DE GRUPOS PARROQUIALES
+# =====================================
+
+class GrupoParroquial(Base):
+    __tablename__ = "grupos_parroquiales"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    categoria = Column(String(100), nullable=False, index=True)
+
+    nombre = Column(String(200), nullable=False)
+
+    descripcion = Column(Text, nullable=False)
+
+    imagen = Column(String(500), nullable=True)
+
+    orden = Column(Integer, default=0, nullable=False)
+
+    activo = Column(Boolean, default=True, nullable=False)
+
+    creado_at = Column(DateTime, default=datetime.utcnow)

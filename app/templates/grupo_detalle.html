@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grupo parroquial | Parroquia Cruz del Señor</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-50 text-gray-800">
+
+<div class="max-w-2xl mx-auto min-h-screen bg-white shadow-sm">
+
+    <!-- CABECERA -->
+    <header class="bg-blue-700 text-white px-4 py-4">
+        <a href="/grupos"
+           class="inline-block bg-white text-blue-700 px-3 py-2 rounded-lg text-sm font-semibold">
+            ← Volver a grupos
+        </a>
+    </header>
+
+    <!-- CONTENIDO DEL GRUPO -->
+    <main class="px-5 py-8">
+
+        <div id="contenido">
+            <p class="text-center text-gray-500">
+                Cargando información del grupo...
+            </p>
+        </div>
+
+    </main>
+
+    <footer class="text-center text-xs text-gray-500 py-6 px-4 border-t">
+        Parroquia Cruz del Señor
+    </footer>
+
+</div>
+
+<script>
+async function cargarGrupo() {
+
+    const contenedor = document.getElementById("contenido");
+    const grupoId = window.location.pathname.split("/").pop();
+
+    if (!/^\d+$/.test(grupoId)) {
+        contenedor.textContent = "Grupo parroquial no válido.";
+        return;
+    }
+
+    try {
+        const respuesta = await fetch(
+            "/api/grupos/" + grupoId
+        );
+
+        if (!respuesta.ok) {
+            throw new Error("Grupo no encontrado");
+        }
+
+        const grupo = await respuesta.json();
+
+        contenedor.replaceChildren();
+
+        // CATEGORÍA
+        const categoria = document.createElement("p");
+        categoria.className =
+            "text-sm font-semibold text-blue-600 mb-3";
+        categoria.textContent = grupo.categoria;
+
+        // NOMBRE
+        const titulo = document.createElement("h1");
+        titulo.className =
+            "text-2xl font-bold text-blue-800 mb-6";
+        titulo.textContent = grupo.nombre;
+
+        contenedor.appendChild(categoria);
+        contenedor.appendChild(titulo);
+
+        // IMAGEN OPCIONAL
+        if (grupo.imagen) {
+            const imagen = document.createElement("img");
+            imagen.src = grupo.imagen;
+            imagen.alt = grupo.nombre;
+            imagen.className =
+                "w-full rounded-2xl mb-6 object-cover";
+            imagen.loading = "lazy";
+
+            contenedor.appendChild(imagen);
+        }
+
+        // DESCRIPCIÓN
+        const descripcion = document.createElement("div");
+        descripcion.className =
+            "text-gray-700 leading-relaxed whitespace-pre-line";
+
+        descripcion.textContent = grupo.descripcion;
+
+        contenedor.appendChild(descripcion);
+
+    } catch (error) {
+        contenedor.replaceChildren();
+
+        const aviso = document.createElement("p");
+        aviso.className = "text-center text-red-600 py-6";
+        aviso.textContent =
+            "No se pudo cargar la información del grupo.";
+
+        contenedor.appendChild(aviso);
+    }
+}
+
+document.addEventListener("DOMContentLoaded", cargarGrupo);
+</script>
+
+</body>
+</html>

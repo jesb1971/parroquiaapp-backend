@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Administrar grupos parroquiales</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet">
+</head>
+
+<body class="bg-light">
+
+<div class="container py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary">👥 Grupos parroquiales</h2>
+
+        <a href="/admin" class="btn btn-outline-secondary">
+            ← Volver al panel
+        </a>
+    </div>
+
+    <div id="mensaje" role="status" aria-live="polite"></div>
+
+    <!-- FORMULARIO -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            Crear o editar grupo parroquial
+        </div>
+
+        <div class="card-body">
+
+            <form id="formGrupo" enctype="multipart/form-data">
+
+                <input type="hidden" id="grupoId">
+
+                <div class="mb-3">
+                    <label for="categoria" class="form-label">
+                        Categoría
+                    </label>
+
+                    <select id="categoria" name="categoria"
+                            class="form-select" required>
+                        <option value="">Seleccionar categoría</option>
+                        <option value="Asociaciones de Laicos">
+                            Asociaciones de Laicos
+                        </option>
+                        <option value="Grupos Acción Caritativa y Social">
+                            Grupos Acción Caritativa y Social
+                        </option>
+                        <option value="Grupos de Oración">
+                            Grupos de Oración
+                        </option>
+                        <option value="Grupos de Formación">
+                            Grupos de Formación
+                        </option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="nombre" class="form-label">
+                        Nombre del grupo
+                    </label>
+                    <input type="text" id="nombre" name="nombre"
+                           class="form-control" maxlength="200" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="descripcion" class="form-label">
+                        Descripción
+                    </label>
+                    <textarea id="descripcion" name="descripcion"
+                              class="form-control" rows="7"
+                              required></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label for="imagen" class="form-label">
+                        Imagen del grupo (opcional)
+                    </label>
+                    <input type="file" id="imagen" name="imagen"
+                           class="form-control"
+                           accept="image/jpeg,image/png,image/webp">
+                    <div class="form-text">
+                        JPG, PNG o WebP. Máximo 5 MB.
+                        Si editas sin seleccionar imagen,
+                        se conservará la anterior.
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="orden" class="form-label">
+                        Orden de aparición
+                    </label>
+                    <input type="number" id="orden" name="orden"
+                           class="form-control" value="0">
+                </div>
+
+                <div class="form-check mb-3">
+                    <input type="checkbox" id="activo" name="activo"
+                           class="form-check-input" checked>
+                    <label for="activo" class="form-check-label">
+                        Grupo activo (visible públicamente)
+                    </label>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" id="btnGuardar"
+                            class="btn btn-primary">
+                        Guardar grupo
+                    </button>
+
+                    <button type="button" id="btnCancelar"
+                            class="btn btn-outline-secondary">
+                        Cancelar edición
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <!-- LISTADO DE GRUPOS -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            Grupos registrados
+        </div>
+
+        <div class="card-body">
+            <div id="listadoGrupos">
+                <p class="text-muted">Cargando grupos...</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+
+// =====================================
+// CARGAR LISTADO DE GRUPOS
+// =====================================
+
+async function cargarGruposAdmin() {
+    const contenedor = document.getElementById("listadoGrupos");
+
+    try {
+        const respuesta = await fetch("/api/grupos/admin/listado");
+
+        if (!respuesta.ok) {
+            throw new Error("No se pudo consultar el listado.");
+        }
+
+        const grupos = await respuesta.json();
+        contenedor.replaceChildren();
+
+        if (grupos.length === 0) {
+            const aviso = document.createElement("p");
+            aviso.className = "text-muted";
+            aviso.textContent = "Todavía no hay grupos registrados.";
+            contenedor.appendChild(aviso);
+            return;
+        }
+
+        grupos.forEach(grupo => {
+            const tarjeta = document.createElement("div");
+            tarjeta.className =
+                "border rounded p-3 mb-3 bg-white";
+
+            const nombre = document.createElement("h5");
+            nombre.className = "mb-1";
+            nombre.textContent = grupo.nombre;
+
+            const categoria = document.createElement("p");
+            categoria.className = "text-muted mb-2";
+            categoria.textContent = grupo.categoria;
+
+            const estado = document.createElement("span");
+            estado.className = grupo.activo
+                ? "badge bg-success"
+                : "badge bg-secondary";
+            estado.textContent = grupo.activo
+                ? "Activo"
+                : "Inactivo";
+
+            
+			const acciones = document.createElement("div");
+			acciones.className = "mt-3";
+
+			const btnEditar = document.createElement("button");
+			btnEditar.type = "button";
+			btnEditar.className = "btn btn-outline-primary btn-sm";
+			btnEditar.textContent = "✏️ Editar";
+
+			btnEditar.addEventListener("click", () => {
+			editarGrupo(grupo);
+		});
+
+			const btnEliminar = document.createElement("button");
+			btnEliminar.type = "button";
+			btnEliminar.className = "btn btn-outline-danger btn-sm ms-2";
+			btnEliminar.textContent = "🗑️ Eliminar";
+			btnEliminar.addEventListener("click", () => {
+				eliminarGrupo(grupo.id, grupo.nombre);
+			});
+
+			acciones.appendChild(btnEditar);
+			acciones.appendChild(btnEliminar);
+
+			tarjeta.append(nombre, categoria, estado, acciones);
+
+            contenedor.appendChild(tarjeta);
+        });
+
+    } catch (error) {
+        contenedor.replaceChildren();
+
+        const aviso = document.createElement("p");
+        aviso.className = "text-danger";
+        aviso.textContent =
+            "No se pudo cargar el listado de grupos.";
+
+        contenedor.appendChild(aviso);
+    }
+}
+
+
+// =====================================
+// GUARDAR GRUPO PARROQUIAL
+// =====================================
+
+async function guardarGrupo(evento) {
+    evento.preventDefault();
+
+    const formulario = document.getElementById("formGrupo");
+    const grupoId = document.getElementById("grupoId").value;
+    const boton = document.getElementById("btnGuardar");
+    const mensaje = document.getElementById("mensaje");
+
+    const datos = new FormData(formulario);
+
+    datos.set(
+        "activo",
+        document.getElementById("activo").checked ? "true" : "false"
+    );
+
+    const url = grupoId
+        ? "/api/grupos/" + grupoId
+        : "/api/grupos/crear";
+
+    const metodo = grupoId ? "PUT" : "POST";
+
+    boton.disabled = true;
+    mensaje.replaceChildren();
+
+    try {
+        const respuesta = await fetch(url, {
+            method: metodo,
+            body: datos
+        });
+
+        if (!respuesta.ok) {
+            const error = await respuesta.json();
+            throw new Error(
+                typeof error.detail === "string"
+                    ? error.detail
+                    : "No se pudo guardar el grupo."
+            );
+        }
+
+        mensaje.className = "alert alert-success";
+        mensaje.textContent = grupoId
+            ? "Grupo actualizado correctamente."
+            : "Grupo creado correctamente.";
+
+        formulario.reset();
+        document.getElementById("grupoId").value = "";
+
+        await cargarGruposAdmin();
+
+    } catch (error) {
+        mensaje.className = "alert alert-danger";
+        mensaje.textContent = error.message;
+
+    } finally {
+        boton.disabled = false;
+    }
+}
+
+
+// =====================================
+// CARGAR GRUPO PARA EDITAR
+// =====================================
+
+function editarGrupo(grupo) {
+    document.getElementById("grupoId").value = grupo.id;
+    document.getElementById("categoria").value = grupo.categoria;
+    document.getElementById("nombre").value = grupo.nombre;
+    document.getElementById("descripcion").value = grupo.descripcion;
+    document.getElementById("orden").value = grupo.orden ?? 0;
+    document.getElementById("activo").checked = grupo.activo;
+
+    // La imagen anterior se conserva si no se selecciona otra.
+    document.getElementById("imagen").value = "";
+
+    const boton = document.getElementById("btnGuardar");
+    boton.textContent = "Guardar cambios";
+
+    const mensaje = document.getElementById("mensaje");
+    mensaje.replaceChildren();
+    mensaje.className = "";
+
+    document.getElementById("formGrupo").scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+    });
+}
+
+
+// =====================================
+// CANCELAR EDICIÓN
+// =====================================
+
+function cancelarEdicion() {
+    document.getElementById("formGrupo").reset();
+    document.getElementById("grupoId").value = "";
+
+    document.getElementById("btnGuardar").textContent =
+        "Guardar grupo";
+
+    const mensaje = document.getElementById("mensaje");
+    mensaje.replaceChildren();
+    mensaje.className = "";
+}
+
+document.getElementById("btnCancelar").addEventListener(
+    "click",
+    cancelarEdicion
+);
+
+
+// =====================================
+// ELIMINAR GRUPO CON CONFIRMACIÓN
+// =====================================
+
+async function eliminarGrupo(grupoId, nombre) {
+    if (!window.confirm(`¿Seguro que deseas eliminar el grupo "${nombre}"? Esta acción no se puede deshacer.`)) {
+        return;
+    }
+
+    const mensaje = document.getElementById("mensaje");
+    mensaje.className = "";
+    mensaje.replaceChildren();
+
+    try {
+        const respuesta = await fetch("/api/grupos/" + grupoId, {
+            method: "DELETE"
+        });
+
+        if (!respuesta.ok) {
+            const error = await respuesta.json().catch(() => ({}));
+            throw new Error(typeof error.detail === "string" ? error.detail : "No se pudo eliminar el grupo.");
+        }
+
+        if (document.getElementById("grupoId").value === String(grupoId)) {
+            cancelarEdicion();
+        }
+
+        await cargarGruposAdmin();
+        mensaje.className = "alert alert-success";
+        mensaje.textContent = "Grupo eliminado correctamente.";
+    } catch (error) {
+        mensaje.className = "alert alert-danger";
+        mensaje.textContent = error.message;
+    }
+}
+
+
+// =====================================
+// INICIALIZACIÓN
+// =====================================
+
+document.getElementById("formGrupo").addEventListener(
+    "submit",
+    guardarGrupo
+);
+
+document.addEventListener(
+    "DOMContentLoaded",
+    cargarGruposAdmin
+);
+
+</script>
+
+</body>
+</html>

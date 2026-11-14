@@ -28,7 +28,8 @@ from app.routers import (
     noticias,
     reflexion_dominical,
     notificaciones,
-    oraciones
+    oraciones,
+    grupos
 )
 
 from app.security import (
@@ -72,6 +73,7 @@ app.include_router(donativos.router)
 app.include_router(reflexion_dominical.router)
 app.include_router(notificaciones.router)
 app.include_router(oraciones.router)
+app.include_router(grupos.router)
 
 
 # =====================================
@@ -167,8 +169,6 @@ app.mount(
     StaticFiles(directory=REFLEXIONES_IMAGENES_DIR),
     name="media_reflexiones"
 )
-
-
 
 
 # =====================================
@@ -492,6 +492,22 @@ app.mount(
 
 
 # =====================================
+# IMÁGENES DE GRUPOS PARROQUIALES
+# =====================================
+
+GRUPOS_IMAGENES_DIR = "/var/data/grupos/imagenes"
+
+os.makedirs(GRUPOS_IMAGENES_DIR, exist_ok=True)
+
+app.mount(
+    "/media/grupos",
+    StaticFiles(directory=GRUPOS_IMAGENES_DIR),
+    name="grupos_imagenes"
+)
+
+
+
+# =====================================
 # PÁGINA PÚBLICA DE ORACIÓN DEL DÍA
 # =====================================
 
@@ -530,6 +546,21 @@ def administrar_oraciones(
     )
 
 
+# =====================================
+# ADMINISTRACIÓN DE GRUPOS PARROQUIALES
+# =====================================
+
+@app.get("/admin/grupos", response_class=HTMLResponse)
+def administrar_grupos(
+    request: Request,
+    admin: bool = Depends(exigir_administrador)
+):
+    return templates.TemplateResponse(
+        "admin_grupos.html",
+        {"request": request}
+    )
+
+
 
 # =====================================
 # GRUPOS PARROQUIALES PÚBLICOS
@@ -539,5 +570,20 @@ def administrar_oraciones(
 def grupos_parroquiales(request: Request):
     return templates.TemplateResponse(
         "grupos.html",
+        {"request": request}
+    )
+
+
+# =====================================
+# FICHA INDIVIDUAL DE GRUPO PARROQUIAL
+# =====================================
+
+@app.get("/grupo/{grupo_id}", response_class=HTMLResponse)
+def detalle_grupo_parroquial(
+    request: Request,
+    grupo_id: int
+):
+    return templates.TemplateResponse(
+        "grupo_detalle.html",
         {"request": request}
     )
