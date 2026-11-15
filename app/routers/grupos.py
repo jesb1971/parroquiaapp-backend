@@ -42,7 +42,7 @@ CATEGORIAS = [
     "Asociaciones de Laicos",
     "Grupos Acción Caritativa y Social",
     "Grupos de Oración",
-    "Grupos de Formación"
+    "Grupos de Formación",
     "Grupos de Evangelización"
 ]
 
