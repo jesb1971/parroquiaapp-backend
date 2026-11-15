@@ -336,6 +336,21 @@ def reflexiones_publicas(request: Request):
     )
     
 # =====================================
+# POLÍTICA DE PRIVACIDAD
+# =====================================
+
+@app.get("/politica-privacidad", response_class=HTMLResponse)
+def mostrar_politica_privacidad(request: Request):
+    return templates.TemplateResponse(
+        "politica_privacidad.html",
+        {"request": request}
+    )
+    
+
+
+
+    
+# =====================================
 # ADMINISTRACIÓN DE REFLEXIONES DOMINICALES
 # =====================================
 
