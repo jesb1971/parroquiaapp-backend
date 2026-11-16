@@ -106,13 +106,85 @@ def obtener_liturgia(fecha: datetime, db: Session):
     year = fecha.year
     pascua = calcular_pascua(year)
 
-    nombres_dias = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"]
+    nombres_dias = [
+        "Lunes", "Martes", "Miércoles",
+        "Jueves", "Viernes", "Sábado", "Domingo"
+    ]
+
     dia_semana = fecha.weekday()
 
+    # =========================
+    # FECHAS LITÚRGICAS
+    # =========================
     miercoles_ceniza = pascua - timedelta(days=46)
     pentecostes = pascua + timedelta(days=49)
     inicio_ordinario_post = pentecostes + timedelta(days=1)
 
+    # Cuarto domingo anterior a Navidad
+    navidad = datetime(year, 12, 25)
+    domingo_anterior_navidad = navidad - timedelta(
+        days=(navidad.weekday() + 1) % 7
+    )
+
+    primer_domingo_adviento = domingo_anterior_navidad - timedelta(days=21)
+
+    # =========================
+    # ADVIENTO
+    # =========================
+    if primer_domingo_adviento <= fecha < navidad:
+
+        dias_adviento = (fecha.date() - primer_domingo_adviento.date()).days
+        semana = (dias_adviento // 7) + 1
+
+        semana_romana = numero_romano(semana)
+
+        # III Domingo de Adviento: Gaudete
+        color = "morado"
+
+        if semana == 3 and dia_semana == 6:
+            color = "rosa"
+
+        if dia_semana == 6:
+            celebracion = f"{semana_romana} Domingo de Adviento"
+        else:
+            celebracion = (
+                f"{nombres_dias[dia_semana]} "
+                f"de la {semana_romana} Semana de Adviento"
+            )
+
+        # Del 17 al 24 de diciembre
+        if fecha.month == 12 and fecha.day >= 17:
+            if dia_semana != 6:
+                celebracion = f"Feria de Adviento del {fecha.day} de diciembre"
+
+        return {
+            "tiempo": "adviento",
+            "color": color,
+            "celebracion": celebracion
+        }
+
+    # =========================
+    # NAVIDAD
+    # =========================
+    if fecha.month == 12 and fecha.day >= 25:
+
+        if fecha.day == 25:
+            celebracion = "Natividad del Señor"
+        else:
+            celebracion = (
+                f"{nombres_dias[dia_semana]} "
+                "de la Octava de Navidad"
+            )
+
+        return {
+            "tiempo": "navidad",
+            "color": "blanco",
+            "celebracion": celebracion
+        }
+
+    # =========================
+    # CUARESMA
+    # =========================
     if miercoles_ceniza <= fecha < pascua:
         return {
             "tiempo": "cuaresma",
@@ -122,6 +194,9 @@ def obtener_liturgia(fecha: datetime, db: Session):
 
     dias = (fecha - pascua).days
 
+    # =========================
+    # PASCUA
+    # =========================
     if dias == 0:
         return {
             "tiempo": "pascua",
@@ -138,6 +213,7 @@ def obtener_liturgia(fecha: datetime, db: Session):
             "Viernes de la Octava de Pascua",
             "Sábado de la Octava de Pascua",
         ]
+
         return {
             "tiempo": "pascua",
             "color": "blanco",
@@ -161,14 +237,21 @@ def obtener_liturgia(fecha: datetime, db: Session):
             "celebracion": domingos[dias]
         }
 
-    if dias <= 49:
+    if 0 < dias <= 49:
         semana = ((dias - 7) // 7) + 2
+
         return {
             "tiempo": "pascua",
             "color": "blanco",
-            "celebracion": f"{nombres_dias[dia_semana]} de la {numero_romano(semana)} Semana de Pascua"
+            "celebracion": (
+                f"{nombres_dias[dia_semana]} "
+                f"de la {numero_romano(semana)} Semana de Pascua"
+            )
         }
 
+    # =========================
+    # TIEMPO ORDINARIO
+    # =========================
     dias_post = (fecha - inicio_ordinario_post).days
     semana = 8 + (dias_post // 7)
 
@@ -178,9 +261,12 @@ def obtener_liturgia(fecha: datetime, db: Session):
     return {
         "tiempo": "ordinario",
         "color": "verde",
-        "celebracion": f"{nombres_dias[dia_semana]} de la {numero_romano(semana)} Semana del Tiempo Ordinario"
+        "celebracion": (
+            f"{nombres_dias[dia_semana]} "
+            f"de la {numero_romano(semana)} "
+            "Semana del Tiempo Ordinario"
+        )
     }
-
 
 # =========================
 # 📋 LISTAR (BLINDADO)
