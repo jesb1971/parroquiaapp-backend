@@ -281,15 +281,22 @@ def listar_misas(db: Session = Depends(get_db)):
 
     for misa in misas:
 
-        lit = obtener_liturgia(misa.fecha, db)
+        fecha_liturgica = misa.fecha
 
-        # ✔ color siempre
+        # Las misas vespertinas del sábado
+        # corresponden a la liturgia del domingo.
+        if misa.fecha.weekday() == 5 and misa.fecha.hour >= 19:
+            fecha_liturgica = misa.fecha + timedelta(days=1)
+
+        lit = obtener_liturgia(fecha_liturgica, db)
+
+        # Color litúrgico
         misa.color = lit.get("color", "blanco")
 
-        # ✔ celebración litúrgica
+        # Celebración litúrgica
         celebracion = lit.get("celebracion", "")
 
-        # 🔥 NUEVO: NO tocar descripcion original
+        # No modificar la descripción original
         if celebracion:
             if misa.descripcion and misa.descripcion.strip():
                 if celebracion not in misa.descripcion:
@@ -297,12 +304,11 @@ def listar_misas(db: Session = Depends(get_db)):
                 else:
                     misa.descripcion_final = misa.descripcion
             else:
-                misa.descripcion_final = f"{celebracion}"
+                misa.descripcion_final = celebracion
         else:
             misa.descripcion_final = misa.descripcion or ""
 
-    return misas
-    
+    return misas    
 # =========================
 # 🔄 REGENERAR
 # =========================
