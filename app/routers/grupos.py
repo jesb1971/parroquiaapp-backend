@@ -127,6 +127,7 @@ def listar_grupos_publicos(
         db.query(models.GrupoParroquial)
         .filter(models.GrupoParroquial.activo.is_(True))
         .order_by(
+            models.GrupoParroquial.categoria.asc(),
             models.GrupoParroquial.orden.asc(),
             models.GrupoParroquial.nombre.asc()
         )
@@ -151,6 +152,7 @@ def listar_grupos_administracion(
     grupos = (
         db.query(models.GrupoParroquial)
         .order_by(
+            models.GrupoParroquial.categoria.asc(),
             models.GrupoParroquial.orden.asc(),
             models.GrupoParroquial.nombre.asc()
         )
