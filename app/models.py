@@ -264,6 +264,57 @@ class DispositivoPush(Base):
         default=datetime.utcnow,
         onupdate=datetime.utcnow
     )
+    
+# =====================================
+# NOTIFICACIONES AUTOMÁTICAS DE EVANGELIZACIÓN
+# =====================================
+
+class NotificacionEvangelizacion(Base):
+    __tablename__ = "notificaciones_evangelizacion"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    contenido_id = Column(
+        Integer,
+        ForeignKey("contenidos.id"),
+        unique=True,
+        nullable=False
+    )
+
+    programado_at = Column(
+        DateTime,
+        nullable=False
+    )
+
+    estado = Column(
+        String(20),
+        nullable=False,
+        default="pendiente"
+    )
+
+    intentos = Column(
+        Integer,
+        nullable=False,
+        default=0
+    )
+
+    iniciado_at = Column(DateTime)
+
+    enviado_at = Column(DateTime)
+
+    enviados = Column(
+        Integer,
+        nullable=False,
+        default=0
+    )
+
+    fallidos = Column(
+        Integer,
+        nullable=False,
+        default=0
+    )
+
+    ultimo_error = Column(Text)
 
 
 # =====================================

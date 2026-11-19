@@ -499,6 +499,18 @@ async def crear_publicacion(
         )
 
         db.add(nuevo)
+        db.flush()
+
+        if programado_at is not None:
+            notificacion = models.NotificacionEvangelizacion(
+                contenido_id=nuevo.id,
+                programado_at=programado_at,
+                estado="pendiente",
+                intentos=0
+            )
+
+            db.add(notificacion)
+
         db.commit()
 
     except Exception:
@@ -602,6 +614,41 @@ async def guardar_edicion(
         if nueva_fecha is not None:
             publicacion.publicado_at, publicacion.programado_at = nueva_fecha
 
+            notificacion = (
+                db.query(models.NotificacionEvangelizacion)
+                .filter(
+                    models.NotificacionEvangelizacion.contenido_id == publicacion.id
+                )
+                .first()
+            )
+
+            if notificacion and notificacion.enviado_at:
+                raise HTTPException(
+                    status_code=409,
+                    detail="La notificación ya fue enviada."
+                )
+
+            if publicacion.programado_at is None:
+                if notificacion:
+                    db.delete(notificacion)
+
+            elif notificacion:
+                notificacion.programado_at = publicacion.programado_at
+                notificacion.estado = "pendiente"
+                notificacion.intentos = 0
+                notificacion.iniciado_at = None
+                notificacion.ultimo_error = None
+
+            else:
+                db.add(
+                    models.NotificacionEvangelizacion(
+                        contenido_id=publicacion.id,
+                        programado_at=publicacion.programado_at,
+                        estado="pendiente",
+                        intentos=0
+                    )
+                )
+
         db.commit()
 
     except Exception:
@@ -634,8 +681,17 @@ def eliminar_publicacion(
 
     publicacion = obtener_publicacion(db, publicacion_id)
 
-    db.delete(publicacion)
-    db.commit()
+    try:
+        db.query(models.NotificacionEvangelizacion).filter(
+            models.NotificacionEvangelizacion.contenido_id == publicacion.id
+        ).delete(synchronize_session=False)
+
+        db.delete(publicacion)
+        db.commit()
+
+    except Exception:
+        db.rollback()
+        raise
 
     return RedirectResponse(
         url="/admin/evangelizacion",

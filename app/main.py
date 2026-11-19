@@ -2,6 +2,8 @@
 
 import os
 import shutil
+import asyncio
+from contextlib import asynccontextmanager
 from datetime import datetime
 
 from fastapi import FastAPI, Request, Depends
@@ -38,12 +40,40 @@ from app.security import (
 )
 from app.routers.misas import obtener_liturgia
 
+# =====================================
+# CICLO DE VIDA - NOTIFICACIONES AUTOMÁTICAS
+# =====================================
+
+from app.notificaciones_programadas import (
+    ejecutar_notificaciones_periodicamente
+)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    tarea_notificaciones = asyncio.create_task(
+        ejecutar_notificaciones_periodicamente()
+    )
+
+    try:
+        yield
+    finally:
+        tarea_notificaciones.cancel()
+
+        try:
+            await tarea_notificaciones
+        except asyncio.CancelledError:
+            pass
+
 
 # =====================================
 # APLICACIÓN
 # =====================================
 
-app = FastAPI(title="ParroquiaApp")
+app = FastAPI(
+    title="ParroquiaApp",
+    lifespan=lifespan
+)
 
 # =====================================
 # PROTECCIÓN CONTRA SOLICITUDES ABUSIVAS
