@@ -269,13 +269,29 @@ def obtener_liturgia(fecha: datetime, db: Session):
     }
 
 # =========================
-# 📋 LISTAR (BLINDADO)
+# 📋 LISTAR MISAS VIGENTES
 # =========================
 @router.get("/", response_model=list[schemas.MisaOut])
 def listar_misas(db: Session = Depends(get_db)):
 
+    from datetime import datetime, time
+    from zoneinfo import ZoneInfo
+
+    # Fecha actual en Canarias
+    ahora = datetime.now(ZoneInfo("Atlantic/Canary"))
+
+    # Mostrar todas las misas del día actual,
+    # además de las próximas celebraciones.
+    inicio_hoy = datetime.combine(
+        ahora.date(),
+        time.min
+    )
+
     misas = db.query(models.Misa)\
-        .filter(models.Misa.parroquia_id == PARROQUIA_ID)\
+        .filter(
+            models.Misa.parroquia_id == PARROQUIA_ID,
+            models.Misa.fecha >= inicio_hoy
+        )\
         .order_by(models.Misa.fecha.asc())\
         .all()
 
@@ -300,7 +316,9 @@ def listar_misas(db: Session = Depends(get_db)):
         if celebracion:
             if misa.descripcion and misa.descripcion.strip():
                 if celebracion not in misa.descripcion:
-                    misa.descripcion_final = f"{misa.descripcion} | {celebracion}"
+                    misa.descripcion_final = (
+                        f"{misa.descripcion} | {celebracion}"
+                    )
                 else:
                     misa.descripcion_final = misa.descripcion
             else:
@@ -308,7 +326,9 @@ def listar_misas(db: Session = Depends(get_db)):
         else:
             misa.descripcion_final = misa.descripcion or ""
 
-    return misas    
+    return misas
+
+    
 # =========================
 # 🔄 REGENERAR
 # =========================
