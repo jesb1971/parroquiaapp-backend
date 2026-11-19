@@ -1,7 +1,9 @@
 
 """Rutas de evangelización de ParroquiaApp."""
 
-from datetime import datetime
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
+from sqlalchemy import or_
 from pathlib import Path
 from uuid import uuid4
 import os
@@ -27,6 +29,7 @@ from app.security import exigir_administrador
 
 router = APIRouter(tags=["evangelizacion"])
 templates = Jinja2Templates(directory="app/templates")
+ZONA_CANARIAS = ZoneInfo("Atlantic/Canary")
 
 
 # =====================================
@@ -82,15 +85,66 @@ TIPOS_AUDIO = {
 # CONSULTAS
 # =====================================
 
+def ahora_utc():
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+    
+def mostrar_hora_canarias(fecha_utc):
+    """Convierte una fecha UTC almacenada en SQLite al horario de Canarias."""
+    if fecha_utc is None:
+        return None
+
+    return fecha_utc.replace(
+        tzinfo=timezone.utc
+    ).astimezone(ZONA_CANARIAS)
+
+
+def fecha_publicacion(modo, fecha_programada):
+    """Convierte la hora local de Canarias a UTC para guardar en SQLite."""
+    if modo == "ahora":
+        return ahora_utc(), None
+    if modo != "programar":
+        raise HTTPException(status_code=400, detail="Modo de publicación no válido.")
+    if not fecha_programada:
+        raise HTTPException(status_code=400, detail="Indica fecha y hora de publicación.")
+    try:
+        local = datetime.strptime(fecha_programada, "%Y-%m-%dT%H:%M")
+        localizada = local.replace(tzinfo=ZONA_CANARIAS)
+        # Evitar horas inexistentes en el cambio de horario de verano.
+        vuelta = localizada.astimezone(timezone.utc).astimezone(ZONA_CANARIAS)
+        if vuelta.replace(tzinfo=None) != local:
+            raise ValueError("Hora local inexistente")
+        utc = localizada.astimezone(timezone.utc).replace(tzinfo=None)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Fecha u hora de Canarias no válida.")
+    if utc <= ahora_utc():
+        raise HTTPException(status_code=400, detail="La programación debe ser futura.")
+    return utc, utc
+
+
 def consultar_reflexiones(db):
+    """Solo publicaciones visibles; las programadas aparecen al llegar su hora."""
+    instante = ahora_utc()
     return (
         db.query(models.Contenido)
         .filter(models.Contenido.tipo == "reflexion")
         .filter(models.Contenido.publicado_at.isnot(None))
+        .filter(models.Contenido.publicado_at <= instante)
+        .filter(or_(
+            models.Contenido.programado_at.is_(None),
+            models.Contenido.programado_at <= instante
+        ))
         .order_by(
             models.Contenido.publicado_at.desc(),
             models.Contenido.id.desc()
         )
+    )
+
+
+def consultar_admin(db):
+    return (
+        db.query(models.Contenido)
+        .filter(models.Contenido.tipo == "reflexion")
+        .order_by(models.Contenido.publicado_at.desc(), models.Contenido.id.desc())
     )
 
 
@@ -259,13 +313,16 @@ def admin_evangelizacion(
     admin: bool = Depends(exigir_administrador)
 ):
 
-    publicaciones = consultar_reflexiones(db).all()
+    publicaciones = consultar_admin(db).all()
 
     return templates.TemplateResponse(
         "admin_evangelizacion.html",
         {
             "request": request,
-            "publicaciones": publicaciones
+            "publicaciones": publicaciones,
+            "ahora_utc": ahora_utc(),
+            "zona_canarias": ZONA_CANARIAS,
+            "mostrar_hora_canarias": mostrar_hora_canarias
         }
     )
 
@@ -403,6 +460,8 @@ async def crear_publicacion(
     pregunta_reflexion: str = Form(""),
     santoral: str = Form(""),
     descripcion_santoral: str = Form(""),
+    modo_publicacion: str = Form("ahora"),
+    fecha_programada: str = Form(""),
     imagen: UploadFile | None = File(None),
     audio: UploadFile | None = File(None),
     db: Session = Depends(get_db),
@@ -412,6 +471,7 @@ async def crear_publicacion(
     imagen_url = None
     audio_url = None
     archivos_guardados = []
+    publicado_at, programado_at = fecha_publicacion(modo_publicacion, fecha_programada)
 
     try:
         if imagen is not None and imagen.filename:
@@ -434,7 +494,8 @@ async def crear_publicacion(
             ),
             imagen_url=imagen_url,
             audio_url=audio_url,
-            publicado_at=datetime.utcnow()
+            publicado_at=publicado_at,
+            programado_at=programado_at
         )
 
         db.add(nuevo)
@@ -478,7 +539,9 @@ def formulario_edicion(
         {
             "request": request,
             "publicacion": publicacion,
-            **campos
+            **campos,
+            "zona_canarias": ZONA_CANARIAS,
+            "mostrar_hora_canarias": mostrar_hora_canarias
         }
     )
 
@@ -496,6 +559,8 @@ async def guardar_edicion(
     pregunta_reflexion: str = Form(""),
     santoral: str | None = Form(None),
     descripcion_santoral: str | None = Form(None),
+    modo_publicacion: str | None = Form(None),
+    fecha_programada: str | None = Form(None),
     imagen: UploadFile | None = File(None),
     audio: UploadFile | None = File(None),
     db: Session = Depends(get_db),
@@ -509,6 +574,10 @@ async def guardar_edicion(
     if descripcion_santoral is None:
         descripcion_santoral = campos_actuales["descripcion_santoral"]
     archivos_guardados = []
+    # Los formularios antiguos pueden editar sin alterar la programación.
+    nueva_fecha = None
+    if modo_publicacion is not None:
+        nueva_fecha = fecha_publicacion(modo_publicacion, fecha_programada)
 
     try:
         if imagen is not None and imagen.filename:
@@ -529,6 +598,9 @@ async def guardar_edicion(
             santoral,
             descripcion_santoral
         )
+
+        if nueva_fecha is not None:
+            publicacion.publicado_at, publicacion.programado_at = nueva_fecha
 
         db.commit()
 
