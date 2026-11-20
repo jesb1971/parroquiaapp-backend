@@ -1,7 +1,8 @@
 
 """Rutas del módulo Reflexión dominical."""
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from uuid import uuid4
 
@@ -19,6 +20,23 @@ from ..db import get_db
 from .. import models
 from app.security import exigir_administrador
 
+
+# =====================================
+# CONVERTIR HORA DE CANARIAS A UTC
+# =====================================
+
+def convertir_canarias_utc(fecha_programada):
+    if fecha_programada is None:
+        return None
+
+    if fecha_programada.tzinfo is None:
+        fecha_programada = fecha_programada.replace(
+            tzinfo=ZoneInfo("Atlantic/Canary")
+        )
+
+    return fecha_programada.astimezone(
+        timezone.utc
+    ).replace(tzinfo=None)
 
 router = APIRouter(
     prefix="/reflexiones-dominicales",
@@ -98,6 +116,7 @@ TIPOS_AUDIO = {
 
 class ReflexionDatos(BaseModel):
     fecha_domingo: date
+    programado_at: datetime | None = None
     titulo: str = Field(min_length=1, max_length=200)
     subtitulo: str | None = Field(
         default=None,
@@ -112,18 +131,42 @@ class ReflexionDatos(BaseModel):
         default=None,
         max_length=500
     )
+    
+# =====================================
+# CONSULTAR TODAS LAS REFLEXIONES
+# SOLO ADMINISTRADOR
+# =====================================
 
+@router.get("/admin/todas")
+def listar_reflexiones_admin(
+    db: Session = Depends(get_db),
+    admin: bool = Depends(exigir_administrador)
+):
+    return (
+        db.query(models.ReflexionDominical)
+        .order_by(
+            models.ReflexionDominical.fecha_domingo.desc(),
+            models.ReflexionDominical.id.desc()
+        )
+        .all()
+    )
 
 # =====================================
-# CONSULTAR HISTORIAL
+# CONSULTAR REFLEXIONES PUBLICADAS
 # =====================================
 
 @router.get("/")
 def listar_reflexiones(
     db: Session = Depends(get_db)
 ):
+    instante = datetime.now(timezone.utc).replace(tzinfo=None)
+
     return (
         db.query(models.ReflexionDominical)
+        .filter(
+            (models.ReflexionDominical.programado_at.is_(None)) |
+            (models.ReflexionDominical.programado_at <= instante)
+        )
         .order_by(
             models.ReflexionDominical.fecha_domingo.desc(),
             models.ReflexionDominical.id.desc()
@@ -289,6 +332,15 @@ def obtener_reflexion(
             detail="Reflexión no encontrada"
         )
 
+    if (
+        reflexion.programado_at is not None
+        and reflexion.programado_at > datetime.now(timezone.utc).replace(tzinfo=None)
+    ):
+        raise HTTPException(
+            status_code=404,
+            detail="Reflexión no encontrada"
+        )
+    
     return reflexion
 
 
@@ -302,19 +354,37 @@ def crear_reflexion(
     db: Session = Depends(get_db),
     admin: bool = Depends(exigir_administrador)
 ):
+    instante = datetime.now(timezone.utc).replace(tzinfo=None)
+    programado = convertir_canarias_utc(datos.programado_at)
+
+    if programado is not None and programado <= instante:
+        raise HTTPException(status_code=400, detail="La fecha programada debe ser futura.")
+
     reflexion = models.ReflexionDominical(
         fecha_domingo=datos.fecha_domingo,
+        programado_at=programado,
         titulo=datos.titulo.strip(),
         subtitulo=datos.subtitulo,
         contenido=datos.contenido.strip(),
         imagen=datos.imagen,
         audio_url=datos.audio_url,
-        publicado_at=datetime.utcnow()
+        publicado_at=programado if programado is not None else instante
     )
 
-    db.add(reflexion)
-    db.commit()
-    db.refresh(reflexion)
+    try:
+        db.add(reflexion)
+        db.flush()
+        if programado is not None:
+            db.add(models.NotificacionReflexionDominical(
+                reflexion_id=reflexion.id,
+                programado_at=programado,
+                estado="pendiente"
+            ))
+        db.commit()
+        db.refresh(reflexion)
+    except Exception:
+        db.rollback()
+        raise
 
     return reflexion
 
@@ -330,16 +400,40 @@ def editar_reflexion(
     db: Session = Depends(get_db),
     admin: bool = Depends(exigir_administrador)
 ):
-    reflexion = db.get(
-        models.ReflexionDominical,
-        reflexion_id
+    reflexion = db.get(models.ReflexionDominical, reflexion_id)
+    if reflexion is None:
+        raise HTTPException(status_code=404, detail="Reflexión no encontrada")
+
+    instante = datetime.now(timezone.utc).replace(tzinfo=None)
+    nueva_programacion = convertir_canarias_utc(datos.programado_at)
+    ya_publicada = (
+        reflexion.programado_at is None
+        or reflexion.programado_at <= instante
+    )
+    notificacion = (
+        db.query(models.NotificacionReflexionDominical)
+        .filter(models.NotificacionReflexionDominical.reflexion_id == reflexion.id)
+        .first()
     )
 
-    if reflexion is None:
+    if ya_publicada and nueva_programacion is not None:
         raise HTTPException(
-            status_code=404,
-            detail="Reflexión no encontrada"
+            status_code=400,
+            detail="Una reflexión ya publicada no puede volver a programarse."
         )
+
+    if not ya_publicada and nueva_programacion is not None and nueva_programacion <= instante:
+        raise HTTPException(
+            status_code=400,
+            detail="La fecha programada debe ser futura."
+        )
+
+    if not ya_publicada and notificacion is not None and notificacion.estado != "pendiente":
+        if nueva_programacion != reflexion.programado_at:
+            raise HTTPException(
+                status_code=400,
+                detail="No se puede modificar una programación ya procesada."
+            )
 
     reflexion.fecha_domingo = datos.fecha_domingo
     reflexion.titulo = datos.titulo.strip()
@@ -348,8 +442,29 @@ def editar_reflexion(
     reflexion.imagen = datos.imagen
     reflexion.audio_url = datos.audio_url
 
-    db.commit()
-    db.refresh(reflexion)
+    if not ya_publicada:
+        reflexion.programado_at = nueva_programacion
+        if nueva_programacion is None:
+            reflexion.publicado_at = instante
+            if notificacion is not None and notificacion.estado == "pendiente":
+                db.delete(notificacion)
+        else:
+            reflexion.publicado_at = nueva_programacion
+            if notificacion is not None and notificacion.estado == "pendiente":
+                notificacion.programado_at = nueva_programacion
+            elif notificacion is None:
+                db.add(models.NotificacionReflexionDominical(
+                    reflexion_id=reflexion.id,
+                    programado_at=nueva_programacion,
+                    estado="pendiente"
+                ))
+
+    try:
+        db.commit()
+        db.refresh(reflexion)
+    except Exception:
+        db.rollback()
+        raise
 
     return reflexion
 
@@ -364,20 +479,18 @@ def eliminar_reflexion(
     db: Session = Depends(get_db),
     admin: bool = Depends(exigir_administrador)
 ):
-    reflexion = db.get(
-        models.ReflexionDominical,
-        reflexion_id
-    )
-
+    reflexion = db.get(models.ReflexionDominical, reflexion_id)
     if reflexion is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Reflexión no encontrada"
-        )
+        raise HTTPException(status_code=404, detail="Reflexión no encontrada")
 
-    db.delete(reflexion)
-    db.commit()
+    try:
+        (db.query(models.NotificacionReflexionDominical)
+         .filter(models.NotificacionReflexionDominical.reflexion_id == reflexion.id)
+         .delete(synchronize_session=False))
+        db.delete(reflexion)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
 
-    return {
-        "mensaje": "Reflexión eliminada correctamente"
-    }
+    return {"mensaje": "Reflexión eliminada correctamente"}

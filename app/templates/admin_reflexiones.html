@@ -96,7 +96,25 @@
                     >
                 </div>
 
-                <!-- T√çTULO -->
+                <!-- PROGRAMAR PUBLICACI®ÆN -->
+				<div class="mb-3">
+					<label for="programadoAt" class="form-label">
+						Fecha y hora de publicaci®Æn
+					</label>
+
+					<input
+						type="datetime-local"
+						id="programadoAt"
+						class="form-control"
+					>
+
+				<div class="form-text">
+					Deja este campo vac®™o para publicar inmediatamente.
+					La fecha y hora corresponden a Canarias.
+				</div>
+</div>
+				
+				<!-- T®™TULO -->
                 <div class="mb-3">
                     <label for="titulo" class="form-label">
                         T√≠tulo
@@ -111,7 +129,7 @@
                     >
                 </div>
 
-                <!-- SUBT√çTULO -->
+                <!-- SUBT®™TULO -->
                 <div class="mb-3">
                     <label for="subtitulo" class="form-label">
                         Subt√≠tulo (opcional)
@@ -300,7 +318,7 @@
 
     <div class="text-center mt-4">
         <a href="/admin" class="btn btn-secondary">
-            ‚Üê Volver al panel
+            ‚Ü?Volver al panel
         </a>
     </div>
 
@@ -310,9 +328,11 @@
 "use strict";
 
 const API_URL = "/reflexiones-dominicales/";
+const API_ADMIN_URL = "/reflexiones-dominicales/admin/todas";
 
 const formulario = document.getElementById("formularioReflexion");
 const fechaInput = document.getElementById("fechaDomingo");
+const programadoInput = document.getElementById("programadoAt");
 const tituloInput = document.getElementById("titulo");
 const subtituloInput = document.getElementById("subtitulo");
 const contenidoInput = document.getElementById("contenido");
@@ -398,6 +418,8 @@ function limpiarPreviaAudio() {
 function limpiarFormulario() {
 
     formulario.reset();
+	
+	programadoInput.disabled = false;
 
     reflexionEnEdicion = null;
     imagenGuardada = null;
@@ -547,7 +569,7 @@ async function cargarReflexiones() {
 
     try {
 
-        const respuesta = await fetch(API_URL);
+        const respuesta = await fetch(API_ADMIN_URL);
 
         if (!respuesta.ok) {
             throw new Error("No se pudieron cargar las reflexiones.");
@@ -678,7 +700,7 @@ async function cargarReflexiones() {
 
 
 // =====================================
-// EDITAR REFLEXI√ìN
+// EDITAR REFLEXI®ÆN
 // =====================================
 
 function iniciarEdicion(id) {
@@ -701,6 +723,25 @@ function iniciarEdicion(id) {
     audioGuardado = reflexion.audio_url || null;
 
     fechaInput.value = reflexion.fecha_domingo;
+	
+	const yaPublicada = !reflexion.programado_at ||
+    new Date(reflexion.programado_at + "Z") <= new Date();
+
+	programadoInput.disabled = yaPublicada;
+	
+	programadoInput.value = reflexion.programado_at
+    ? new Date(reflexion.programado_at + "Z")
+        .toLocaleString("sv-SE", {
+            timeZone: "Atlantic/Canary",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            hourCycle: "h23"
+        })
+        .replace(" ", "T")
+    : "";
     
     tituloInput.value = reflexion.titulo || "";
     subtituloInput.value = reflexion.subtitulo || "";
@@ -748,7 +789,7 @@ function iniciarEdicion(id) {
 
 
 // =====================================
-// CANCELAR EDICI√ìN
+// CANCELAR EDICI®ÆN
 // =====================================
 
 botonCancelar.addEventListener("click", function () {
@@ -793,7 +834,7 @@ async function subirArchivo(ruta, campo, archivo) {
 
 
 // =====================================
-// PUBLICAR O EDITAR REFLEXI√ìN
+// PUBLICAR O EDITAR REFLEXI®ÆN
 // =====================================
 
 formulario.addEventListener("submit", async function (evento) {
@@ -804,6 +845,7 @@ formulario.addEventListener("submit", async function (evento) {
 
     const datos = {
         fecha_domingo: fechaInput.value,
+		programado_at: programadoInput.disabled ? null : (programadoInput.value || null),
         titulo: tituloInput.value.trim(),
         subtitulo: subtituloInput.value.trim() || null,
         contenido: contenidoInput.value.trim(),
