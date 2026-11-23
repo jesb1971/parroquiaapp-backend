@@ -53,6 +53,20 @@ FIRMAS_IMAGEN = {
     )
 }
 
+# Almacenamiento persistente de audios
+AUDIOS_DIR = Path("/var/data/oraciones/audios")
+
+MAX_AUDIO_BYTES = 30 * 1024 * 1024
+
+FORMATOS_AUDIO = {
+    "audio/mpeg": ".mp3",
+    "audio/mp4": ".m4a",
+    "audio/x-m4a": ".m4a",
+    "audio/aac": ".aac",
+    "audio/ogg": ".ogg",
+    "audio/opus": ".opus"
+}
+
 
 # =====================================
 # FECHA ACTUAL DE CANARIAS
@@ -126,6 +140,50 @@ async def guardar_imagen_oracion(imagen: UploadFile):
 
 
 # =====================================
+# GUARDAR AUDIO DE LA ORACIÓN
+# =====================================
+
+async def guardar_audio_oracion(audio: UploadFile):
+    extension = FORMATOS_AUDIO.get(audio.content_type)
+
+    if not extension:
+        raise HTTPException(
+            status_code=400,
+            detail="Formato de audio no permitido."
+        )
+
+    datos = await audio.read(MAX_AUDIO_BYTES + 1)
+
+    if len(datos) > MAX_AUDIO_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail="El audio supera el límite de 30 MB."
+        )
+
+    if not datos:
+        raise HTTPException(
+            status_code=400,
+            detail="El archivo de audio está vacío."
+        )
+
+    AUDIOS_DIR.mkdir(parents=True, exist_ok=True)
+
+    nombre = f"{uuid4().hex}{extension}"
+    ruta = AUDIOS_DIR / nombre
+
+    try:
+        with open(ruta, "xb") as archivo:
+            archivo.write(datos)
+    except OSError:
+        raise HTTPException(
+            status_code=500,
+            detail="No se pudo guardar el audio."
+        )
+
+    return ruta, f"/media/oraciones/audios/{nombre}"
+
+
+# =====================================
 # CREAR Y PROGRAMAR ORACIÓN
 # =====================================
 
@@ -137,6 +195,7 @@ async def publicar_oracion(
     contenido: str = Form(...),
     autor: str = Form(""),
     imagen: UploadFile | None = File(None),
+    audio: UploadFile | None = File(None),
     db: Session = Depends(get_db),
     admin: bool = Depends(exigir_administrador)
 ):
@@ -185,12 +244,20 @@ async def publicar_oracion(
 
     ruta_guardada = None
     imagen_url = None
+    ruta_audio_guardado = None
+    audio_url = None
 
     try:
         # Guardar imagen si se ha seleccionado
         if imagen is not None and imagen.filename:
             ruta_guardada, imagen_url = (
                 await guardar_imagen_oracion(imagen)
+            )
+
+        # Guardar audio si se ha seleccionado
+        if audio is not None and audio.filename:
+            ruta_audio_guardado, audio_url = (
+                await guardar_audio_oracion(audio)
             )
 
         # Crear oración
@@ -200,6 +267,7 @@ async def publicar_oracion(
             contenido=contenido.strip(),
             autor=autor.strip() or None,
             imagen=imagen_url,
+            audio_url=audio_url,
             programado_at=fecha_programada_utc
         )
 
@@ -229,6 +297,12 @@ async def publicar_oracion(
         if ruta_guardada is not None:
             try:
                 os.remove(ruta_guardada)
+            except OSError:
+                pass
+
+        if ruta_audio_guardado is not None:
+            try:
+                os.remove(ruta_audio_guardado)
             except OSError:
                 pass
 
@@ -322,6 +396,7 @@ async def editar_oracion(
     contenido: str = Form(...),
     autor: str = Form(""),
     imagen: UploadFile | None = File(None),
+    audio: UploadFile | None = File(None),
     db: Session = Depends(get_db),
     admin: bool = Depends(exigir_administrador)
 ):
@@ -414,6 +489,7 @@ async def editar_oracion(
         )
 
     ruta_guardada = None
+    ruta_audio_guardado = None
 
     try:
         # Guardar una imagen nueva si se ha seleccionado.
@@ -422,6 +498,14 @@ async def editar_oracion(
                 await guardar_imagen_oracion(imagen)
             )
             oracion.imagen = nueva_url
+
+        # Sustituir el audio solo si se selecciona uno nuevo.
+        # Si no, conservar el audio anterior.
+        if audio is not None and audio.filename:
+            ruta_audio_guardado, nueva_audio_url = (
+                await guardar_audio_oracion(audio)
+            )
+            oracion.audio_url = nueva_audio_url
 
         # Actualizar los datos de la oración.
         oracion.fecha = fecha
@@ -462,6 +546,12 @@ async def editar_oracion(
         if ruta_guardada is not None:
             try:
                 os.remove(ruta_guardada)
+            except OSError:
+                pass
+
+        if ruta_audio_guardado is not None:
+            try:
+                os.remove(ruta_audio_guardado)
             except OSError:
                 pass
 

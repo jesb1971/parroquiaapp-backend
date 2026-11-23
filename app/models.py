@@ -422,6 +422,8 @@ class OracionDiaria(Base):
 
     imagen = Column(String(500), nullable=True)
 
+    audio_url = Column(String(500), nullable=True)
+
     creado_at = Column(DateTime, default=datetime.utcnow)
 
     programado_at = Column(DateTime, nullable=True, index=True)

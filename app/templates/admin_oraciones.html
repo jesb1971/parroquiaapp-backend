@@ -116,6 +116,21 @@
                 </div>
             </div>
 
+            <!-- AUDIO OPCIONAL -->
+            <div>
+                <label for="audio" class="block font-semibold mb-1">
+                    Audio de la oración (opcional)
+                </label>
+                <input type="file" id="audio" name="audio"
+                       accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/aac,audio/ogg,audio/opus,.mp3,.m4a,.aac,.ogg,.opus"
+                       class="w-full border rounded-lg p-3 bg-white">
+                <p class="text-xs text-gray-500 mt-1">
+                    MP3, M4A, AAC, OGG u OPUS. Máximo 30 MB.
+                    Al editar, deja este campo vacío para conservar el audio anterior.
+                </p>
+                <div id="audio-actual" class="mt-3 hidden"></div>
+            </div>
+
 			<fieldset class="border border-blue-200 rounded-xl p-4 bg-blue-50">
     <legend class="font-bold text-blue-900 px-2">
         ¿Cuándo se publicará?
@@ -213,6 +228,7 @@ const botonCancelar = document.getElementById("boton-cancelar");
 const tituloFormulario = document.getElementById("titulo-formulario");
 const listado = document.getElementById("listado-admin-oraciones");
 const imagenActual = document.getElementById("imagen-actual");
+const audioActual = document.getElementById("audio-actual");
 
 let oracionEnEdicion = null;
 
@@ -307,6 +323,8 @@ function restablecerFormulario() {
 
     imagenActual.replaceChildren();
     imagenActual.classList.add("hidden");
+    audioActual.replaceChildren();
+    audioActual.classList.add("hidden");
 
     actualizarModoPublicacion();
 }
@@ -356,6 +374,16 @@ async function cargarOracionesAdmin() {
                 imagen.className =
                     "w-full max-h-48 object-contain rounded-lg mb-3";
                 tarjeta.appendChild(imagen);
+            }
+
+            // Audio
+            if (oracion.audio_url) {
+                const reproductor = document.createElement("audio");
+                reproductor.controls = true;
+                reproductor.preload = "none";
+                reproductor.src = oracion.audio_url;
+                reproductor.className = "w-full my-3";
+                tarjeta.appendChild(reproductor);
             }
 
             // Título
@@ -554,6 +582,25 @@ function editarOracion(oracion) {
 
     } else {
         imagenActual.classList.add("hidden");
+    }
+
+    // Mostrar el audio existente sin reemplazarlo
+    document.getElementById("audio").value = "";
+    audioActual.replaceChildren();
+    if (oracion.audio_url) {
+        const textoAudio = document.createElement("p");
+        textoAudio.className = "text-sm text-gray-600 mb-2";
+        textoAudio.textContent =
+            "Audio actual. Se conservará si no seleccionas otro.";
+        const reproductor = document.createElement("audio");
+        reproductor.controls = true;
+        reproductor.preload = "none";
+        reproductor.src = oracion.audio_url;
+        reproductor.className = "w-full";
+        audioActual.append(textoAudio, reproductor);
+        audioActual.classList.remove("hidden");
+    } else {
+        audioActual.classList.add("hidden");
     }
 
     // Informar al administrador

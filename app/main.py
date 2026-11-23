@@ -108,6 +108,12 @@ with engine.begin() as conexion:
             "ADD COLUMN programado_at DATETIME"
         ))
 
+    if "audio_url" not in columnas:
+        conexion.execute(text(
+            "ALTER TABLE oraciones_diarias "
+            "ADD COLUMN audio_url VARCHAR(500)"
+        ))
+
     conexion.execute(text(
         "CREATE INDEX IF NOT EXISTS "
         "ix_oraciones_diarias_programado_at "
@@ -559,6 +565,23 @@ app.mount(
     "/media/oraciones",
     StaticFiles(directory=ORACIONES_IMAGENES_DIR),
     name="media_oraciones"
+)
+
+# =====================================
+# AUDIOS DE ORACIÓN DEL DÍA
+# =====================================
+
+ORACIONES_AUDIOS_DIR = "/var/data/oraciones/audios"
+
+os.makedirs(
+    ORACIONES_AUDIOS_DIR,
+    exist_ok=True
+)
+
+app.mount(
+    "/media/oraciones/audios",
+    StaticFiles(directory=ORACIONES_AUDIOS_DIR),
+    name="media_oraciones_audios"
 )
 
 

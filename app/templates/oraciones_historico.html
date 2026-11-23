@@ -122,6 +122,29 @@ async function cargarHistorico() {
             contenido.textContent = oracion.contenido;
             detalle.appendChild(contenido);
 
+            if (oracion.audio_url) {
+                const bloqueAudio = document.createElement("div");
+                bloqueAudio.className = "mt-4";
+
+                const etiquetaAudio = document.createElement("p");
+                etiquetaAudio.className =
+                    "text-sm font-semibold text-blue-700 mb-2";
+                etiquetaAudio.textContent = "🎧 Escuchar la oración";
+
+                const reproductor = document.createElement("audio");
+                reproductor.controls = true;
+                reproductor.preload = "none";
+                reproductor.src = oracion.audio_url;
+                reproductor.className = "w-full";
+                reproductor.setAttribute(
+                    "aria-label", "Audio de la oración: " + oracion.titulo
+                );
+
+                bloqueAudio.appendChild(etiquetaAudio);
+                bloqueAudio.appendChild(reproductor);
+                detalle.appendChild(bloqueAudio);
+            }
+
             if (oracion.autor) {
                 const autor = document.createElement("p");
                 autor.className =
