@@ -65,6 +65,21 @@ def fecha_actual_canarias():
 
 
 # =====================================
+# CONVERTIR FECHA Y HORA DE CANARIAS A UTC
+# =====================================
+
+def convertir_canarias_utc(fecha_hora: datetime) -> datetime:
+    if fecha_hora.tzinfo is None:
+        fecha_hora = fecha_hora.replace(
+            tzinfo=ZoneInfo("Atlantic/Canary")
+        )
+
+    return fecha_hora.astimezone(
+        ZoneInfo("UTC")
+    ).replace(tzinfo=None)
+
+
+# =====================================
 # GUARDAR IMAGEN DE LA ORACIÓN
 # =====================================
 
@@ -109,6 +124,7 @@ async def guardar_imagen_oracion(imagen: UploadFile):
     return ruta, f"/media/oraciones/{nombre}"
 
 
+
 # =====================================
 # CREAR Y PROGRAMAR ORACIÓN
 # =====================================
@@ -116,6 +132,7 @@ async def guardar_imagen_oracion(imagen: UploadFile):
 @router.post("/publicar")
 async def publicar_oracion(
     fecha: date = Form(...),
+    programado_at: datetime | None = Form(None),
     titulo: str = Form(...),
     contenido: str = Form(...),
     autor: str = Form(""),
@@ -137,36 +154,78 @@ async def publicar_oracion(
             detail="Ya existe una oración para esta fecha."
         )
 
+    # Validar campos obligatorios
     if not titulo.strip() or not contenido.strip():
         raise HTTPException(
             status_code=400,
             detail="El título y el contenido son obligatorios."
         )
 
+    # Convertir la programación de Canarias a UTC
+    fecha_programada_utc = (
+        convertir_canarias_utc(programado_at)
+        if programado_at is not None
+        else None
+    )
+
+    # Impedir programaciones con fechas pasadas
+    if fecha_programada_utc is not None:
+        ahora_utc = datetime.now(
+            ZoneInfo("UTC")
+        ).replace(tzinfo=None)
+
+        if fecha_programada_utc <= ahora_utc:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "La fecha y hora programadas "
+                    "deben ser futuras."
+                )
+            )
+
     ruta_guardada = None
     imagen_url = None
 
     try:
+        # Guardar imagen si se ha seleccionado
         if imagen is not None and imagen.filename:
             ruta_guardada, imagen_url = (
                 await guardar_imagen_oracion(imagen)
             )
 
+        # Crear oración
         oracion = models.OracionDiaria(
             fecha=fecha,
             titulo=titulo.strip(),
             contenido=contenido.strip(),
             autor=autor.strip() or None,
-            imagen=imagen_url
+            imagen=imagen_url,
+            programado_at=fecha_programada_utc
         )
 
         db.add(oracion)
+        db.flush()
+
+        # Registrar notificación automática
+        # únicamente para publicaciones programadas
+        if fecha_programada_utc is not None:
+            db.add(
+                models.NotificacionOracionDiaria(
+                    oracion_id=oracion.id,
+                    programado_at=fecha_programada_utc,
+                    estado="pendiente"
+                )
+            )
+
+        # Guardar oración y notificación
+        # en una misma transacción
         db.commit()
         db.refresh(oracion)
 
     except Exception:
         db.rollback()
 
+        # Eliminar imagen nueva si falla el guardado
         if ruta_guardada is not None:
             try:
                 os.remove(ruta_guardada)
@@ -176,6 +235,8 @@ async def publicar_oracion(
         raise
 
     return oracion
+
+
 
 
 # =====================================
@@ -188,10 +249,17 @@ def obtener_oracion_del_dia(
 ):
 
     hoy = fecha_actual_canarias()
+    ahora_utc = datetime.utcnow()
 
     oracion = (
         db.query(models.OracionDiaria)
-        .filter(models.OracionDiaria.fecha <= hoy)
+        .filter(
+            models.OracionDiaria.fecha <= hoy,
+            (
+                models.OracionDiaria.programado_at.is_(None)
+                | (models.OracionDiaria.programado_at <= ahora_utc)
+            )
+        )
         .order_by(
             models.OracionDiaria.fecha.desc(),
             models.OracionDiaria.id.desc()
@@ -208,6 +276,7 @@ def obtener_oracion_del_dia(
     return oracion
 
 
+
 # =====================================
 # HISTÓRICO PÚBLICO DE ORACIONES
 # =====================================
@@ -218,10 +287,17 @@ def obtener_historico_oraciones(
 ):
 
     hoy = fecha_actual_canarias()
+    ahora_utc = datetime.utcnow()
 
     oraciones = (
         db.query(models.OracionDiaria)
-        .filter(models.OracionDiaria.fecha <= hoy)
+        .filter(
+            models.OracionDiaria.fecha <= hoy,
+            (
+                models.OracionDiaria.programado_at.is_(None)
+                | (models.OracionDiaria.programado_at <= ahora_utc)
+            )
+        )
         .order_by(
             models.OracionDiaria.fecha.desc(),
             models.OracionDiaria.id.desc()
@@ -232,6 +308,7 @@ def obtener_historico_oraciones(
     return oraciones
 
 
+
 # =====================================
 # EDITAR ORACIÓN
 # =====================================
@@ -240,6 +317,7 @@ def obtener_historico_oraciones(
 async def editar_oracion(
     oracion_id: int,
     fecha: date = Form(...),
+    programado_at: datetime | None = Form(None),
     titulo: str = Form(...),
     contenido: str = Form(...),
     autor: str = Form(""),
@@ -281,26 +359,106 @@ async def editar_oracion(
             detail="Ya existe otra oración para esta fecha."
         )
 
+    # Conservar la programación original.
+    programacion_original = oracion.programado_at
+
+    nueva_programacion = (
+        convertir_canarias_utc(programado_at)
+        if programado_at is not None
+        else None
+    )
+
+    # Consultar la notificación existente.
+    notificacion = (
+        db.query(models.NotificacionOracionDiaria)
+        .filter(
+            models.NotificacionOracionDiaria.oracion_id == oracion.id
+        )
+        .first()
+    )
+
+    # Conservar la programación de notificaciones
+    # que ya se hayan procesado o estén en proceso.
+    if (
+        notificacion is not None
+        and notificacion.estado in (
+            "enviada",
+            "parcial",
+            "procesando"
+        )
+    ):
+        if nueva_programacion is None:
+            nueva_programacion = programacion_original
+
+        elif nueva_programacion != programacion_original:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "Esta oración ya tiene una notificación "
+                    "enviada o en proceso. No se puede "
+                    "modificar su programación."
+                )
+            )
+
+    # Validar nuevas programaciones.
+    if (
+        nueva_programacion is not None
+        and nueva_programacion != programacion_original
+        and nueva_programacion <= datetime.now(
+            ZoneInfo("UTC")
+        ).replace(tzinfo=None)
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="La fecha y hora programadas deben ser futuras."
+        )
+
     ruta_guardada = None
 
     try:
+        # Guardar una imagen nueva si se ha seleccionado.
         if imagen is not None and imagen.filename:
             ruta_guardada, nueva_url = (
                 await guardar_imagen_oracion(imagen)
             )
             oracion.imagen = nueva_url
 
+        # Actualizar los datos de la oración.
         oracion.fecha = fecha
         oracion.titulo = titulo.strip()
         oracion.contenido = contenido.strip()
         oracion.autor = autor.strip() or None
+        oracion.programado_at = nueva_programacion
 
+        # Gestionar la notificación pendiente.
+        if nueva_programacion is not None:
+
+            if notificacion is None:
+                db.add(
+                    models.NotificacionOracionDiaria(
+                        oracion_id=oracion.id,
+                        programado_at=nueva_programacion,
+                        estado="pendiente"
+                    )
+                )
+
+            elif notificacion.estado == "pendiente":
+                notificacion.programado_at = nueva_programacion
+
+        elif (
+            notificacion is not None
+            and notificacion.estado == "pendiente"
+        ):
+            db.delete(notificacion)
+
+        # Guardar todos los cambios en una transacción.
         db.commit()
         db.refresh(oracion)
 
     except Exception:
         db.rollback()
 
+        # Eliminar la imagen nueva si falla el guardado.
         if ruta_guardada is not None:
             try:
                 os.remove(ruta_guardada)
@@ -310,6 +468,8 @@ async def editar_oracion(
         raise
 
     return oracion
+
+
 
 
 # =====================================

@@ -116,6 +116,38 @@
                 </div>
             </div>
 
+			<fieldset class="border border-blue-200 rounded-xl p-4 bg-blue-50">
+    <legend class="font-bold text-blue-900 px-2">
+        ¿Cuándo se publicará?
+    </legend>
+
+    <div class="flex flex-col gap-3 mt-2">
+        <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="modo_publicacion"
+                   value="ahora" checked class="accent-blue-700">
+            Publicar ahora
+        </label>
+
+        <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="modo_publicacion"
+                   value="programar" class="accent-blue-700">
+            Programar publicación
+        </label>
+    </div>
+
+    <div id="bloque-programacion" class="hidden mt-4">
+        <label for="programado_at" class="block font-semibold mb-1">
+            Fecha y hora de publicación (Canarias)
+        </label>
+
+        <input type="datetime-local"
+               id="programado_at"
+               name="programado_at"
+               disabled
+               class="w-full border rounded-lg p-3 bg-white">
+    </div>
+</fieldset>
+
             <div class="flex flex-wrap gap-3">
 
                 <button type="submit"
@@ -184,6 +216,42 @@ const imagenActual = document.getElementById("imagen-actual");
 
 let oracionEnEdicion = null;
 
+const opcionesPublicacion = document.querySelectorAll(
+    'input[name="modo_publicacion"]'
+);
+
+const bloqueProgramacion = document.getElementById(
+    "bloque-programacion"
+);
+
+const programadoInput = document.getElementById(
+    "programado_at"
+);
+
+function actualizarModoPublicacion() {
+    const programar = document.querySelector(
+        'input[name="modo_publicacion"]:checked'
+    ).value === "programar";
+
+    bloqueProgramacion.classList.toggle("hidden", !programar);
+    programadoInput.disabled = !programar;
+    programadoInput.required = programar;
+
+    if (!programar) {
+        programadoInput.value = "";
+    }
+
+    if (oracionEnEdicion === null) {
+        botonGuardar.textContent = programar
+            ? "Programar oración"
+            : "Publicar oración";
+    }
+}
+
+opcionesPublicacion.forEach(opcion => {
+    opcion.addEventListener("change", actualizarModoPublicacion);
+});
+
 
 // =====================================
 // FECHA ACTUAL DE CANARIAS
@@ -235,13 +303,12 @@ function restablecerFormulario() {
 
     tituloFormulario.textContent = "Nueva oración";
 
-    botonGuardar.textContent =
-        "Guardar y programar oración";
-
     botonCancelar.classList.add("hidden");
 
     imagenActual.replaceChildren();
     imagenActual.classList.add("hidden");
+
+    actualizarModoPublicacion();
 }
 
 
@@ -311,9 +378,31 @@ async function cargarOracionesAdmin() {
             estado.className =
                 "text-sm font-semibold mt-2";
 
-            estado.textContent = oracion.fecha > hoy
-                ? "⏳ Programada"
-                : "✅ Publicada";
+            const fechaProgramada = oracion.programado_at
+    ? new Date(
+        oracion.programado_at +
+        (/[zZ]|[+-]\d\d:\d\d$/.test(oracion.programado_at) ? "" : "Z")
+    )
+    : null;
+
+const pendiente = oracion.fecha > hoy ||
+    (fechaProgramada && fechaProgramada > new Date());
+
+estado.textContent = pendiente
+    ? "⏳ Programada"
+    : "✅ Publicada";
+
+if (pendiente && fechaProgramada) {
+    estado.textContent += " · " +
+        fechaProgramada.toLocaleString("es-ES", {
+            timeZone: "Atlantic/Canary",
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+        }) + " (Canarias)";
+}
 
             tarjeta.appendChild(estado);
 
@@ -365,37 +454,89 @@ async function cargarOracionesAdmin() {
 }
 
 
-// =====================================
-// EDITAR ORACIÓN
-// =====================================
+
+ // =====================================
+ // EDITAR ORACIÓN
+ // =====================================
 
 function editarOracion(oracion) {
 
     oracionEnEdicion = oracion.id;
 
+    // Determinar si la oración sigue programada
+    const fechaProgramada = oracion.programado_at
+        ? new Date(
+            oracion.programado_at +
+            (/[zZ]|[+-]\d\d:\d\d$/.test(oracion.programado_at)
+                ? ""
+                : "Z")
+        )
+        : null;
+
+    const programada = fechaProgramada !== null
+        && fechaProgramada > new Date();
+
+    // Recuperar el modo de publicación
+    const modo = document.querySelector(
+        `input[name="modo_publicacion"][value="${programada ? "programar" : "ahora"}"]`
+    );
+
+    modo.checked = true;
+
+    actualizarModoPublicacion();
+
+    // Restaurar fecha y hora en horario de Canarias
+    if (programada) {
+
+        programadoInput.value = fechaProgramada
+            .toLocaleString("sv-SE", {
+                timeZone: "Atlantic/Canary",
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+                hourCycle: "h23"
+            })
+            .replace(" ", "T");
+
+        programadoInput.disabled = false;
+
+    } else {
+
+        // Una oración publicada no debe conservar
+        // una programación activa en el formulario.
+        programadoInput.value = "";
+        programadoInput.disabled = true;
+    }
+
+    // Recuperar los datos de la oración
     document.getElementById("fecha").value =
         oracion.fecha;
 
     document.getElementById("titulo").value =
-        oracion.titulo;
+        oracion.titulo || "";
 
     document.getElementById("contenido").value =
-        oracion.contenido;
+        oracion.contenido || "";
 
     document.getElementById("autor").value =
         oracion.autor || "";
 
     document.getElementById("imagen").value = "";
 
+    // Configurar el formulario en modo edición
     tituloFormulario.textContent = "Editar oración";
 
     botonGuardar.textContent = "Guardar cambios";
 
     botonCancelar.classList.remove("hidden");
 
+    // Mostrar la imagen existente
     imagenActual.replaceChildren();
 
     if (oracion.imagen) {
+
         const texto = document.createElement("p");
         texto.className = "text-sm text-gray-600 mb-2";
         texto.textContent =
@@ -410,10 +551,12 @@ function editarOracion(oracion) {
         imagenActual.appendChild(texto);
         imagenActual.appendChild(imagen);
         imagenActual.classList.remove("hidden");
+
     } else {
         imagenActual.classList.add("hidden");
     }
 
+    // Informar al administrador
     mensaje.className =
         "mt-4 text-sm font-semibold text-blue-700";
 
@@ -427,6 +570,7 @@ function editarOracion(oracion) {
 }
 
 
+
 // =====================================
 // CANCELAR EDICIÓN
 // =====================================
@@ -437,15 +581,20 @@ botonCancelar.addEventListener("click", function() {
 });
 
 
-// =====================================
-// GUARDAR O ACTUALIZAR ORACIÓN
-// =====================================
+
+ // =====================================
+ // GUARDAR O ACTUALIZAR ORACIÓN
+ // =====================================
 
 formulario.addEventListener("submit", async function(event) {
 
     event.preventDefault();
 
     const editando = oracionEnEdicion !== null;
+
+    const modo = document.querySelector(
+        'input[name="modo_publicacion"]:checked'
+    ).value;
 
     const url = editando
         ? `/oraciones/${oracionEnEdicion}`
@@ -460,6 +609,48 @@ formulario.addEventListener("submit", async function(event) {
 
     try {
         const datos = new FormData(formulario);
+
+        // El backend no necesita recibir el modo.
+        datos.delete("modo_publicacion");
+
+        if (modo === "programar") {
+
+            if (!programadoInput.value) {
+                throw new Error(
+                    "Selecciona la fecha y hora de publicación."
+                );
+            }
+
+            const ahoraCanarias = new Intl.DateTimeFormat(
+                "sv-SE",
+                {
+                    timeZone: "Atlantic/Canary",
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hourCycle: "h23"
+                }
+            ).format(new Date()).replace(" ", "T");
+
+            if (programadoInput.value <= ahoraCanarias) {
+                throw new Error(
+                    "La fecha y hora programadas deben ser futuras."
+                );
+            }
+
+            datos.set(
+                "programado_at",
+                programadoInput.value
+            );
+
+        } else {
+
+            // Publicación inmediata o edición de una
+            // oración que ya está publicada.
+            datos.delete("programado_at");
+        }
 
         const respuesta = await fetch(url, {
             method: metodo,
@@ -488,7 +679,9 @@ formulario.addEventListener("submit", async function(event) {
         mostrarMensaje(
             editando
                 ? "Oración actualizada correctamente."
-                : "Oración guardada y programada correctamente."
+                : modo === "programar"
+                    ? "Oración programada correctamente."
+                    : "Oración publicada correctamente."
         );
 
         await cargarOracionesAdmin();
@@ -502,12 +695,14 @@ formulario.addEventListener("submit", async function(event) {
         botonGuardar.disabled = false;
         botonCancelar.disabled = false;
 
-        botonGuardar.textContent =
-            oracionEnEdicion !== null
-                ? "Guardar cambios"
-                : "Guardar y programar oración";
+        if (oracionEnEdicion !== null) {
+            botonGuardar.textContent = "Guardar cambios";
+        } else {
+            actualizarModoPublicacion();
+        }
     }
 });
+
 
 
 // =====================================

@@ -113,7 +113,7 @@ class FiestaParroquia(Base):
     fecha = Column(Date, nullable=False)
     nombre = Column(String, nullable=False)
     color = Column(String, default="blanco")
-    
+
 # ─────────────────────────────────────────────
 # Módulo de contacto
 # ─────────────────────────────────────────────
@@ -125,7 +125,7 @@ class Contacto(Base):
     nombre = Column(String, nullable=False)
     email = Column(String, nullable=False)
     mensaje = Column(String, nullable=False)
-    
+
 # ─────────────────────────────────────────────
 # Módulo de noticias
 # ─────────────────────────────────────────────
@@ -141,7 +141,7 @@ class Noticia(Base):
     contenido = Column(String, nullable=False)
     fecha = Column(DateTime)
     imagen = Column(String, nullable=True)  # 👈 NUEVO
-    
+
 # ─────────────────────────────────────────────
 # Módulo de evangelización
 # ─────────────────────────────────────────────
@@ -170,7 +170,7 @@ class Evangelizacion(Base):
     publicado = Column(Boolean, default=True)
 
     fecha_publicacion = Column(DateTime, default=datetime.utcnow)
-    
+
 
 # ─────────────────────────────────────────────
 # Módulo de Donativos - Configuración
@@ -209,7 +209,7 @@ class ConfiguracionDonativos(Base):
     )
 
     activo = Column(Boolean, default=True, nullable=False)
-    
+
 # =====================================
 # Módulo de Reflexión dominical
 # =====================================
@@ -226,7 +226,7 @@ class ReflexionDominical(Base):
     audio_url = Column(String(500), nullable=True)
     publicado_at = Column(DateTime, default=datetime.utcnow)
     programado_at = Column(DateTime, nullable=True)
-    
+
 # =====================================
 # DISPOSITIVOS PARA NOTIFICACIONES PUSH
 # =====================================
@@ -265,7 +265,7 @@ class DispositivoPush(Base):
         default=datetime.utcnow,
         onupdate=datetime.utcnow
     )
-    
+
 # =====================================
 # NOTIFICACIONES AUTOMÁTICAS DE EVANGELIZACIÓN
 # =====================================
@@ -370,6 +370,40 @@ class NotificacionReflexionDominical(Base):
     ultimo_error = Column(Text)
 
 # =====================================
+# NOTIFICACIONES DE ORACIÓN DEL DÍA
+# =====================================
+
+class NotificacionOracionDiaria(Base):
+    __tablename__ = "notificaciones_oraciones_diarias"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    oracion_id = Column(
+        Integer,
+        ForeignKey("oraciones_diarias.id"),
+        unique=True,
+        nullable=False
+    )
+
+    programado_at = Column(DateTime, nullable=False)
+
+    estado = Column(
+        String(20),
+        nullable=False,
+        default="pendiente"
+    )
+
+    intentos = Column(Integer, nullable=False, default=0)
+
+    iniciado_at = Column(DateTime)
+    enviado_at = Column(DateTime)
+
+    enviados = Column(Integer, nullable=False, default=0)
+    fallidos = Column(Integer, nullable=False, default=0)
+
+    ultimo_error = Column(Text)
+
+# =====================================
 # MÓDULO DE ORACIÓN DEL DÍA
 # =====================================
 
@@ -389,6 +423,8 @@ class OracionDiaria(Base):
     imagen = Column(String(500), nullable=True)
 
     creado_at = Column(DateTime, default=datetime.utcnow)
+
+    programado_at = Column(DateTime, nullable=True, index=True)
 
 
 # =====================================

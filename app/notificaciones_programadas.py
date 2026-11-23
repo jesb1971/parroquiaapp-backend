@@ -312,9 +312,13 @@ async def ejecutar_notificaciones_periodicamente():
             await asyncio.to_thread(
                 procesar_notificaciones_pendientes
             )
-            
+
             await asyncio.to_thread(
                 procesar_notificaciones_dominicales
+            )
+
+            await asyncio.to_thread(
+                procesar_notificaciones_oraciones
             )
 
         except asyncio.CancelledError:
@@ -326,7 +330,7 @@ async def ejecutar_notificaciones_periodicamente():
             )
 
         await asyncio.sleep(30)
-        
+
 # =====================================
 # REFLEXIONES DOMINICALES
 # BUSCAR NOTIFICACIONES PENDIENTES
@@ -357,7 +361,7 @@ def obtener_notificaciones_dominicales_pendientes(db: Session):
         )
         .all()
     )
-    
+
 # =====================================
 # REFLEXIONES DOMINICALES
 # RESERVAR NOTIFICACIÓN
@@ -392,7 +396,7 @@ def reservar_notificacion_dominical(db: Session, notificacion_id: int):
     db.commit()
 
     return actualizadas == 1
-    
+
 # =====================================
 # REFLEXIONES DOMINICALES
 # REGISTRAR RESULTADO DEL ENVÍO
@@ -431,7 +435,7 @@ def registrar_resultado_dominical(
     db.commit()
 
     return True
-    
+
 # =====================================
 # REFLEXIONES DOMINICALES
 # ENVIAR NOTIFICACIÓN PROGRAMADA
@@ -520,7 +524,7 @@ def enviar_notificacion_dominical(db: Session, notificacion_id: int):
             str(error)[:500]
         )
         return False
-        
+
 # =====================================
 # REFLEXIONES DOMINICALES
 # DETECTAR ENVÍOS INTERRUMPIDOS
@@ -556,7 +560,7 @@ def detectar_envios_dominicales_interrumpidos(db: Session):
         db.commit()
 
     return len(registros)
-    
+
 # =====================================
 # REFLEXIONES DOMINICALES
 # PROCESAR NOTIFICACIONES PENDIENTES
@@ -586,6 +590,220 @@ def procesar_notificaciones_dominicales():
 
     except Exception:
         db.rollback()
+        raise
+
+    finally:
+        db.close()
+
+# =====================================
+# ORACIÓN DEL DÍA
+# BUSCAR NOTIFICACIONES PENDIENTES
+# =====================================
+
+def obtener_notificaciones_oraciones_pendientes(db: Session):
+    instante = ahora_utc()
+
+    return (
+        db.query(models.NotificacionOracionDiaria)
+        .join(
+            models.OracionDiaria,
+            models.NotificacionOracionDiaria.oracion_id
+            == models.OracionDiaria.id
+        )
+        .filter(
+            models.NotificacionOracionDiaria.estado == "pendiente",
+            models.NotificacionOracionDiaria.programado_at <= instante,
+            models.OracionDiaria.programado_at <= instante
+        )
+        .order_by(
+            models.NotificacionOracionDiaria.programado_at.asc()
+        )
+        .all()
+    )
+
+# =====================================
+# ORACIÓN DEL DÍA
+# RESERVAR NOTIFICACIÓN
+# =====================================
+
+def reservar_notificacion_oracion(db: Session, notificacion_id: int):
+    instante = ahora_utc()
+
+    actualizadas = (
+        db.query(models.NotificacionOracionDiaria)
+        .filter(
+            models.NotificacionOracionDiaria.id == notificacion_id,
+            models.NotificacionOracionDiaria.estado == "pendiente",
+            models.NotificacionOracionDiaria.programado_at <= instante
+        )
+        .update(
+            {
+                models.NotificacionOracionDiaria.estado: "procesando",
+                models.NotificacionOracionDiaria.iniciado_at: instante,
+                models.NotificacionOracionDiaria.intentos:
+                    models.NotificacionOracionDiaria.intentos + 1
+            },
+            synchronize_session=False
+        )
+    )
+
+    db.commit()
+
+    return actualizadas == 1
+
+# =====================================
+# ORACIÓN DEL DÍA
+# REGISTRAR RESULTADO DEL ENVÍO
+# =====================================
+
+def registrar_resultado_oracion(
+    db: Session,
+    notificacion_id: int,
+    enviados: int,
+    fallidos: int,
+    error: str | None = None
+):
+    notificacion = (
+        db.query(models.NotificacionOracionDiaria)
+        .filter(
+            models.NotificacionOracionDiaria.id == notificacion_id,
+            models.NotificacionOracionDiaria.estado == "procesando"
+        )
+        .first()
+    )
+
+    if notificacion is None:
+        return False
+
+    notificacion.enviados = enviados
+    notificacion.fallidos = fallidos
+    notificacion.ultimo_error = error
+
+    notificacion.estado = (
+        "enviada" if fallidos == 0 and error is None
+        else "parcial"
+    )
+
+    notificacion.enviado_at = ahora_utc()
+
+    db.commit()
+
+    return True
+
+# =====================================
+# ORACIÓN DEL DÍA
+# ENVIAR NOTIFICACIÓN PROGRAMADA
+# =====================================
+
+def enviar_notificacion_oracion(db: Session, notificacion_id: int):
+
+    notificacion = (
+        db.query(models.NotificacionOracionDiaria)
+        .filter(
+            models.NotificacionOracionDiaria.id == notificacion_id,
+            models.NotificacionOracionDiaria.estado == "procesando"
+        )
+        .first()
+    )
+
+    if notificacion is None:
+        return False
+
+    oracion = db.get(
+        models.OracionDiaria,
+        notificacion.oracion_id
+    )
+
+    if oracion is None:
+        registrar_resultado_oracion(
+            db, notificacion_id, 0, 0,
+            "La oración ya no existe."
+        )
+        return False
+
+    dispositivos = (
+        db.query(models.DispositivoPush)
+        .filter(models.DispositivoPush.activo.is_(True))
+        .all()
+    )
+
+    tokens = [dispositivo.token for dispositivo in dispositivos]
+
+    if not tokens:
+        registrar_resultado_oracion(
+            db, notificacion_id, 0, 0,
+            "No hay dispositivos activos."
+        )
+        return False
+
+    try:
+        resultado = enviar_notificaciones_multiples(
+            tokens,
+            "Nueva oración del día",
+            oracion.titulo[:100]
+        )
+
+        if resultado["tokens_invalidos"]:
+            (
+                db.query(models.DispositivoPush)
+                .filter(
+                    models.DispositivoPush.token.in_(
+                        resultado["tokens_invalidos"]
+                    )
+                )
+                .update(
+                    {models.DispositivoPush.activo: False},
+                    synchronize_session=False
+                )
+            )
+
+        registrar_resultado_oracion(
+            db,
+            notificacion_id,
+            resultado["enviados"],
+            resultado["fallidos"]
+        )
+
+        return True
+
+    except Exception as error:
+        db.rollback()
+
+        registrar_resultado_oracion(
+            db, notificacion_id, 0, 0, str(error)
+        )
+
+        logger.exception(
+            "Error al enviar notificación de Oración del Día."
+        )
+
+        return False
+
+# =====================================
+# ORACIÓN DEL DÍA
+# PROCESAR NOTIFICACIONES PENDIENTES
+# =====================================
+
+def procesar_notificaciones_oraciones():
+    db = SessionLocal()
+
+    try:
+        pendientes = obtener_notificaciones_oraciones_pendientes(db)
+
+        for notificacion in pendientes:
+            notificacion_id = notificacion.id
+
+            if reservar_notificacion_oracion(db, notificacion_id):
+                enviar_notificacion_oracion(
+                    db,
+                    notificacion_id
+                )
+
+    except Exception:
+        db.rollback()
+        logger.exception(
+            "Error al procesar notificaciones de Oración del Día."
+        )
         raise
 
     finally:

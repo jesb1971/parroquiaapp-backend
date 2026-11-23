@@ -88,6 +88,32 @@ app.add_exception_handler(
 # Crear tablas automáticamente
 Base.metadata.create_all(bind=engine)
 
+# =====================================
+# MIGRACIÓN: PROGRAMACIÓN DE ORACIONES
+# =====================================
+
+from sqlalchemy import inspect, text
+
+with engine.begin() as conexion:
+    columnas = {
+        columna["name"]
+        for columna in inspect(conexion).get_columns(
+            "oraciones_diarias"
+        )
+    }
+
+    if "programado_at" not in columnas:
+        conexion.execute(text(
+            "ALTER TABLE oraciones_diarias "
+            "ADD COLUMN programado_at DATETIME"
+        ))
+
+    conexion.execute(text(
+        "CREATE INDEX IF NOT EXISTS "
+        "ix_oraciones_diarias_programado_at "
+        "ON oraciones_diarias (programado_at)"
+    ))
+
 
 # =====================================
 # ROUTERS
