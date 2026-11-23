@@ -59,12 +59,21 @@ AUDIOS_DIR = Path("/var/data/oraciones/audios")
 MAX_AUDIO_BYTES = 30 * 1024 * 1024
 
 FORMATOS_AUDIO = {
-    "audio/mpeg": ".mp3",
-    "audio/mp4": ".m4a",
-    "audio/x-m4a": ".m4a",
-    "audio/aac": ".aac",
-    "audio/ogg": ".ogg",
-    "audio/opus": ".opus"
+    ".opus": "audio/ogg",
+    ".ogg": "audio/ogg",
+    ".mp3": "audio/mpeg",
+    ".mpeg": "audio/mpeg",
+    ".m4a": "audio/mp4",
+    ".aac": "audio/aac"
+}
+
+TIPOS_AUDIO = {
+    ".opus": {"audio/ogg", "audio/opus", "application/ogg"},
+    ".ogg": {"audio/ogg", "application/ogg"},
+    ".mp3": {"audio/mpeg", "audio/mp3"},
+    ".mpeg": {"audio/mpeg", "audio/mp3", "audio/x-mpeg", "video/mpeg"},
+    ".m4a": {"audio/mp4", "audio/x-m4a"},
+    ".aac": {"audio/aac", "audio/x-aac"}
 }
 
 
@@ -144,12 +153,18 @@ async def guardar_imagen_oracion(imagen: UploadFile):
 # =====================================
 
 async def guardar_audio_oracion(audio: UploadFile):
-    extension = FORMATOS_AUDIO.get(audio.content_type)
+    extension = Path(audio.filename).suffix.lower()
 
-    if not extension:
+    if extension not in FORMATOS_AUDIO:
         raise HTTPException(
             status_code=400,
             detail="Formato de audio no permitido."
+        )
+
+    if audio.content_type not in TIPOS_AUDIO[extension]:
+        raise HTTPException(
+            status_code=400,
+            detail="El tipo de audio no coincide con su extensión."
         )
 
     datos = await audio.read(MAX_AUDIO_BYTES + 1)
@@ -164,6 +179,31 @@ async def guardar_audio_oracion(audio: UploadFile):
         raise HTTPException(
             status_code=400,
             detail="El archivo de audio está vacío."
+        )
+
+    if extension in {".opus", ".ogg"}:
+        valido = datos.startswith(b"OggS")
+    elif extension in {".mp3", ".mpeg"}:
+        valido = (
+            datos.startswith(b"ID3")
+            or (
+                len(datos) >= 2
+                and datos[0] == 0xFF
+                and (datos[1] & 0xE0) == 0xE0
+            )
+        )
+    elif extension == ".m4a":
+        valido = len(datos) >= 12 and datos[4:8] == b"ftyp"
+    else:
+        valido = (
+            datos.startswith(b"\xff\xf1")
+            or datos.startswith(b"\xff\xf9")
+        )
+
+    if not valido:
+        raise HTTPException(
+            status_code=400,
+            detail="El archivo no tiene una cabecera de audio válida."
         )
 
     AUDIOS_DIR.mkdir(parents=True, exist_ok=True)
