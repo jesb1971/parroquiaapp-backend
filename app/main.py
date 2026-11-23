@@ -548,24 +548,6 @@ def admin_noticias(
         "admin_noticias.html",
         {"request": request}
     )
-    
-
-# =====================================
-# IMÁGENES DE ORACIÓN DEL DÍA
-# =====================================
-
-ORACIONES_IMAGENES_DIR = "/var/data/oraciones/imagenes"
-
-os.makedirs(
-    ORACIONES_IMAGENES_DIR,
-    exist_ok=True
-)
-
-app.mount(
-    "/media/oraciones",
-    StaticFiles(directory=ORACIONES_IMAGENES_DIR),
-    name="media_oraciones"
-)
 
 # =====================================
 # AUDIOS DE ORACIÓN DEL DÍA
@@ -583,7 +565,23 @@ app.mount(
     StaticFiles(directory=ORACIONES_AUDIOS_DIR),
     name="media_oraciones_audios"
 )
+    
+# =====================================
+# IMÁGENES DE ORACIÓN DEL DÍA
+# =====================================
 
+ORACIONES_IMAGENES_DIR = "/var/data/oraciones/imagenes"
+
+os.makedirs(
+    ORACIONES_IMAGENES_DIR,
+    exist_ok=True
+)
+
+app.mount(
+    "/media/oraciones",
+    StaticFiles(directory=ORACIONES_IMAGENES_DIR),
+    name="media_oraciones"
+)
 
 # =====================================
 # IMÁGENES DE GRUPOS PARROQUIALES
