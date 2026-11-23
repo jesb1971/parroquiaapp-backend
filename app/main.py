@@ -352,7 +352,7 @@ def app_home(request: Request):
             reverse=True
         )
 
-        destacados = destacados[:5]
+        destacados = destacados[:6]
 
         # =====================================
         # MOSTRAR PANTALLA PRINCIPAL
