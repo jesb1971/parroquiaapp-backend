@@ -315,15 +315,20 @@ async def publicar_oracion(
         db.flush()
 
         # Registrar notificación automática
-        # únicamente para publicaciones programadas
-        if fecha_programada_utc is not None:
-            db.add(
-                models.NotificacionOracionDiaria(
-                    oracion_id=oracion.id,
-                    programado_at=fecha_programada_utc,
-                    estado="pendiente"
-                )
+        # para publicaciones inmediatas y programadas
+        fecha_notificacion = (
+            fecha_programada_utc
+            if fecha_programada_utc is not None
+            else datetime.utcnow()
+        )
+
+        db.add(
+            models.NotificacionOracionDiaria(
+                oracion_id=oracion.id,
+                programado_at=fecha_notificacion,
+                estado="pendiente"
             )
+        )
 
         # Guardar oración y notificación
         # en una misma transacción

@@ -613,7 +613,10 @@ def obtener_notificaciones_oraciones_pendientes(db: Session):
         .filter(
             models.NotificacionOracionDiaria.estado == "pendiente",
             models.NotificacionOracionDiaria.programado_at <= instante,
-            models.OracionDiaria.programado_at <= instante
+            (
+                models.OracionDiaria.programado_at.is_(None)
+                | (models.OracionDiaria.programado_at <= instante)
+            )
         )
         .order_by(
             models.NotificacionOracionDiaria.programado_at.asc()
